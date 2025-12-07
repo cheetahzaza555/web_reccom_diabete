@@ -6,182 +6,91 @@
     <title>ระบบแนะนำการออกกำลังกายผู้ป่วยเบาหวาน</title>
     <style>
         body { font-family: 'Sarabun', sans-serif; max-width: 900px; margin: auto; padding: 20px; background-color: #f4f6f9; }
-        h1, h2, h3, h4 { color: #333; }
-        
-        /* Card Style */
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        /* Form Layout */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .form-group { margin-bottom: 10px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; color: #555; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        
-        /* Buttons */
-        button { padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; font-size: 16px; transition: 0.3s; }
+        button { padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; font-size: 16px; transition: 0.3s; margin-right: 5px; margin-bottom: 5px; }
         .btn-green { background-color: #28a745; color: white; width: 100%; margin-top: 10px; }
-        .btn-green:hover { background-color: #218838; }
         .btn-blue { background-color: #007bff; color: white; }
-        .btn-blue:hover { background-color: #0056b3; }
         .btn-red { background-color: #dc3545; color: white; }
         .btn-red:hover { background-color: #c82333; }
-        .btn-orange { background-color: #fd7e14; color: white; width: 100%; margin-top: 10px; }
-        .btn-orange:hover { background-color: #e36b0a; }
 
         /* Result Areas */
         #result, #searchResult { display: none; margin-top: 20px; }
         ul { padding-left: 20px; }
         li { margin-bottom: 5px; }
-        
-        /* Alert Box */
-        .alert-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
-        .alert-box strong { color: #856404; }
     </style>
 </head>
 <body>
 
-    <h1 style="text-align: center;"> ระบบแนะนำการออกกำลังกายสำหรับผู้ป่วยโรคเบาหวาน</h1>
-
-    <!-- 🆕 ปุ่มรันกฎสำหรับผู้ป่วยเก่า -->
-    <div class="card alert-box">
-        <strong>⚡ สำคัญ:</strong> หากคุณมีข้อมูลผู้ป่วยเก่าอยู่แล้ว ให้กดปุ่มด้านล่างเพื่อประมวลผลคำแนะนำ
-        <button class="btn-orange" onclick="runInferenceForAll()">🔄 รันกฎสำหรับผู้ป่วยทั้งหมด</button>
-    </div>
+    <h1 style="text-align: center;">🏥 ระบบแนะนำการออกกำลังกาย (Diabetes AI)</h1>
 
     <div class="card">
-        <h3>📝 เพิ่ม/อัปเดต ข้อมูลผู้ป่วยใหม่</h3>
-        
+        <h3>📝 เพิ่ม/อัปเดต ข้อมูลผู้ป่วย</h3>
         <div class="form-grid">
-            <div class="form-group">
-                <label>รหัสผู้ป่วย (ID): *</label>
-                <input type="number" id="pid" placeholder="เช่น 99">
-            </div>
-            <div class="form-group">
-                <label>ประเภทเบาหวาน:</label>
+            <div class="form-group"><label>รหัส (ID): *</label><input type="number" id="pid" placeholder="เช่น 99"></div>
+            <div class="form-group"><label>ประเภท:</label>
                 <select id="dtype">
                     <option value="T1DM">ชนิดที่ 1 (T1DM)</option>
                     <option value="T2DM">ชนิดที่ 2 (T2DM)</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>ชื่อจริง:</label>
-                <input type="text" id="fname" placeholder="ชื่อจริง">
-            </div>
-            <div class="form-group">
-                <label>นามสกุล:</label>
-                <input type="text" id="lname" placeholder="นามสกุล">
-            </div>
+            <div class="form-group"><label>ชื่อ:</label><input type="text" id="fname"></div>
+            <div class="form-group"><label>สกุล:</label><input type="text" id="lname"></div>
         </div>
-
         <hr style="border-top: 1px dashed #ddd; margin: 15px 0;">
-        
         <div class="form-grid">
-            <div class="form-group">
-                <label>BMI (kg/m²):</label>
-                <input type="number" step="0.1" id="bmi" placeholder="22.5">
-            </div>
-            <div class="form-group">
-                <label>ความดันตัวบน (SBP):</label>
-                <input type="number" id="sbp" placeholder="120">
-            </div>
-            <div class="form-group">
-                <label>ความดันตัวล่าง (DBP):</label>
-                <input type="number" id="dbp" placeholder="80">
-            </div>
-            <div class="form-group">
-                <label>คอเลสเตอรอล (Chol):</label>
-                <input type="number" id="chol" placeholder="200">
-            </div>
-            <div class="form-group">
-                <label>ไขมันเลว (LDL):</label>
-                <input type="number" id="ldl" placeholder="100">
-            </div>
-            <div class="form-group">
-                <label>ไขมันดี (HDL):</label>
-                <input type="number" id="hdl" placeholder="50">
-            </div>
-            <div class="form-group">
-                <label>ไตรกลีเซอไรด์ (Tri):</label>
-                <input type="number" id="tri" placeholder="150">
-            </div>
+            <div class="form-group"><label>BMI:</label><input type="number" step="0.1" id="bmi" placeholder="22.5"></div>
+            <div class="form-group"><label>SBP:</label><input type="number" id="sbp"></div>
+            <div class="form-group"><label>DBP:</label><input type="number" id="dbp"></div>
+            <div class="form-group"><label>Chol:</label><input type="number" id="chol"></div>
+            <div class="form-group"><label>LDL:</label><input type="number" id="ldl"></div>
         </div>
-
-        <button class="btn-green" onclick="analyzeData()">🚀 บันทึกข้อมูล & ประมวลผลคำแนะนำ</button>
+        <button class="btn-green" onclick="analyzeData()">🚀 บันทึกข้อมูล & ประมวลผล</button>
     </div>
 
     <div id="result" class="card" style="border-left: 5px solid #28a745;">
         <h3>ผลการวิเคราะห์ล่าสุด</h3>
         <p><strong>คำเตือน:</strong> <span id="warnText">-</span></p>
-        <p><strong>ท่าออกกำลังกายที่แนะนำ:</strong></p>
-        <ul id="exList"></ul>
+        <p><strong>ท่าออกกำลังกาย:</strong></p> <ul id="exList"></ul>
     </div>
 
     <div class="card" style="background-color: #e9ecef;">
-        <h3>🔍 ค้นหา / ลบ ข้อมูลผู้ป่วย</h3>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="search_id" placeholder="ระบุ ID (เช่น 99 หรือ 1)">
-            <button class="btn-blue" onclick="searchPatient()">ค้นหา</button>
-            <button class="btn-red" onclick="deletePatient()">ลบข้อมูล</button>
-        </div>
+        <h3>🔍 จัดการข้อมูล</h3>
+        <input type="text" id="search_id" placeholder="ระบุ ID (เช่น 99)" style="width: 200px; padding: 8px;">
+        <button class="btn-blue" onclick="searchPatient()">ค้นหา</button>
+        <button class="btn-orange" onclick="reprocessPatient()">⚡ รันกฎใหม่</button>
+        <button class="btn-red" onclick="deletePatient()">ลบข้อมูล</button>
     </div>
 
     <div id="searchResult" class="card" style="border: 1px solid #007bff;">
         <h2 style="color: #007bff; margin-top: 0;">📋 ข้อมูลผู้ป่วย: <span id="show_id"></span></h2>
-        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
-                <h4>👤 ข้อมูลทั่วไป</h4>
-                <p><strong>ชื่อ-นามสกุล:</strong> <span id="show_name">-</span></p>
+                <p><strong>ชื่อ-สกุล:</strong> <span id="show_name">-</span></p>
                 <p><strong>ประเภท:</strong> <span id="show_type">-</span></p>
                 <p><strong>BMI:</strong> <span id="show_bmi">-</span></p>
             </div>
             <div>
-                <h4>🩺 ผลตรวจสุขภาพ</h4>
-                <p><strong>ความดัน (SBP/DBP):</strong> <span id="show_bp">-</span></p>
-                <p><strong>ไขมัน (Chol/LDL):</strong> <span id="show_lipid">-</span></p>
+                <p><strong>ความดัน:</strong> <span id="show_bp">-</span></p>
+                <p><strong>ไขมัน:</strong> <span id="show_lipid">-</span></p>
             </div>
         </div>
-
         <hr>
-        
         <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px;">
-            <h4 style="color: #856404; margin-top: 0;">⚠️ คำเตือนสุขภาพ (Diagnosis)</h4>
+            <h4 style="color: #856404; margin-top: 0;">⚠️ คำเตือนสุขภาพ</h4>
             <ul id="show_warnings"></ul>
         </div>
-
         <div style="background-color: #d4edda; padding: 15px; border-radius: 5px; margin-top: 10px;">
-            <h4 style="color: #155724; margin-top: 0;">✅ ท่าออกกำลังกายที่แนะนำ</h4>
+            <h4 style="color: #155724; margin-top: 0;">✅ ท่าออกกำลังกาย</h4>
             <ul id="show_recs"></ul>
         </div>
     </div>
 
     <script>
-        // 🆕 ฟังก์ชันรันกฎสำหรับผู้ป่วยทั้งหมด
-        async function runInferenceForAll() {
-            const btn = event.target;
-            btn.innerText = "⏳ กำลังประมวลผล...";
-            btn.disabled = true;
-
-            try {
-                const response = await fetch('/api/run-inference', {
-                    method: 'POST'
-                });
-                const result = await response.json();
-                
-                if(result.status === 'ok') {
-                    alert(`✅ ${result.message}`);
-                } else {
-                    alert(`❌ ${result.message}`);
-                }
-            } catch(e) {
-                alert("เกิดข้อผิดพลาด: " + e);
-            } finally {
-                btn.innerText = "🔄 รันกฎสำหรับผู้ป่วยทั้งหมด";
-                btn.disabled = false;
-            }
-        }
-
-        // ฟังก์ชัน 1: บันทึกและประมวลผล
+        // ฟังก์ชัน 1: บันทึกและประมวลผล (ส่งข้อมูลครบทุกช่อง)
         async function analyzeData() {
             const data = {
                 id: document.getElementById('pid').value,
@@ -192,108 +101,65 @@
                 sbp: document.getElementById('sbp').value,
                 dbp: document.getElementById('dbp').value,
                 chol: document.getElementById('chol').value,
-                ldl: document.getElementById('ldl').value,
-                hdl: document.getElementById('hdl').value,
-                tri: document.getElementById('tri').value
+                ldl: document.getElementById('ldl').value
             };
-
-            if(!data.id || !data.bmi) { alert("กรุณากรอก ID และ BMI เป็นอย่างน้อย"); return; }
-
-            const btn = document.querySelector('.btn-green');
-            btn.innerText = "⏳ กำลังประมวลผล...";
-            btn.disabled = true;
-
+            if(!data.id || !data.bmi) { alert("กรอก ID และ BMI ก่อนครับ"); return; }
+            
+            const btn = document.querySelector('.btn-green'); btn.innerText = "⏳ กำลังคิด..."; btn.disabled = true;
             try {
-                const response = await fetch('/api/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-
-                // แสดงผลลัพธ์
-                document.getElementById('result').style.display = 'block';
-                document.getElementById('warnText').innerText = result.warnings.length > 0 ? result.warnings.join(", ") : "ไม่มีคำเตือนพิเศษ";
-                
-                const list = document.getElementById('exList');
-                list.innerHTML = "";
-                if(result.exercises.length === 0) list.innerHTML = "<li>ไม่พบคำแนะนำ</li>";
-                
-                result.exercises.forEach(ex => {
-                    const li = document.createElement('li');
-                    li.innerText = ex;
-                    list.appendChild(li);
-                });
-
-            } catch(e) {
-                alert("เกิดข้อผิดพลาด: " + e);
-            } finally {
-                btn.innerText = "🚀 บันทึกข้อมูล & ประมวลผลคำแนะนำ";
-                btn.disabled = false;
-            }
+                const res = await fetch('/api/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const json = await res.json();
+                showResult(json, 'result');
+            } catch(e) { alert("Error: " + e); } finally { btn.innerText = "🚀 บันทึกข้อมูล & ประมวลผล"; btn.disabled = false; }
         }
-    
-        // ฟังก์ชัน 2: ค้นหาข้อมูล
+
         async function searchPatient() {
             const id = document.getElementById('search_id').value;
-            if(!id) { alert("กรุณาระบุ ID"); return; }
-
-            const response = await fetch(`/api/patient/${id}`);
-            const result = await response.json();
-
-            if(result.status === 'error') {
-                alert("ไม่พบข้อมูลผู้ป่วย ID นี้");
-                document.getElementById('searchResult').style.display = 'none';
-                return;
-            }
-
-            // แสดงข้อมูล
+            if(!id) return alert("ใส่ ID ก่อนครับ");
+            const res = await fetch(`/api/patient/${id}`);
+            const json = await res.json();
+            if(json.status === 'error') { alert("ไม่เจอข้อมูล"); document.getElementById('searchResult').style.display = 'none'; return; }
+            
             document.getElementById('searchResult').style.display = 'block';
             document.getElementById('show_id').innerText = id;
-            
-            const info = result.info;
-            document.getElementById('show_name').innerText = `${info.firstname} ${info.lastname}`;
-            document.getElementById('show_type').innerText = info.type.split('#').pop();
-            document.getElementById('show_bmi').innerText = info.bmi;
-            document.getElementById('show_bp').innerText = `${info.sbp} / ${info.dbp}`;
-            document.getElementById('show_lipid').innerText = `Chol: ${info.chol}, LDL: ${info.ldl}`;
-
-            // คำเตือน
-            const warnList = document.getElementById('show_warnings');
-            warnList.innerHTML = "";
-            if(result.warnings.length === 0) warnList.innerHTML = "<li>ไม่มีคำเตือนพิเศษ</li>";
-            result.warnings.forEach(w => {
-                let li = document.createElement('li');
-                li.innerText = w;
-                warnList.appendChild(li);
-            });
-
-            // คำแนะนำ
-            const recList = document.getElementById('show_recs');
-            recList.innerHTML = "";
-            if(result.exercises.length === 0) recList.innerHTML = "<li>ไม่พบคำแนะนำ</li>";
-            result.exercises.forEach(ex => {
-                let li = document.createElement('li');
-                li.innerText = ex;
-                recList.appendChild(li);
-            });
+            document.getElementById('show_name').innerText = json.info.firstname + " " + json.info.lastname;
+            document.getElementById('show_type').innerText = json.info.type;
+            document.getElementById('show_bmi').innerText = json.info.bmi;
+            document.getElementById('show_bp').innerText = `${json.info.sbp} / ${json.info.dbp}`;
+            document.getElementById('show_lipid').innerText = `Chol: ${json.info.chol}, LDL: ${json.info.ldl}`;
+            displayLists(json.warnings, json.exercises, 'show_warnings', 'show_recs');
         }
 
-        // ฟังก์ชัน 3: ลบข้อมูล
+        async function reprocessPatient() {
+            const id = document.getElementById('search_id').value;
+            if(!id) return alert("ใส่ ID ก่อนครับ");
+            const btn = document.querySelector('.btn-orange'); btn.disabled = true;
+            try {
+                const res = await fetch(`/api/reprocess/${id}`, { method: 'POST' });
+                const json = await res.json();
+                if(json.status === 'ok') { alert("✅ คิดใหม่เสร็จแล้ว!"); searchPatient(); }
+                else alert(json.message);
+            } catch(e) { alert(e); } finally { btn.disabled = false; }
+        }
+
         async function deletePatient() {
             const id = document.getElementById('search_id').value;
-            if(!id) { alert("กรุณาระบุ ID ในช่องค้นหาก่อนกดลบ"); return; }
+            if(!id || !confirm("ลบจริงนะ?")) return;
+            await fetch(`/api/delete/${id}`, { method: 'DELETE' });
+            alert("ลบเรียบร้อย"); document.getElementById('searchResult').style.display = 'none';
+        }
 
-            if(!confirm(`ยืนยันที่จะลบข้อมูลผู้ป่วย ID: ${id} ?`)) return;
-
-            const response = await fetch(`/api/delete/${id}`, { method: 'DELETE' });
-            const result = await response.json();
-            
-            alert(result.message);
-            if(result.status === 'ok') {
-                document.getElementById('searchResult').style.display = 'none';
-                document.getElementById('result').style.display = 'none';
-            }
+        function showResult(result, elId) {
+            document.getElementById(elId).style.display = 'block';
+            document.getElementById('warnText').innerText = result.warnings.join(", ") || "ไม่มี";
+            const list = document.getElementById('exList'); list.innerHTML = "";
+            (result.exercises.length ? result.exercises : ["ไม่มีคำแนะนำ"]).forEach(x => list.innerHTML += `<li>${x}</li>`);
+        }
+        function displayLists(w, e, wId, eId) {
+            const wl = document.getElementById(wId); wl.innerHTML = "";
+            (w.length ? w : ["ไม่มี"]).forEach(x => wl.innerHTML += `<li>${x}</li>`);
+            const el = document.getElementById(eId); el.innerHTML = "";
+            (e.length ? e : ["ไม่มี"]).forEach(x => el.innerHTML += `<li>${x}</li>`);
         }
     </script>
 </body>

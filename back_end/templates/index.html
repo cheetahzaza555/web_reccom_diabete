@@ -25,16 +25,28 @@
         .btn-blue:hover { background-color: #0056b3; }
         .btn-red { background-color: #dc3545; color: white; }
         .btn-red:hover { background-color: #c82333; }
+        .btn-orange { background-color: #fd7e14; color: white; width: 100%; margin-top: 10px; }
+        .btn-orange:hover { background-color: #e36b0a; }
 
         /* Result Areas */
         #result, #searchResult { display: none; margin-top: 20px; }
         ul { padding-left: 20px; }
         li { margin-bottom: 5px; }
+        
+        /* Alert Box */
+        .alert-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        .alert-box strong { color: #856404; }
     </style>
 </head>
 <body>
 
-    <h1 style="text-align: center;">🏥 ระบบแนะนำการออกกำลังกาย (Diabetes AI)</h1>
+    <h1 style="text-align: center;"> ระบบแนะนำการออกกำลังกายสำหรับผู้ป่วยโรคเบาหวาน</h1>
+
+    <!-- 🆕 ปุ่มรันกฎสำหรับผู้ป่วยเก่า -->
+    <div class="card alert-box">
+        <strong>⚡ สำคัญ:</strong> หากคุณมีข้อมูลผู้ป่วยเก่าอยู่แล้ว ให้กดปุ่มด้านล่างเพื่อประมวลผลคำแนะนำ
+        <button class="btn-orange" onclick="runInferenceForAll()">🔄 รันกฎสำหรับผู้ป่วยทั้งหมด</button>
+    </div>
 
     <div class="card">
         <h3>📝 เพิ่ม/อัปเดต ข้อมูลผู้ป่วยใหม่</h3>
@@ -144,7 +156,32 @@
     </div>
 
     <script>
-        // ฟังก์ชัน 1: บันทึกและประมวลผล (ส่งข้อมูลครบทุกช่อง)
+        // 🆕 ฟังก์ชันรันกฎสำหรับผู้ป่วยทั้งหมด
+        async function runInferenceForAll() {
+            const btn = event.target;
+            btn.innerText = "⏳ กำลังประมวลผล...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/run-inference', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if(result.status === 'ok') {
+                    alert(`✅ ${result.message}`);
+                } else {
+                    alert(`❌ ${result.message}`);
+                }
+            } catch(e) {
+                alert("เกิดข้อผิดพลาด: " + e);
+            } finally {
+                btn.innerText = "🔄 รันกฎสำหรับผู้ป่วยทั้งหมด";
+                btn.disabled = false;
+            }
+        }
+
+        // ฟังก์ชัน 1: บันทึกและประมวลผล
         async function analyzeData() {
             const data = {
                 id: document.getElementById('pid').value,

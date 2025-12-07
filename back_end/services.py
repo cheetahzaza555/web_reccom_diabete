@@ -1,8 +1,7 @@
-# services.py
 from SPARQLWrapper import SPARQLWrapper, JSON, POST
-import rules  # <--- นำเข้ากฎจากไฟล์ rules.py
+import rules
 
-# ตั้งค่า GraphDB ตรงนี้จุดเดียว
+# ตั้งค่า GraphDB
 DB_URL = "http://localhost:7200/repositories/Project"
 UPDATE_URL = DB_URL + "/statements"
 
@@ -13,12 +12,9 @@ sparql_write = SPARQLWrapper(UPDATE_URL)
 sparql_write.setMethod(POST)
 
 def add_new_patient(data):
-    run_inference_engine()
-    """เพิ่มผู้ป่วยใหม่ลงฐานข้อมูล (รับค่าครบถ้วน)"""
-    new_id = f"Patient{data['id']}" # สร้าง ID เช่น Patient99
+    """เพิ่มผู้ป่วยใหม่ลงฐานข้อมูล"""
+    new_id = f"Patient{data['id']}"
     
-    # 1. ดึงค่าต่างๆ มาเตรียมไว้ (ถ้าไม่มีให้ใส่เป็น 0 หรือ -)
-    # ต้องรับค่า SBP, DBP, Chol ฯลฯ ด้วย ไม่อย่างนั้นกฎ SWRL จะไม่ทำงาน
     fname = data.get('firstname', '-')
     lname = data.get('lastname', '-')
     sbp = data.get('sbp', '0')
@@ -28,7 +24,6 @@ def add_new_patient(data):
     hdl = data.get('hdl', '0')
     tri = data.get('tri', '0')
 
-    # 2. เตรียมคำสั่ง INSERT (ใส่ข้อมูลให้ครบทุก field)
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -55,82 +50,126 @@ def add_new_patient(data):
     sparql_write.setQuery(query)
     sparql_write.query()
     
-    # 3. [สำคัญ] สั่งรันกฎทันทีหลังจากเพิ่มข้อมูลเสร็จ
-    print(f"💾 บันทึกผู้ป่วย {new_id} เสร็จสิ้น -> กำลังสั่งรันกฎ...")
+    print(f"💾 บันทึกผู้ป่วย {new_id} เสร็จสิ้น")
+    print(f"   - BMI: {data['bmi']}, SBP: {sbp}, DBP: {dbp}")
+    print(f"   - Chol: {chol}, LDL: {ldl}")
+    
+    # รันกฎ
     run_inference_engine()
+    
+    # ตรวจสอบผลลัพธ์ทันทีหลังรันกฎ
+    verify_patient_data(new_id)
     
     return new_id
 
 def run_inference_engine():
     """สั่งรันกฎทั้งหมดตามลำดับ"""
-    print("🧠 Services: กำลังประมวลผลกฎ...")
+    print("\n🧠 Services: กำลังประมวลผลกฎ...")
     
+    # 1. ลบข้อมูลเก่า
+    print("   1️⃣ ลบข้อมูลเก่า...")
     sparql_write.setQuery(rules.DELETE_OLD_DATA)
     sparql_write.query()
     
     # 2. รันกฎวินิจฉัย
-    sparql_write.setQuery(rules.RULE_DIAGNOSIS_NORMAL)
-    sparql_write.query()
+    print("   2️⃣ รันกฎวินิจฉัย...")
+    for i, rule in enumerate(rules.DIAGNOSIS_RULES, 1):
+        sparql_write.setQuery(rule)
+        sparql_write.query()
+        print(f"      ✓ กฎวินิจฉัยที่ {i} เสร็จสิ้น")
     
     # 3. รันกฎแนะนำ
-    sparql_write.setQuery(rules.RULE_RECOMMENDATION)
-    sparql_write.query()
+    print("   3️⃣ รันกฎแนะนำ...")
+    for i, rule in enumerate(rules.RECOMMENDATION_RULES, 1):
+        sparql_write.setQuery(rule)
+        sparql_write.query()
+        print(f"      ✓ กฎแนะนำที่ {i} เสร็จสิ้น")
     
-    print("✅ Services: ประมวลผลเสร็จสิ้น")
+    print("✅ Services: ประมวลผลเสร็จสิ้น\n")
+
+def verify_patient_data(patient_id):
+    """ตรวจสอบข้อมูลที่ถูกสร้างจากกฎ (Debug)"""
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    SELECT ?comorbidity ?warning ?exercise
+    WHERE {{
+        OPTIONAL {{ ex:{patient_id} ex:hasComorbidity ?comorbidity }}
+        OPTIONAL {{ ex:{patient_id} ex:hasPatientWarning ?warning }}
+        OPTIONAL {{ ex:{patient_id} ex:recommendedExercise ?exercise }}
+    }}
+    """
+    sparql_read.setQuery(query)
+    results = sparql_read.query().convert()
+    
+    print(f"🔍 ตรวจสอบข้อมูลผู้ป่วย {patient_id}:")
+    bindings = results['results']['bindings']
+    
+    if not bindings or not any(bindings[0].values()):
+        print("   ⚠️ ไม่พบข้อมูลที่ถูกสร้างจากกฎ! กฎอาจไม่ทำงาน")
+        return
+    
+    for r in bindings:
+        if 'comorbidity' in r:
+            print(f"   ✓ Comorbidity: {r['comorbidity']['value']}")
+        if 'warning' in r:
+            print(f"   ✓ Warning: {r['warning']['value']}")
+        if 'exercise' in r:
+            print(f"   ✓ Exercise: {r['exercise']['value']}")
 
 def get_patient_results(patient_id):
     """ดึงผลลัพธ์จาก DB พร้อมข้อความบรรยาย"""
+    print(f"\n📊 กำลังดึงผลลัพธ์สำหรับ {patient_id}...")
+    
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
     SELECT ?exerciseName ?warningDesc
     WHERE {{
-        # 1. ดึงท่าออกกำลังกาย (แก้ชื่อ Property ตรงนี้)
         OPTIONAL {{
-            ex:{patient_id} ex:recommendedExercise ?rec .  # <--- แก้เป็น recommendedExercise
+            ex:{patient_id} ex:recommendedExercise ?rec .
             ?rec rdfs:label ?exerciseName . 
         }}
         
-        # 2. ดึงคำเตือน (เหมือนเดิม)
         OPTIONAL {{ 
             ex:{patient_id} ex:hasPatientWarning ?warning .
             ?warning ex:description ?warningDesc . 
         }}
     }}
     """
+    
+    print(f"🔍 SPARQL Query:\n{query}\n")
+    
     sparql_read.setQuery(query)
     results = sparql_read.query().convert()
     
-    # จัด Format ข้อมูล
+    # แสดงผลลัพธ์ดิบ
+    print(f"📦 Raw Results: {results['results']['bindings']}\n")
+    
     exercises = set()
     warnings = set()
     
     for r in results['results']['bindings']:
-        # เก็บชื่อท่าออกกำลังกาย
         if 'exerciseName' in r:
             exercises.add(r['exerciseName']['value'])
+            print(f"   ✓ พบท่าออกกำลังกาย: {r['exerciseName']['value']}")
             
-        # เก็บข้อความคำเตือน (ภาษาไทย)
         if 'warningDesc' in r:
             warnings.add(r['warningDesc']['value'])
-            
-    exercise_list = list(exercises)
-    warning_list = list(warnings)
-            
-    limited_exercises = exercise_list[:5]
+            print(f"   ✓ พบคำเตือน: {r['warningDesc']['value']}")
     
-    return limited_exercises, warning_list
+    exercise_list = list(exercises)[:5]
+    warning_list = list(warnings)
+    
+    print(f"\n📋 สรุปผลลัพธ์:")
+    print(f"   - ท่าออกกำลังกาย: {len(exercise_list)} ท่า")
+    print(f"   - คำเตือน: {len(warning_list)} ข้อ\n")
+    
+    return exercise_list, warning_list
 
 def get_patient_profile(id_input):
-    """ดึงข้อมูลส่วนตัวของผู้ป่วย (ชื่อ, BMI, ผลเลือด)"""
-    
-    # หมายเหตุ: ตรงนี้ต้องระวังเรื่องชื่อ ID
-    # ถ้าเป็นคนที่เราเพิ่งเพิ่มใหม่ ID จะชื่อ "Patient_99"
-    # แต่ถ้าเป็นคนเก่าในไฟล์ Patient3.ttl ชื่ออาจจะเป็น "Patient1"
-    # เพื่อความชัวร์ เราจะลองหาทั้ง 2 แบบ
-    
-    potential_ids = [f"Patient_{id_input}", f"Patient{id_input}"] 
+    """ดึงข้อมูลส่วนตัวของผู้ป่วย"""
+    potential_ids = [f"Patient{id_input}"]
     
     for pid in potential_ids:
         query = f"""
@@ -157,10 +196,9 @@ def get_patient_profile(id_input):
         bindings = results["results"]["bindings"]
         
         if bindings:
-            # ถ้าเจอข้อมูล ให้ return ทันที
             data = bindings[0]
             return {
-                "found_id": pid, # ส่ง ID ที่ถูกต้องกลับไป
+                "found_id": pid,
                 "firstname": data.get("fname", {}).get("value", "-"),
                 "lastname": data.get("lname", {}).get("value", "-"),
                 "type": data.get("dtype", {}).get("value", "-"),
@@ -171,11 +209,11 @@ def get_patient_profile(id_input):
                 "ldl": data.get("ldl", {}).get("value", "-"),
             }
             
-    return None # ไม่เจอเลย
+    return None
 
 def delete_patient_by_id(patient_id_num):
-    # แก้ตรงนี้! ให้เหมือนกับตอน add (ไม่มี underscore)
-    target_id = f"Patient{patient_id_num}" 
+    """ลบข้อมูลผู้ป่วยทั้งหมด"""
+    target_id = f"Patient{patient_id_num}"
     
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
@@ -194,3 +232,25 @@ def delete_patient_by_id(patient_id_num):
     sparql_write.setQuery(query)
     sparql_write.query()
     print(f"🗑️ ลบข้อมูล {target_id} เรียบร้อยแล้ว")
+
+def run_inference_for_all_patients():
+    """รันกฎสำหรับผู้ป่วยทั้งหมดที่มีอยู่ใน GraphDB"""
+    print("\n🔄 กำลังรันกฎสำหรับผู้ป่วยทั้งหมด...")
+    
+    # เรียกใช้ฟังก์ชันรันกฎปกติ (มันจะรันกฎกับทุกคนที่มี Patient Class)
+    run_inference_engine()
+    
+    # นับจำนวนผู้ป่วยที่ได้รับการประมวลผล
+    query = """
+    PREFIX ex: <http://example.org/diabetes#>
+    SELECT (COUNT(DISTINCT ?p) as ?count)
+    WHERE {
+        ?p a ex:Patient .
+    }
+    """
+    sparql_read.setQuery(query)
+    results = sparql_read.query().convert()
+    count = results['results']['bindings'][0]['count']['value']
+    
+    print(f"✅ ประมวลผลเสร็จสิ้น - ผู้ป่วยทั้งหมด: {count} คน\n")
+    return int(count)

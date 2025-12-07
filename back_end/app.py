@@ -66,5 +66,18 @@ def delete_patient(id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/run-inference', methods=['POST'])
+def run_inference_endpoint():
+    try:
+        # เรียกฟังก์ชันใน services.py ที่คุณเขียนเตรียมไว้แล้ว
+        count = services.run_inference_for_all_patients()
+        return jsonify({
+            "status": "ok", 
+            "message": f"รันกฎสำหรับผู้ป่วยทั้งหมดเรียบร้อยแล้ว ({count} คน)"
+        })
+    except Exception as e:
+        print(f"Error running inference: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)

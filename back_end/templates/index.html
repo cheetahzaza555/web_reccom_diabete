@@ -3,88 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diabetes AI</title>
+    <title>Diabetes Expert System | ระบบผู้เชี่ยวชาญเบาหวาน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Sarabun', sans-serif; max-width: 900px; margin: auto; padding: 20px; background: #f4f6f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        label { display: block; font-weight: bold; font-size: 0.9em; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { padding: 10px 15px; border: none; cursor: pointer; border-radius: 4px; margin-right: 5px; color: white; }
-        .btn-green { background: #28a745; width: 100%; margin-top: 10px; }
-        .btn-blue { background: #007bff; }
-        .btn-orange { background: #ffc107; color: black; }
-        .btn-red { background: #dc3545; }
-        ul { padding-left: 20px; }
+        :root {
+            --primary: #00695c; --secondary: #4db6ac; --bg: #f0f4f8;
+            --white: #ffffff; --text: #333; --danger: #d32f2f;
+            --warning: #fbc02d; --success: #388e3c;
+        }
+        body { font-family: 'Sarabun', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
+        .container { max-width: 1000px; margin: auto; }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 30px; font-weight: 600; }
+        .card { background: var(--white); border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h3 { border-bottom: 2px solid var(--bg); padding-bottom: 10px; margin-top: 0; color: var(--primary); font-size: 1.1rem; }
+        
+        /* Grid Layout */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-group { margin-bottom: 5px; }
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 5px; color: #555; }
+        input[type="text"], input[type="number"], select { 
+            width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; 
+            font-family: 'Sarabun', sans-serif; box-sizing: border-box;
+        }
+        input:focus, select:focus { border-color: var(--secondary); outline: none; }
+
+        /* Checkbox Style */
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
+        .checkbox-item input { width: auto; margin: 0; cursor: pointer; }
+
+        /* Buttons */
+        .action-bar { display: flex; gap: 10px; margin-top: 20px; }
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; flex: 1; color: white; transition: 0.2s; }
+        .btn-main { background: var(--primary); width: 100%; }
+        .btn-main:hover { background: #004d40; }
+        .btn-blue { background: #1976d2; }
+        .btn-orange { background: var(--warning); color: #333; }
+        .btn-red { background: var(--danger); }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Result Section */
+        #result { border-top: 5px solid var(--success); }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .result-box { background: #fafafa; padding: 15px; border-radius: 8px; border-left: 4px solid #ccc; }
+        .box-warn { border-color: var(--warning); background: #fffde7; }
+        .box-danger { border-color: var(--danger); background: #ffebee; }
+        .box-success { border-color: var(--success); background: #e8f5e9; }
+        ul { padding-left: 20px; margin: 5px 0; }
+        li { margin-bottom: 5px; font-size: 0.95rem; }
+
+        /* Search Bar */
+        .search-area { display: flex; gap: 10px; align-items: center; background: #e3f2fd; padding: 15px; border-radius: 8px; }
+        .search-area input { width: 120px; }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center;">🏥 ระบบผู้เชี่ยวชาญเบาหวาน</h2>
 
-    <div class="card">
-        <h3>📝 ข้อมูลผู้ป่วย</h3>
-        <div class="form-grid">
-            <div><label>ID:</label><input type="number" id="pid" placeholder="99"></div>
-            <div><label>Type:</label><select id="dtype"><option value="T1DM">T1DM</option><option value="T2DM">T2DM</option></select></div>
-            <div><label>ชื่อ:</label><input type="text" id="fname"></div>
-            <div><label>สกุล:</label><input type="text" id="lname"></div>
-        </div>
-        <hr>
-        <div class="form-grid">
-            <div><label>BMI:</label><input type="number" step="0.1" id="bmi"></div>
-            <div><label>SBP (บน):</label><input type="number" id="sbp"></div>
-            <div><label>DBP (ล่าง):</label><input type="number" id="dbp"></div>
-            <div><label>FPG (น้ำตาล):</label><input type="number" id="fpg"></div>
-            <div><label>Cholesterol:</label><input type="number" id="chol"></div>
-            <div><label>LDL:</label><input type="number" id="ldl"></div>
-            <div><label>HDL:</label><input type="number" id="hdl"></div>
-            <div><label>Triglyceride:</label><input type="number" id="tri"></div>
-            <div><label>Ketone:</label>
-                <select id="ketone">
-                    <option value="Negative">Negative</option>
-                    <option value="Positive">Positive</option>
-                </select>
-            </div>
-            <div><label>Microalbuminurin:</label>
-                <select id="micro">
-                    <option value="Negative">Negative</option>
-                    <option value="Positive">Positive</option>
-                </select>
-            </div>
-            <div><label>ภาวะแทรกซ้อนพิเศษ:</label>
-                <select id="special">
-                    <option value="None">- ระบุ -</option>
-                    <option value="NoOtherComplication">ไม่มีภาวะแทรกซ้อนอื่น (NoOther)</option>
-                </select>
-            </div>
-        </div>
-        <button class="btn-green" onclick="analyzeData()">🚀 บันทึก & ประมวลผล</button>
-    </div>
+    <div class="container">
+        <h2>🏥 ระบบผู้เชี่ยวชาญวินิจฉัยโรคเบาหวาน</h2>
 
-    <div id="result" class="card" style="display:none; border-left: 5px solid #28a745;">
-        <h3>ผลการวิเคราะห์</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div>
-                <p><strong>⚠️ คำเตือน:</strong></p><ul id="warnList"></ul>
+        <div class="card">
+            <h3>📝 ข้อมูลผู้ป่วย (Patient Info)</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>ID (รหัส)</label><input type="number" id="pid" placeholder="เช่น 101"></div>
+                <div class="form-group"><label>Type (ชนิด)</label><select id="dtype"><option value="T1DM">T1DM (ชนิดที่ 1)</option><option value="T2DM">T2DM (ชนิดที่ 2)</option></select></div>
+                <div class="form-group"><label>ชื่อ</label><input type="text" id="fname"></div>
+                <div class="form-group"><label>นามสกุล</label><input type="text" id="lname"></div>
             </div>
-            <div>
-                <p><strong>🩺 ภาวะแทรกซ้อน:</strong></p><ul id="compliList" style="color:red;"></ul>
+            
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            
+            <h3>🩺 ผลตรวจร่างกาย (Physical & Lab)</h3>
+            <div class="form-grid">
+                <div><label>BMI</label><input type="number" step="0.1" id="bmi" placeholder="22.0"></div>
+                <div><label>FPG</label><input type="number" id="fpg" placeholder="100"></div>
+                <div><label>SBP</label><input type="number" id="sbp" placeholder="120"></div>
+                <div><label>DBP</label><input type="number" id="dbp" placeholder="80"></div>
+                <div><label>Cholesterol</label><input type="number" id="chol" placeholder="150"></div>
+                <div><label>LDL</label><input type="number" id="ldl" placeholder="100"></div>
+                <div><label>HDL</label><input type="number" id="hdl" placeholder="50"></div>
+                <div><label>Triglyceride</label><input type="number" id="tri" placeholder="100"></div>
+                
+                <div><label>Ketone</label>
+                    <select id="ketone"><option value="Negative">Negative</option><option value="Positive">Positive</option></select>
+                </div>
+                <div><label>Microalbuminuria</label>
+                    <select id="micro"><option value="Negative">Negative</option><option value="Positive">Positive</option></select>
+                </div>
+
+                <div style="grid-column: span 2;">
+                    <label>⚠️ ภาวะแทรกซ้อนพิเศษ (เลือกได้หลายข้อ)</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="special" value="HeartDisease"> โรคหัวใจ (HeartDisease)
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="special" value="PeripheralNeuropathy"> ปลายประสาทเสื่อม (PeripheralNeuropathy)
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="special" value="AutonomicNeuropathy"> ระบบประสาทอัตโนมัติ (AutonomicNeuropathy)
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="special" value="Retinopathy"> จอประสาทตาเสื่อม (Retinopathy)
+                        </label>
+                        <label class="checkbox-item" style="color: green;">
+                            <input type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"> ✅ ไม่มีภาวะแทรกซ้อนอื่น (NoOther)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button class="btn-main" onclick="analyzeData()">🚀 บันทึก & ประมวลผล (Analyze)</button>
             </div>
         </div>
-        <p><strong>✅ แนะนำออกกำลังกาย:</strong></p><ul id="exList"></ul>
-        <p><strong>➕ โรคร่วม (Comorbidity):</strong></p><ul id="comorbList"></ul>
-    </div>
 
-    <div class="card" style="background: #e9ecef;">
-        <h3>🔍 จัดการข้อมูล</h3>
-        <input type="text" id="search_id" placeholder="ID" style="width: 100px;">
-        <button class="btn-blue" onclick="searchPatient()">ค้นหา</button>
-        <button class="btn-orange" onclick="reprocessPatient()">⚡ รันกฎใหม่</button>
-        <button class="btn-red" onclick="deletePatient()">ลบ</button>
+        <div id="result" class="card" style="display:none;">
+            <h3 style="color:#2e7d32;">📊 ผลการวินิจฉัย</h3>
+            <div class="result-grid">
+                <div class="result-box box-warn"><p style="color:#f57f17; margin:0;"><strong>⚠️ คำเตือน</strong></p><ul id="warnList"></ul></div>
+                <div class="result-box box-danger"><p style="color:#c62828; margin:0;"><strong>💉 ภาวะแทรกซ้อน</strong></p><ul id="compliList" style="color:#d32f2f;"></ul></div>
+            </div>
+            <div class="result-grid" style="margin-top: 15px;">
+                <div class="result-box box-success"><p style="color:#2e7d32; margin:0;"><strong>🏃 แนะนำออกกำลังกาย</strong></p><ul id="exList"></ul></div>
+                <div class="result-box"><p style="color:#1565c0; margin:0;"><strong>➕ โรคร่วม</strong></p><ul id="comorbList"></ul></div>
+            </div>
+        </div>
+
+        <div class="search-area">
+            <strong>🔍 จัดการข้อมูล:</strong>
+            <input type="text" id="search_id" placeholder="ID ผู้ป่วย">
+            <button class="btn-blue" onclick="searchPatient()">ค้นหา</button>
+            <button class="btn-orange" onclick="reprocessPatient()">⚡ รันใหม่</button>
+            <button class="btn-red" onclick="deletePatient()">ลบ</button>
+        </div>
     </div>
 
     <script>
+        // ฟังก์ชันจัดการ Checkbox: ถ้าเลือก "ไม่มีโรคอื่น" ให้ติ๊กออกอันอื่น
+        function toggleNoOther(checkbox) {
+            if (checkbox.checked) {
+                document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => el.checked = false);
+            }
+        }
+
+        // ถ้าเลือกโรคอื่น ให้ติ๊ก "ไม่มีโรคอื่น" ออก
+        document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
+            el.addEventListener('change', () => {
+                if(el.checked) document.getElementById('chkNoOther').checked = false;
+            });
+        });
+
         async function analyzeData() {
+            // ✅ รวบรวมค่าจาก Checkbox ทั้งหมดเป็น Array
+            const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
+            
             const data = {
                 id: document.getElementById('pid').value,
                 type: document.getElementById('dtype').value,
@@ -100,12 +181,27 @@
                 fpg: document.getElementById('fpg').value,
                 ketone: document.getElementById('ketone').value,
                 micro: document.getElementById('micro').value,
-                special: document.getElementById('special').value // ✅ ส่งค่า special ไปด้วย
+                special: selectedSpecials // ส่งเป็น Array ไปเลย (เดี๋ยว Python รับได้)
             };
-            if(!data.id) return alert("ใส่ ID ก่อน");
-            const res = await fetch('/api/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-            const json = await res.json();
-            showResult(json);
+
+            if(!data.id) return alert("กรุณาใส่ ID ผู้ป่วย");
+            
+            try {
+                const res = await fetch('/api/analyze', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify(data) 
+                });
+                const json = await res.json();
+                
+                if(json.status === 'ok') {
+                    showResult(json);
+                    document.getElementById('search_id').value = data.id;
+                    alert("✅ บันทึกและประมวลผลสำเร็จ!");
+                } else {
+                    alert("❌ Error: " + json.message);
+                }
+            } catch(e) { alert("เชื่อมต่อ Server ไม่ได้: " + e); }
         }
 
         async function searchPatient() {
@@ -113,16 +209,18 @@
             if(!id) return;
             const res = await fetch(`/api/patient/${id}`);
             const json = await res.json();
-            if(json.status === 'error') { alert("ไม่พบ"); return; }
+            if(json.status === 'error') { alert("ไม่พบข้อมูล"); return; }
             
-            document.getElementById('result').style.display = 'block';
-            updateList('warnList', json.warnings);
-            updateList('exList', json.exercises);
-            updateList('comorbList', json.comorbs);
-            updateList('compliList', json.complis);
+            // คืนค่าฟอร์ม
+            document.getElementById('pid').value = id;
+            document.getElementById('fname').value = json.info.firstname;
+            document.getElementById('lname').value = json.info.lastname;
             
-            // คืนค่าฟอร์ม (ถ้ามี)
-            if(json.info.special) document.getElementById('special').value = json.info.special;
+            // ✅ คืนค่า Checkbox (ถ้ามีข้อมูล)
+            document.querySelectorAll('input[name="special"]').forEach(el => el.checked = false); // เคลียร์ก่อน
+            // (ต้องรอ Logic หลังบ้านส่ง List กลับมา แต่ตอนนี้เอาแค่แสดงผลก่อน)
+            
+            showResult(json);
         }
 
         async function reprocessPatient() {
@@ -135,11 +233,16 @@
 
         async function deletePatient() {
             const id = document.getElementById('search_id').value;
-            if(confirm("ลบ?")) await fetch(`/api/delete/${id}`, { method: 'DELETE' });
+            if(confirm("ลบข้อมูล ID " + id + " ?")) {
+                await fetch(`/api/delete/${id}`, { method: 'DELETE' });
+                alert("ลบแล้ว");
+                location.reload();
+            }
         }
 
         function showResult(json) {
             document.getElementById('result').style.display = 'block';
+            document.getElementById('result').scrollIntoView({behavior: 'smooth'});
             updateList('warnList', json.warnings);
             updateList('exList', json.exercises);
             updateList('comorbList', json.comorbs);
@@ -148,7 +251,8 @@
 
         function updateList(id, items) {
             const el = document.getElementById(id); el.innerHTML = "";
-            (items && items.length ? items : ["-"]).forEach(x => el.innerHTML += `<li>${x}</li>`);
+            if(!items || items.length === 0) el.innerHTML = `<li style="color:#999;">- ไม่พบข้อมูล -</li>`;
+            else items.forEach(x => el.innerHTML += `<li>${x}</li>`);
         }
     </script>
 </body>

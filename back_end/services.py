@@ -123,11 +123,21 @@ def process_patient_realtime(patient_id, input_data=None):
         if input_data:
             print(f"⚡ Processing {patient_id} using Direct Input...")
             # กรณีรับจากหน้าเว็บ (มักจะมีแค่ตัวเดียว เพราะ Dropdown เลือกได้ทีละอัน)
-            special_val = input_data.get('special')
-            if special_val and special_val != "None":
-                target_specials.append(special_val)
-            else:
-                target_specials.append("NoOtherComplication")
+            raw_special = input_data.get('special')
+            
+            if isinstance(raw_special, list):
+                # ถ้าส่งมาเป็น List (จาก Checkbox)
+                if not raw_special: # ถ้า List ว่าง
+                    target_specials.append("NoOtherComplication")
+                else:
+                    target_specials.extend(raw_special)
+            
+            elif isinstance(raw_special, str):
+                # ถ้าส่งมาเป็น String ตัวเดียว (เผื่อไว้)
+                if raw_special and raw_special != "None":
+                    target_specials.append(raw_special)
+                else:
+                    target_specials.append("NoOtherComplication")
 
             data = {
                 'type': input_data.get('type', 'T2DM'),
@@ -298,31 +308,64 @@ def save_results_to_db(pid_num, recs, warns, comorbs, complis):
 def save_raw_patient_data(data):
     if not validate_id(data.get('id')): return
     pid = f"Patient{data['id']}"
-    delete_patient(data['id'])
     
-    fname = escape_sparql(data.get('firstname', '-'))
-    lname = escape_sparql(data.get('lastname', '-'))
-    ketone_val = escape_sparql(data.get('ketone') or "Negative")
-    micro_val = escape_sparql(data.get('micro') or "Negative")
-    special_name = escape_sparql(data.get('special') if data.get('special') != "None" else "NoOtherComplication")
-    
-    def val(k): return safe_float(data.get(k)) or 0
-    
-    triples = f"""
-        ex:{pid} a ex:Patient ; ex:diabetType ex:{escape_sparql(data['type'])} ; 
-                 ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
-                 ex:hasPhysicalExam ex:{pid}_PE ; ex:hasLabExam ex:{pid}_LE .
-        ex:{pid}_PE a ex:PhysicalExam ; ex:hasBMI "{val('bmi')}"^^xsd:decimal ; 
-                    ex:hasSBP "{val('sbp')}"^^xsd:decimal ; ex:hasDBP "{val('dbp')}"^^xsd:decimal ;
-                    ex:hasSpecialComplication ex:{special_name} .
-        ex:{pid}_LE a ex:LabExam ; ex:hasTotalCholesterol "{val('chol')}"^^xsd:decimal ; 
-                    ex:hasLDL "{val('ldl')}"^^xsd:decimal ; ex:hasHDL "{val('hdl')}"^^xsd:decimal ; 
-                    ex:hasTriglyceride "{val('tri')}"^^xsd:decimal ;
-                    ex:hasFPG "{val('fpg')}"^^xsd:decimal ; 
-                    ex:hasKetone "{ketone_val}" ; ex:hasMicroalbuminurin "{micro_val}" . 
-    """
-    sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
-    sparql_write.query()
+    try:
+        # 1. ลบข้อมูลเก่า
+        sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ?s ?p ?o . ?pe ?pp ?oo . ?le ?lp ?lo }} WHERE {{ ?s ?p ?o . FILTER(?s = ex:{pid}) OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} }}")
+        sparql_write.query()
+        
+        # 2. เตรียมข้อมูล
+        fname = escape_sparql(data.get('firstname', '-'))
+        lname = escape_sparql(data.get('lastname', '-'))
+        ketone_val = escape_sparql(data.get('ketone') or "Negative")
+        micro_val = escape_sparql(data.get('micro') or "Negative")
+        
+        def val(k): return safe_float(data.get(k)) or 0
+
+        # ✅ จัดการ Special Complication (รองรับทั้ง List และ String)
+        raw_special = data.get('special')
+        special_triples = ""
+        
+        if isinstance(raw_special, list):
+            # กรณีมาเป็น List (Checkbox)
+            if not raw_special: # ถ้า List ว่าง
+                special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:NoOtherComplication ."
+            else:
+                for sp in raw_special:
+                    safe_sp = escape_sparql(sp)
+                    special_triples += f"ex:{pid}_PE ex:hasSpecialComplication ex:{safe_sp} .\n"
+        
+        elif isinstance(raw_special, str) and raw_special != "None":
+            # กรณีมาเป็น String ตัวเดียว
+            special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:{escape_sparql(raw_special)} ."
+        
+        else:
+            # กรณีไม่เลือกอะไรเลย หรือเป็น None
+            special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:NoOtherComplication ."
+
+        # 3. สร้าง Triples (เอา special_triples ไปแทรก)
+        triples = f"""
+            ex:{pid} a ex:Patient ; ex:diabetType ex:{escape_sparql(data['type'])} ; 
+                     ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
+                     ex:hasPhysicalExam ex:{pid}_PE ; ex:hasLabExam ex:{pid}_LE .
+            
+            ex:{pid}_PE a ex:PhysicalExam ; ex:hasBMI "{val('bmi')}"^^xsd:decimal ; 
+                        ex:hasSBP "{val('sbp')}"^^xsd:decimal ; ex:hasDBP "{val('dbp')}"^^xsd:decimal .
+            
+            {special_triples} 
+            
+            ex:{pid}_LE a ex:LabExam ; ex:hasTotalCholesterol "{val('chol')}"^^xsd:decimal ; 
+                        ex:hasLDL "{val('ldl')}"^^xsd:decimal ; ex:hasHDL "{val('hdl')}"^^xsd:decimal ; 
+                        ex:hasTriglyceride "{val('tri')}"^^xsd:decimal ;
+                        ex:hasFPG "{val('fpg')}"^^xsd:decimal ; 
+                        ex:hasKetone "{ketone_val}" ; ex:hasMicroalbuminurin "{micro_val}" . 
+        """
+        
+        sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
+        sparql_write.query()
+        
+    except Exception as e:
+        print(f"❌ Error saving raw data: {e}")
 
 def delete_patient(patient_id):
     # (ใช้ Logic เดิม)

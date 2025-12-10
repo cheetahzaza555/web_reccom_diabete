@@ -10,13 +10,21 @@ def home(): return render_template('index.html')
 def analyze():
     data = request.json
     try:
+        # 1. บันทึกลง DB (ทำไปเถอะ เพื่อเก็บประวัติ)
         services.save_raw_patient_data(data)
-        # ✅ รับ 4 ค่า
-        recs, warns, comorbs, complis = services.process_patient_realtime(data['id'])
+        
+        # 2. คำนวณผล (แก้บรรทัดนี้!!!)
+        
+        # ❌ แบบเก่า (ผิด): เรียกเฉยๆ มันจะวิ่งไปถาม DB (ซึ่ง DB ยังเขียนไม่เสร็จ)
+        # recs, warns, comorbs, complis = services.process_patient_realtime(data['id']) 
+        
+        # ✅ แบบใหม่ (ถูก): ยัดเยียดข้อมูล (data) เข้าไปเลย ไม่ต้องรอ DB!
+        recs, warns, comorbs, complis = services.process_patient_realtime(data['id'], input_data=data)
+        
         return jsonify({ "status": "ok", "exercises": recs, "warnings": warns, "comorbs": comorbs, "complis": complis })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
+    
 @app.route('/api/patient/<id>', methods=['GET'])
 def get_patient(id):
     try:

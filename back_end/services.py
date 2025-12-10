@@ -2,8 +2,9 @@ import io
 import requests
 import traceback
 import sys
+import uuid
+import re
 import time
-import re # ใช้ Regex แทน STRAFTER
 sys.stdout.reconfigure(encoding='utf-8')
 from SPARQLWrapper import SPARQLWrapper, JSON, POST
 from owlready2 import *
@@ -22,7 +23,34 @@ sparql_write = SPARQLWrapper(GRAPHDB_WRITE)
 sparql_write.setMethod(POST)
 
 # ==========================================
-# 2. Load Ontology
+# 2. Helpers
+# ==========================================
+def validate_id(val):
+    if not val: return False
+    return bool(re.match(r'^[A-Za-z0-9_-]{1,64}$', str(val)))
+
+def escape_sparql(text):
+    if not text: return ""
+    return str(text).replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' ')
+
+def safe_float(value):
+    try:
+        if value is None or str(value).strip() == "": return None
+        return float(value)
+    except (ValueError, TypeError):
+        return None
+
+def get_thai_text(entity):
+    if hasattr(entity, "description") and entity.description: return str(entity.description[0])
+    if hasattr(entity, "label") and entity.label: return str(entity.label[0])
+    return entity.name
+
+def safe_get_name(uri):
+    if not uri: return ""
+    return re.split(r'[#/]', uri)[-1]
+
+# ==========================================
+# 3. Load Ontology
 # ==========================================
 def load_ontology_from_graphdb():
     print(f"🌍 Loading Ontology from {REPO_NAME}...")
@@ -46,7 +74,6 @@ onto = load_ontology_from_graphdb()
 if onto:
     ex = onto.get_namespace("http://example.org/diabetes#")
     with onto:
-        # --- Classes ---
         class Patient(Thing): namespace = ex
         class PhysicalExam(Thing): namespace = ex
         class LabExam(Thing): namespace = ex
@@ -56,7 +83,6 @@ if onto:
         class Comorbidity(Thing): namespace = ex 
         class Complication(Thing): namespace = ex 
         
-        # --- Data Properties ---
         class hasBMI(DataProperty): namespace = ex; range = [float]
         class hasSBP(DataProperty): namespace = ex; range = [float]
         class hasDBP(DataProperty): namespace = ex; range = [float]
@@ -69,7 +95,6 @@ if onto:
         class hasKetone(DataProperty): namespace = ex; range = [str]
         class hasMicroalbuminurin(DataProperty): namespace = ex; range = [str]
         
-        # --- Object Properties ---
         class diabetType(ObjectProperty): namespace = ex; range = [DiabetType]
         class hasPhysicalExam(ObjectProperty): namespace = ex; range = [PhysicalExam]
         class hasLabExam(ObjectProperty): namespace = ex; range = [LabExam]
@@ -79,122 +104,134 @@ if onto:
         class hasComplication(ObjectProperty): namespace = ex; range = [Complication]
         class hasSpecialComplication(ObjectProperty): namespace = ex; range = [Complication]
 
-def get_thai_text(entity):
-    if hasattr(entity, "description") and entity.description: return str(entity.description[0])
-    if hasattr(entity, "label") and entity.label: return str(entity.label[0])
-    return entity.name
-
-def safe_get_name(uri):
-    """Helper to extract name from URI safely"""
-    if not uri: return ""
-    return re.split(r'[#/]', uri)[-1]
-
 # ==========================================
-# 4. Process Logic (Refactored)
+# 4. Core Logic (Updated for Multiple Specials)
 # ==========================================
-def process_patient_realtime(patient_id):
-    # Security check: Ensure patient_id is safe
-    if not str(patient_id).replace("_", "").isalnum():
-        print("❌ Invalid Patient ID")
-        return [], [], [], []
-
+def process_patient_realtime(patient_id, input_data=None):
+    if not validate_id(patient_id): return [], [], [], []
     if not onto: return [], [], [], [] 
 
-    pid_db = f"Patient{patient_id}"
-    # ✅ Fix Race Condition: Use nanoseconds
-    pid_mem = f"Patient_Mem_{patient_id}_{time.time_ns()}"
-
+    unique_suffix = uuid.uuid4().hex[:8]
+    pid_mem = f"Patient_Mem_{patient_id}_{unique_suffix}"
     p, pe, le = None, None, None
 
     try:
-        print(f"📥 Fetching {pid_db}...")
-        query = f"""
-        PREFIX ex: <http://example.org/diabetes#>
-        SELECT ?typeUri ?bmi ?sbp ?dbp ?chol ?ldl ?hdl ?tri ?fpg ?ketone ?micro ?specialUri
-        WHERE {{
-            ex:{pid_db} a ex:Patient ; ex:diabetType ?typeUri .
-            OPTIONAL {{ ex:{pid_db} ex:hasPhysicalExam ?pe . 
-                        OPTIONAL {{ ?pe ex:hasBMI ?bmi }} OPTIONAL {{ ?pe ex:hasSBP ?sbp }} OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
-                        OPTIONAL {{ ?pe ex:hasSpecialComplication ?specialUri }}
-            }}
-            OPTIONAL {{ ex:{pid_db} ex:hasLabExam ?le . 
-                        OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
-                        OPTIONAL {{ ?le ex:hasHDL ?hdl }} OPTIONAL {{ ?le ex:hasTriglyceride ?tri }}
-                        OPTIONAL {{ ?le ex:hasFPG ?fpg }} OPTIONAL {{ ?le ex:hasKetone ?ketone }} OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }}
-            }}
-        }}
-        """
-        sparql_read.setQuery(query)
-        results = sparql_read.query().convert()
-        
-        # ✅ Fix Error Handling: Return empty lists instead of None
-        if not results["results"]["bindings"]:
-            print(f"❌ Patient not found in DB")
-            return [], [], [], []
+        # 1. เตรียมข้อมูล
+        data = {}
+        target_specials = [] # ลิสต์สำหรับเก็บโรคแทรกซ้อน (หลายตัว)
 
-        row = results["results"]["bindings"][0]
-        
-        db_fpg = row.get('fpg', {}).get('value', None)
-        db_ketone = row.get('ketone', {}).get('value', None)
-        db_micro = row.get('micro', {}).get('value', None)
-        # ✅ Fix Parsing: Use helper instead of SPARQL logic
-        db_special_uri = row.get('specialUri', {}).get('value', None)
-        db_special = safe_get_name(db_special_uri)
-        db_type_uri = row.get('typeUri', {}).get('value', None)
-        db_type = safe_get_name(db_type_uri) or 'T2DM'
+        if input_data:
+            print(f"⚡ Processing {patient_id} using Direct Input...")
+            # กรณีรับจากหน้าเว็บ (มักจะมีแค่ตัวเดียว เพราะ Dropdown เลือกได้ทีละอัน)
+            special_val = input_data.get('special')
+            if special_val and special_val != "None":
+                target_specials.append(special_val)
+            else:
+                target_specials.append("NoOtherComplication")
 
-        # ✅ Fix Logic: Check None strictly, allow empty string if needed (though here we default)
-        data = {
-            'type': db_type,
-            'bmi': float(row.get('bmi', {}).get('value', 22.0)), 
-            'sbp': float(row.get('sbp', {}).get('value', 120.0)),
-            'dbp': float(row.get('dbp', {}).get('value', 80.0)), 
-            'chol': float(row.get('chol', {}).get('value', 150.0)),
-            'ldl': float(row.get('ldl', {}).get('value', 100.0)),
-            'hdl': float(row.get('hdl', {}).get('value', 50.0)),
-            'tri': float(row.get('tri', {}).get('value', 100.0)),
-            'fpg': float(db_fpg) if db_fpg is not None else 100.0, 
-            'ketone': db_ketone if db_ketone is not None else "Negative", 
-            'micro': db_micro if db_micro is not None else "Negative",
-            'special': db_special if db_special and db_special != "None" else "NoOtherComplication"
-        }
-        print(f"🧐 Data: {data}")
+            data = {
+                'type': input_data.get('type', 'T2DM'),
+                'bmi': safe_float(input_data.get('bmi')), 
+                'sbp': safe_float(input_data.get('sbp')),
+                'dbp': safe_float(input_data.get('dbp')), 
+                'chol': safe_float(input_data.get('chol')),
+                'ldl': safe_float(input_data.get('ldl')),
+                'hdl': safe_float(input_data.get('hdl')),
+                'tri': safe_float(input_data.get('tri')),
+                'fpg': safe_float(input_data.get('fpg')),
+                'ketone': input_data.get('ketone') or "Negative",
+                'micro': input_data.get('micro') or "Negative",
+            }
+        else:
+            # กรณีดึงจาก DB (ต้องรองรับหลายตัว)
+            print(f"📥 Fetching {patient_id} from DB...")
+            query = f"""
+            PREFIX ex: <http://example.org/diabetes#>
+            SELECT ?typeUri ?bmi ?sbp ?dbp ?chol ?ldl ?hdl ?tri ?fpg ?ketone ?micro ?specialUri
+            WHERE {{
+                ex:Patient{patient_id} a ex:Patient ; ex:diabetType ?typeUri .
+                OPTIONAL {{ ex:Patient{patient_id} ex:hasPhysicalExam ?pe . 
+                            OPTIONAL {{ ?pe ex:hasBMI ?bmi }} OPTIONAL {{ ?pe ex:hasSBP ?sbp }} OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
+                            OPTIONAL {{ ?pe ex:hasSpecialComplication ?specialUri }} }}
+                OPTIONAL {{ ex:Patient{patient_id} ex:hasLabExam ?le . 
+                            OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
+                            OPTIONAL {{ ?le ex:hasHDL ?hdl }} OPTIONAL {{ ?le ex:hasTriglyceride ?tri }}
+                            OPTIONAL {{ ?le ex:hasFPG ?fpg }} OPTIONAL {{ ?le ex:hasKetone ?ketone }} OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }} }}
+            }}
+            """
+            sparql_read.setQuery(query)
+            results = sparql_read.query().convert()
+            if not results["results"]["bindings"]:
+                return [], [], [], []
+
+            # ✅ เก็บทุกโรคแทรกซ้อนที่มีใน DB (วนลูปทุกบรรทัด)
+            for r in results["results"]["bindings"]:
+                s_uri = r.get('specialUri', {}).get('value')
+                if s_uri:
+                    s_name = safe_get_name(s_uri)
+                    if s_name not in target_specials:
+                        target_specials.append(s_name)
+            
+            # ถ้าใน DB ไม่มีเลย ให้ใส่ NoOther
+            if not target_specials:
+                target_specials.append("NoOtherComplication")
+
+            # ข้อมูลอื่นๆ (เอาจากบรรทัดแรกก็พอ เพราะเหมือนกันหมด)
+            row = results["results"]["bindings"][0]
+            db_type = safe_get_name(row.get('typeUri', {}).get('value')) or 'T2DM'
+            
+            data = {
+                'type': db_type,
+                'bmi': safe_float(row.get('bmi', {}).get('value')), 
+                'sbp': safe_float(row.get('sbp', {}).get('value')),
+                'dbp': safe_float(row.get('dbp', {}).get('value')), 
+                'chol': safe_float(row.get('chol', {}).get('value')),
+                'ldl': safe_float(row.get('ldl', {}).get('value')),
+                'hdl': safe_float(row.get('hdl', {}).get('value')),
+                'tri': safe_float(row.get('tri', {}).get('value')),
+                'fpg': safe_float(row.get('fpg', {}).get('value')),
+                'ketone': row.get('ketone', {}).get('value') or "Negative",
+                'micro': row.get('micro', {}).get('value') or "Negative",
+            }
+
+        # Auto-Fill Defaults
+        if data['fpg'] is None: data['fpg'] = 100.0
+
+        print(f"🧐 Analyzed Data: {data}")
+        print(f"🩺 Special Complications: {target_specials}")
 
         with onto:
             p = ex.Patient(pid_mem)
             
-            # ✅ Fix Type Safety: Use getattr and fallback logic
+            # Type
             target_type = data['type']
             type_obj = getattr(ex, target_type, None)
-            if not type_obj:
-                type_obj = onto.search_one(iri=f"*{target_type}") 
-                if not type_obj: type_obj = ex.DiabetType(target_type)
+            if not type_obj: type_obj = onto.search_one(iri=f"*{target_type}") 
+            if not type_obj: type_obj = ex.DiabetType(target_type)
             p.diabetType = [type_obj]
                 
-            pe = ex.PhysicalExam(f"PE_Mem_{patient_id}_{time.time_ns()}")
-            pe.hasBMI = [data['bmi']]
-            pe.hasSBP = [data['sbp']]
-            pe.hasDBP = [data['dbp']]
+            pe = ex.PhysicalExam(f"PE_{unique_suffix}")
+            if data['bmi'] is not None: pe.hasBMI = [data['bmi']]
+            if data['sbp'] is not None: pe.hasSBP = [data['sbp']]
+            if data['dbp'] is not None: pe.hasDBP = [data['dbp']]
             
-            if data['special']:
-                special_name = data['special']
-                # ✅ Fix Namespace Handling: search broadly first
-                special_obj = getattr(ex, special_name, None)
-                if not special_obj:
-                    special_obj = onto.search_one(iri=f"*{special_name}")
-                if not special_obj:
-                    # Fallback create in 'ex' namespace
-                    special_obj = ex.Complication(special_name)
-                pe.hasSpecialComplication = [special_obj]
+            # ✅ Special Complications (วนลูปใส่ให้ครบทุกตัว)
+            pe.hasSpecialComplication = [] # เริ่มต้นเป็นลิสต์ว่าง
+            for sp_name in target_specials:
+                sp_obj = getattr(ex, sp_name, None)
+                if not sp_obj: sp_obj = onto.search_one(iri=f"*{sp_name}")
+                if not sp_obj: sp_obj = ex.Complication(sp_name)
+                # Append เข้าไปในลิสต์
+                pe.hasSpecialComplication.append(sp_obj)
             
             p.hasPhysicalExam = [pe]
             
-            le = ex.LabExam(f"LE_Mem_{patient_id}_{time.time_ns()}")
-            le.hasTotalCholesterol = [data['chol']]
-            le.hasLDL = [data['ldl']]
-            le.hasHDL = [data['hdl']]
-            le.hasTriglyceride = [data['tri']]
-            le.hasFPG = [data['fpg']]
+            le = ex.LabExam(f"LE_{unique_suffix}")
+            if data['chol'] is not None: le.hasTotalCholesterol = [data['chol']]
+            if data['ldl'] is not None: le.hasLDL = [data['ldl']]
+            if data['hdl'] is not None: le.hasHDL = [data['hdl']]
+            if data['tri'] is not None: le.hasTriglyceride = [data['tri']]
+            if data['fpg'] is not None: le.hasFPG = [data['fpg']]
             le.hasKetone = [data['ketone']]
             le.hasMicroalbuminurin = [data['micro']]
             p.hasLabExam = [le]
@@ -202,94 +239,101 @@ def process_patient_realtime(patient_id):
         print("🧠 Running Reasoner...")
         sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
 
-        print("🔍 Querying Memory (Unified)...")
+        print("🔍 Extracting Results...")
         recs, warns, comorbs, complis = [], [], [], [] 
         s_recs, s_warns, s_comorbs, s_complis = [], [], [], []
 
-        # ✅ Fix Performance: Unified Query with UNION
-        # Using suffix matching to be namespace-agnostic
-        unified_query = f"""
-            SELECT ?p ?o WHERE {{ 
-                <{p.iri}> ?p ?o . 
-                FILTER(
-                    STRENDS(STR(?p), "recommendedExercise") ||
-                    STRENDS(STR(?p), "hasPatientWarning") ||
-                    STRENDS(STR(?p), "hasComorbidity") ||
-                    STRENDS(STR(?p), "hasComplication")
-                )
-            }}
-        """
-        try:
-            q = list(default_world.sparql(unified_query, error_on_undefined_entities=False))
-            for row in q:
-                pred = row[0].name # Property Name
-                obj = row[1]       # Value Object
-                
-                if not hasattr(obj, 'name'): continue # Skip literals if any
+        for prop in p.get_properties():
+            values = prop[p]
+            prop_iri = prop.iri
+            target_list, save_list = None, None
+            
+            if prop_iri.endswith("recommendedExercise"): target_list, save_list = recs, s_recs
+            elif prop_iri.endswith("hasPatientWarning"): target_list, save_list = warns, s_warns
+            elif prop_iri.endswith("hasComorbidity"): target_list, save_list = comorbs, s_comorbs
+            elif prop_iri.endswith("hasComplication"): target_list, save_list = complis, s_complis
+            
+            if target_list is not None:
+                for val in values:
+                    if hasattr(val, 'name'):
+                        target_list.append(get_thai_text(val))
+                        save_list.append(val.name)
 
-                text = get_thai_text(obj)
-                name = obj.name
-
-                if "recommendedExercise" in pred:
-                    recs.append(text); s_recs.append(name)
-                elif "hasPatientWarning" in pred:
-                    warns.append(text); s_warns.append(name)
-                elif "hasComorbidity" in pred:
-                    comorbs.append(text); s_comorbs.append(name)
-                elif "hasComplication" in pred:
-                    complis.append(text); s_complis.append(name)
-
-        except Exception as e: print(f"Query Error: {e}")
-
-        # De-duplicate
-        recs, warns, comorbs, complis = list(set(recs)), list(set(warns)), list(set(comorbs)), list(set(complis))
-        s_recs, s_warns, s_comorbs, s_complis = list(set(s_recs)), list(set(s_warns)), list(set(s_comorbs)), list(set(s_complis))
+        recs = list(set(recs)); warns = list(set(warns)); comorbs = list(set(comorbs)); complis = list(set(complis))
+        s_recs = list(set(s_recs)); s_warns = list(set(s_warns)); s_comorbs = list(set(s_comorbs)); s_complis = list(set(s_complis))
 
         print(f"✅ Result: W={len(warns)}, Cb={len(comorbs)}, Cp={len(complis)}")
         
         save_results_to_db(patient_id, s_recs, s_warns, s_comorbs, s_complis)
-        
         return recs, warns, comorbs, complis
 
     except Exception as e:
-        print(f"❌ Critical Error: {e}")
+        print(f"❌ Error: {e}")
         traceback.print_exc()
         return [], [], [], [f"Error: {str(e)}"]
     
     finally:
-        # ✅ Fix Memory Leak: Always cleanup in finally block
         if p: destroy_entity(p)
         if pe: destroy_entity(pe)
         if le: destroy_entity(le)
 
 def save_results_to_db(pid_num, recs, warns, comorbs, complis):
-    # Security check
-    if not str(pid_num).replace("_", "").isalnum(): return
-
+    if not validate_id(pid_num): return
     pid = f"Patient{pid_num}"
-    del_q = f"""
-    PREFIX ex: <http://example.org/diabetes#> 
-    DELETE {{ ex:{pid} ex:hasPatientWarning ?w . ex:{pid} ex:recommendedExercise ?r . ex:{pid} ex:hasComorbidity ?c . ex:{pid} ex:hasComplication ?cp }} 
-    WHERE {{ OPTIONAL {{ ex:{pid} ex:hasPatientWarning ?w }} OPTIONAL {{ ex:{pid} ex:recommendedExercise ?r }} OPTIONAL {{ ex:{pid} ex:hasComorbidity ?c }} OPTIONAL {{ ex:{pid} ex:hasComplication ?cp }} }}
-    """
+    
+    del_q = f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ex:{pid} ex:hasPatientWarning ?w . ex:{pid} ex:recommendedExercise ?r . ex:{pid} ex:hasComorbidity ?c . ex:{pid} ex:hasComplication ?cp }} WHERE {{ OPTIONAL {{ ex:{pid} ex:hasPatientWarning ?w }} OPTIONAL {{ ex:{pid} ex:recommendedExercise ?r }} OPTIONAL {{ ex:{pid} ex:hasComorbidity ?c }} OPTIONAL {{ ex:{pid} ex:hasComplication ?cp }} }}"
     sparql_write.setQuery(del_q); sparql_write.query()
     
-    # ✅ Fix Performance: Use list join
-    triples_list = []
-    for x in recs: triples_list.append(f"ex:{pid} ex:recommendedExercise ex:{x} .")
-    for x in warns: triples_list.append(f"ex:{pid} ex:hasPatientWarning ex:{x} .")
-    for x in comorbs: triples_list.append(f"ex:{pid} ex:hasComorbidity ex:{x} .")
-    for x in complis: triples_list.append(f"ex:{pid} ex:hasComplication ex:{x} .")
+    triples = []
+    for x in recs: triples.append(f"ex:{pid} ex:recommendedExercise ex:{x} .")
+    for x in warns: triples.append(f"ex:{pid} ex:hasPatientWarning ex:{x} .")
+    for x in comorbs: triples.append(f"ex:{pid} ex:hasComorbidity ex:{x} .")
+    for x in complis: triples.append(f"ex:{pid} ex:hasComplication ex:{x} .")
     
-    if triples_list:
-        triples_str = "\n".join(triples_list)
-        ins_q = f"PREFIX ex: <http://example.org/diabetes#> INSERT DATA {{ {triples_str} }}"
+    if triples:
+        ins_q = f"PREFIX ex: <http://example.org/diabetes#> INSERT DATA {{ {' '.join(triples)} }}"
         sparql_write.setQuery(ins_q); sparql_write.query()
-        print(f"💾 Saved to DB")
+        print(f"💾 Saved {len(triples)} results")
+
+def save_raw_patient_data(data):
+    if not validate_id(data.get('id')): return
+    pid = f"Patient{data['id']}"
+    delete_patient(data['id'])
+    
+    fname = escape_sparql(data.get('firstname', '-'))
+    lname = escape_sparql(data.get('lastname', '-'))
+    ketone_val = escape_sparql(data.get('ketone') or "Negative")
+    micro_val = escape_sparql(data.get('micro') or "Negative")
+    special_name = escape_sparql(data.get('special') if data.get('special') != "None" else "NoOtherComplication")
+    
+    def val(k): return safe_float(data.get(k)) or 0
+    
+    triples = f"""
+        ex:{pid} a ex:Patient ; ex:diabetType ex:{escape_sparql(data['type'])} ; 
+                 ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
+                 ex:hasPhysicalExam ex:{pid}_PE ; ex:hasLabExam ex:{pid}_LE .
+        ex:{pid}_PE a ex:PhysicalExam ; ex:hasBMI "{val('bmi')}"^^xsd:decimal ; 
+                    ex:hasSBP "{val('sbp')}"^^xsd:decimal ; ex:hasDBP "{val('dbp')}"^^xsd:decimal ;
+                    ex:hasSpecialComplication ex:{special_name} .
+        ex:{pid}_LE a ex:LabExam ; ex:hasTotalCholesterol "{val('chol')}"^^xsd:decimal ; 
+                    ex:hasLDL "{val('ldl')}"^^xsd:decimal ; ex:hasHDL "{val('hdl')}"^^xsd:decimal ; 
+                    ex:hasTriglyceride "{val('tri')}"^^xsd:decimal ;
+                    ex:hasFPG "{val('fpg')}"^^xsd:decimal ; 
+                    ex:hasKetone "{ketone_val}" ; ex:hasMicroalbuminurin "{micro_val}" . 
+    """
+    sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
+    sparql_write.query()
+
+def delete_patient(patient_id):
+    # (ใช้ Logic เดิม)
+    if not validate_id(patient_id): return
+    pid = f"Patient{patient_id}"
+    sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ?s ?p ?o . ?pe ?pp ?oo . ?le ?lp ?lo }} WHERE {{ ?s ?p ?o . FILTER(?s = ex:{pid}) OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} }}")
+    sparql_write.query()
 
 def get_patient_profile(patient_id):
-    if not str(patient_id).replace("_", "").isalnum(): return None # Security
-
+    # (ใช้ Logic เดิม)
+    if not validate_id(patient_id): return None
     pid = f"Patient{patient_id}"
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
@@ -299,15 +343,12 @@ def get_patient_profile(patient_id):
         ex:{pid} a ex:Patient ; ex:diabetType ?typeUri .
         BIND(STRAFTER(STR(?typeUri), "#") AS ?type)
         OPTIONAL {{ ex:{pid} ex:firstname ?fname }} OPTIONAL {{ ex:{pid} ex:lastname ?lname }}
-        
         OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . 
                     OPTIONAL {{ ?pe ex:hasBMI ?bmi }} OPTIONAL {{ ?pe ex:hasSBP ?sbp }} OPTIONAL {{ ?pe ex:hasDBP ?dbp }} 
-                    OPTIONAL {{ ?pe ex:hasSpecialComplication ?special . 
-                                BIND(STRAFTER(STR(?special), "#") AS ?specialName) }} 
-        }}
-        OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
+                    OPTIONAL {{ ?pe ex:hasSpecialComplication ?special . BIND(STRAFTER(STR(?special), "#") AS ?specialName) }} }}
+        OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . 
+                    OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
                     OPTIONAL {{ ?le ex:hasFPG ?fpg }} OPTIONAL {{ ?le ex:hasKetone ?ketone }} OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }} }}
-        
         OPTIONAL {{ ex:{pid} ex:recommendedExercise ?rec . OPTIONAL {{ ?rec rdfs:label ?recLabel }} BIND(COALESCE(?recLabel, STRAFTER(STR(?rec), "#")) AS ?recName) }} 
         OPTIONAL {{ ex:{pid} ex:hasPatientWarning ?warn . OPTIONAL {{ ?warn ex:description ?wDesc }} OPTIONAL {{ ?warn rdfs:label ?wLabel }} BIND(COALESCE(?wDesc, ?wLabel, STRAFTER(STR(?warn), "#")) AS ?warnDesc) }}
         OPTIONAL {{ ex:{pid} ex:hasComorbidity ?comorb . OPTIONAL {{ ?comorb rdfs:label ?cLabel }} BIND(COALESCE(?cLabel, STRAFTER(STR(?comorb), "#")) AS ?comorbName) }}
@@ -320,54 +361,16 @@ def get_patient_profile(patient_id):
     if not bindings: return None
     first = bindings[0]
     info = {
-        "firstname": first.get("fname", {}).get("value", "-"),
-        "lastname": first.get("lname", {}).get("value", "-"),
-        "type": first.get("type", {}).get("value", "-"),
-        "bmi": first.get("bmi", {}).get("value", "-"),
-        "sbp": first.get("sbp", {}).get("value", "-"),
-        "dbp": first.get("dbp", {}).get("value", "-"),
-        "chol": first.get("chol", {}).get("value", "-"),
-        "ldl": first.get("ldl", {}).get("value", "-"),
-        "fpg": first.get("fpg", {}).get("value", "-"),
-        "ketone": first.get("ketone", {}).get("value", "-"),
-        "micro": first.get("micro", {}).get("value", "-"),
-        "special": first.get("specialName", {}).get("value", ""),
+        "firstname": first.get("fname", {}).get("value", "-"), "lastname": first.get("lname", {}).get("value", "-"),
+        "type": first.get("type", {}).get("value", "-"), "bmi": first.get("bmi", {}).get("value", "-"),
+        "sbp": first.get("sbp", {}).get("value", "-"), "dbp": first.get("dbp", {}).get("value", "-"),
+        "chol": first.get("chol", {}).get("value", "-"), "ldl": first.get("ldl", {}).get("value", "-"),
+        "fpg": first.get("fpg", {}).get("value", "-"), "ketone": first.get("ketone", {}).get("value", "-"),
+        "micro": first.get("micro", {}).get("value", "-"), "special": first.get("specialName", {}).get("value", ""),
     }
-    exercises = set([r["recName"]["value"] for r in bindings if "recName" in r])
-    warnings = set([r["warnDesc"]["value"] for r in bindings if "warnDesc" in r])
-    comorbs = set([r["comorbName"]["value"] for r in bindings if "comorbName" in r])
-    complis = set([r["compliName"]["value"] for r in bindings if "compliName" in r])
+    def extract_set(key): return set([r[key]["value"] for r in bindings if key in r])
+    return {
+        "info": info, "exercises": list(extract_set("recName")), "warnings": list(extract_set("warnDesc")),
+        "comorbs": list(extract_set("comorbName")), "complis": list(extract_set("compliName"))
+    }
     
-    return {"info": info, "exercises": list(exercises), "warnings": list(warnings), "comorbs": list(comorbs), "complis": list(complis)}
-
-def save_raw_patient_data(data):
-    if not str(data['id']).replace("_", "").isalnum(): return # Security
-
-    pid = f"Patient{data['id']}"
-    delete_patient(data['id'])
-    
-    # ✅ Fix Logic Consistency: Use is not None or strict checks
-    ketone_val = data.get('ketone') if data.get('ketone') else "Negative"
-    micro_val = data.get('micro') if data.get('micro') else "Negative"
-    
-    special_triple = ""
-    if data.get('special') and data['special'] != "None":
-        special_triple = f'ex:{pid}_PE ex:hasSpecialComplication ex:{data["special"]} .'
-    else:
-        special_triple = f'ex:{pid}_PE ex:hasSpecialComplication ex:NoOtherComplication .'
-
-    def get_val(key): return data.get(key) if data.get(key) else "0"
-    
-    triples = f"""
-        ex:{pid} a ex:Patient ; ex:diabetType ex:{data['type']} ; ex:firstname "{data.get('firstname', '-')}" ; ex:lastname "{data.get('lastname', '-')}" ; ex:hasPhysicalExam ex:{pid}_PE ; ex:hasLabExam ex:{pid}_LE .
-        ex:{pid}_PE a ex:PhysicalExam ; ex:hasBMI "{get_val('bmi')}"^^xsd:decimal ; ex:hasSBP "{get_val('sbp')}"^^xsd:decimal ; ex:hasDBP "{get_val('dbp')}"^^xsd:decimal .
-        {special_triple} 
-        ex:{pid}_LE a ex:LabExam ; ex:hasTotalCholesterol "{get_val('chol')}"^^xsd:decimal ; ex:hasLDL "{get_val('ldl')}"^^xsd:decimal ; ex:hasHDL "{get_val('hdl')}"^^xsd:decimal ; ex:hasTriglyceride "{get_val('tri')}"^^xsd:decimal ;
-                     ex:hasFPG "{get_val('fpg')}"^^xsd:decimal ; ex:hasKetone "{ketone_val}" ; ex:hasMicroalbuminurin "{micro_val}" . 
-    """
-    sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}"); sparql_write.query()
-
-def delete_patient(patient_id):
-    if not str(patient_id).replace("_", "").isalnum(): return # Security
-    pid = f"Patient{patient_id}"
-    sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ?s ?p ?o . ?pe ?pp ?oo . ?le ?lp ?lo }} WHERE {{ ?s ?p ?o . FILTER(?s = ex:{pid}) OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} }}"); sparql_write.query()

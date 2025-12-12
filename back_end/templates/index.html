@@ -3,95 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแนะนำการออกกำลังกายผู้ป่วยเบาหวาน</title>
+    <title>Diabetes Expert System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Sarabun', sans-serif; max-width: 900px; margin: auto; padding: 20px; background-color: #f4f6f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .form-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; color: #555; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; font-size: 16px; transition: 0.3s; margin-right: 5px; margin-bottom: 5px; }
-        .btn-green { background-color: #28a745; color: white; width: 100%; margin-top: 10px; }
-        .btn-blue { background-color: #007bff; color: white; }
-        .btn-red { background-color: #dc3545; color: white; }
-        .btn-red:hover { background-color: #c82333; }
-
-        /* Result Areas */
-        #result, #searchResult { display: none; margin-top: 20px; }
-        ul { padding-left: 20px; }
-        li { margin-bottom: 5px; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; padding-bottom: 50px; }
+        .header-section { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; padding: 40px 0; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .form-label { font-weight: 600; color: #555; font-size: 0.9rem; }
+        .section-title { border-bottom: 2px solid #e9ecef; padding-bottom: 8px; margin-bottom: 15px; color: #4ca1af; font-weight: bold; }
+        .btn-analyze { width: 100%; font-weight: bold; padding: 12px; border-radius: 8px; }
+        
+        .result-box { padding: 15px; border-radius: 10px; height: 100%; border-left: 5px solid gray; background: #fff; }
+        .res-warn { border-left-color: #dc3545; background-color: #fff5f5; }
+        .res-exercise { border-left-color: #198754; background-color: #e8f5e9; }
+        .res-comorb { border-left-color: #0d6efd; background-color: #e3f2fd; }
+        .res-compli { border-left-color: #fd7e14; background-color: #fff8e1; }
+        .list-group-item { border: none; background: transparent; padding: 5px 0; }
+        
+        .profile-table th { background-color: #f8f9fa; width: 40%; font-size: 0.9rem; color: #666; }
+        .profile-table td { font-size: 0.95rem; font-weight: 600; color: #333; }
     </style>
 </head>
 <body>
 
-    <h1 style="text-align: center;">🏥 ระบบแนะนำการออกกำลังกาย (Diabetes AI)</h1>
+    <div class="header-section text-center">
+        <div class="container">
+            <h1 class="fw-bold"><i class="bi bi-robot"></i> ระบบผู้เชี่ยวชาญเบาหวาน</h1>
+            <p class="mb-0">Semantic Web Expert System</p>
+        </div>
+    </div>
 
-    <div class="card">
-        <h3>📝 เพิ่ม/อัปเดต ข้อมูลผู้ป่วย</h3>
-        <div class="form-grid">
-            <div class="form-group"><label>รหัส (ID): *</label><input type="number" id="pid" placeholder="เช่น 99"></div>
-            <div class="form-group"><label>ประเภท:</label>
-                <select id="dtype">
-                    <option value="T1DM">ชนิดที่ 1 (T1DM)</option>
-                    <option value="T2DM">ชนิดที่ 2 (T2DM)</option>
-                </select>
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card h-100">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 text-primary"><i class="bi bi-file-earmark-medical"></i> บันทึกข้อมูลผู้ป่วย</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12"><div class="section-title">ข้อมูลทั่วไป</div></div>
+                            <div class="col-md-4">
+                                <label class="form-label">ID ผู้ป่วย</label>
+                                <input type="number" id="pid" class="form-control" placeholder="101">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ชนิดเบาหวาน</label>
+                                <select id="dtype" class="form-select">
+                                    <option value="T2DM">Type 2</option>
+                                    <option value="T1DM">Type 1</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">BMI</label>
+                                <input type="number" step="0.1" id="bmi" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ชื่อ</label>
+                                <input type="text" id="fname" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">นามสกุล</label>
+                                <input type="text" id="lname" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">SBP (บน)</label>
+                                <input type="number" id="sbp" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">DBP (ล่าง)</label>
+                                <input type="number" id="dbp" class="form-control">
+                            </div>
+
+                            <div class="col-12 mt-4"><div class="section-title">ผล Lab</div></div>
+                            <div class="col-md-6">
+                                <label class="form-label">FPG</label>
+                                <input type="number" id="fpg" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Cholesterol</label>
+                                <input type="number" id="chol" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">LDL</label>
+                                <input type="number" id="ldl" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">HDL</label>
+                                <input type="number" id="hdl" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Triglyceride</label>
+                                <input type="number" id="tri" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ketone</label>
+                                <select id="ketone" class="form-select">
+                                    <option value="Negative">Negative</option>
+                                    <option value="Positive">Positive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Microalbuminuria</label>
+                                <select id="micro" class="form-select">
+                                    <option value="Negative">Negative</option>
+                                    <option value="Positive">Positive</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 mt-4"><div class="section-title">ภาวะแทรกซ้อนพิเศษ</div></div>
+                            <div class="col-12">
+                                <div class="bg-light p-3 rounded border">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input special-check" type="checkbox" value="AutonomicNeuropathy" id="sc1">
+                                                <label class="form-check-label" for="sc1">Autonomic Neuropathy</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input special-check" type="checkbox" value="HeartDisease" id="sc2">
+                                                <label class="form-check-label" for="sc2">Heart Disease</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input special-check" type="checkbox" value="Retinopathy" id="sc3">
+                                                <label class="form-check-label" for="sc3">Retinopathy</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input special-check" type="checkbox" value="PeripheralNeuropathy" id="sc4">
+                                                <label class="form-check-label" for="sc4">Peripheral Neuropathy</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted mt-2 d-block">* หากไม่มีให้เว้นว่างไว้ ระบบจะระบุเป็น NoOtherComplication อัตโนมัติ</small>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <button class="btn btn-success btn-analyze shadow-sm" onclick="analyzeData()">
+                                    <i class="bi bi-rocket-takeoff"></i> ประมวลผล
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group"><label>ชื่อ:</label><input type="text" id="fname"></div>
-            <div class="form-group"><label>สกุล:</label><input type="text" id="lname"></div>
-        </div>
-        <hr style="border-top: 1px dashed #ddd; margin: 15px 0;">
-        <div class="form-grid">
-            <div class="form-group"><label>BMI:</label><input type="number" step="0.1" id="bmi" placeholder="22.5"></div>
-            <div class="form-group"><label>SBP:</label><input type="number" id="sbp"></div>
-            <div class="form-group"><label>DBP:</label><input type="number" id="dbp"></div>
-            <div class="form-group"><label>Chol:</label><input type="number" id="chol"></div>
-            <div class="form-group"><label>LDL:</label><input type="number" id="ldl"></div>
-        </div>
-        <button class="btn-green" onclick="analyzeData()">🚀 บันทึกข้อมูล & ประมวลผล</button>
-    </div>
 
-    <div id="result" class="card" style="border-left: 5px solid #28a745;">
-        <h3>ผลการวิเคราะห์ล่าสุด</h3>
-        <p><strong>คำเตือน:</strong> <span id="warnText">-</span></p>
-        <p><strong>ท่าออกกำลังกาย:</strong></p> <ul id="exList"></ul>
-    </div>
+            <div class="col-lg-5">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <label class="form-label fw-bold"><i class="bi bi-search"></i> ค้นหาผู้ป่วยเก่า</label>
+                        <div class="input-group">
+                            <input type="text" id="search_id" class="form-control" placeholder="ID...">
+                            <button class="btn btn-primary" onclick="searchPatient()">ค้นหา</button>
+                        </div>
+                    </div>
+                </div>
 
-    <div class="card" style="background-color: #e9ecef;">
-        <h3>🔍 จัดการข้อมูล</h3>
-        <input type="text" id="search_id" placeholder="ระบุ ID (เช่น 99)" style="width: 200px; padding: 8px;">
-        <button class="btn-blue" onclick="searchPatient()">ค้นหา</button>
-        <button class="btn-orange" onclick="reprocessPatient()">⚡ รันกฎใหม่</button>
-        <button class="btn-red" onclick="deletePatient()">ลบข้อมูล</button>
-    </div>
+                <div id="result" class="d-none">
+                    <div class="card mb-3 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-person-vcard"></i> ข้อมูลผู้ป่วย</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-striped mb-0 profile-table">
+                                <tbody id="profileTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
 
-    <div id="searchResult" class="card" style="border: 1px solid #007bff;">
-        <h2 style="color: #007bff; margin-top: 0;">📋 ข้อมูลผู้ป่วย: <span id="show_id"></span></h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div>
-                <p><strong>ชื่อ-สกุล:</strong> <span id="show_name">-</span></p>
-                <p><strong>ประเภท:</strong> <span id="show_type">-</span></p>
-                <p><strong>BMI:</strong> <span id="show_bmi">-</span></p>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="result-box res-warn">
+                                <h6 class="text-danger fw-bold">คำเตือน</h6>
+                                <ul id="warnList" class="list-group list-group-flush small"></ul>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="result-box res-exercise">
+                                <h6 class="text-success fw-bold">แนะนำออกกำลังกาย</h6>
+                                <ul id="exList" class="list-group list-group-flush small"></ul>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="result-box res-comorb">
+                                <h6 class="text-primary fw-bold">โรคร่วม</h6>
+                                <ul id="comorbList" class="list-group list-group-flush small"></ul>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="result-box res-compli">
+                                <h6 class="text-warning fw-bold" style="color:#fd7e14">ภาวะแทรกซ้อน</h6>
+                                <ul id="compliList" class="list-group list-group-flush small"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3 bg-light">
+                        <div class="card-body d-flex justify-content-between">
+                            <button class="btn btn-warning btn-sm" onclick="reprocessPatient()">รันกฎใหม่</button>
+                            <button class="btn btn-danger btn-sm" onclick="deletePatient()">ลบข้อมูล</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <p><strong>ความดัน:</strong> <span id="show_bp">-</span></p>
-                <p><strong>ไขมัน:</strong> <span id="show_lipid">-</span></p>
-            </div>
-        </div>
-        <hr>
-        <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px;">
-            <h4 style="color: #856404; margin-top: 0;">⚠️ คำเตือนสุขภาพ</h4>
-            <ul id="show_warnings"></ul>
-        </div>
-        <div style="background-color: #d4edda; padding: 15px; border-radius: 5px; margin-top: 10px;">
-            <h4 style="color: #155724; margin-top: 0;">✅ ท่าออกกำลังกาย</h4>
-            <ul id="show_recs"></ul>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // ฟังก์ชัน 1: บันทึกและประมวลผล (ส่งข้อมูลครบทุกช่อง)
         async function analyzeData() {
+            // ✅ 1. ดึงค่า Checkbox ทั้งหมดที่ติ๊ก
+            const selectedComplications = [];
+            document.querySelectorAll('.special-check:checked').forEach(cb => {
+                selectedComplications.push(cb.value);
+            });
+
             const data = {
                 id: document.getElementById('pid').value,
                 type: document.getElementById('dtype').value,
@@ -101,65 +232,83 @@
                 sbp: document.getElementById('sbp').value,
                 dbp: document.getElementById('dbp').value,
                 chol: document.getElementById('chol').value,
-                ldl: document.getElementById('ldl').value
+                ldl: document.getElementById('ldl').value,
+                hdl: document.getElementById('hdl').value,
+                tri: document.getElementById('tri').value,
+                fpg: document.getElementById('fpg').value,
+                ketone: document.getElementById('ketone').value,
+                micro: document.getElementById('micro').value,
+                // ✅ 2. ส่ง Array ไปแทนค่าเดี่ยว
+                complications: selectedComplications
             };
-            if(!data.id || !data.bmi) { alert("กรอก ID และ BMI ก่อนครับ"); return; }
-            
-            const btn = document.querySelector('.btn-green'); btn.innerText = "⏳ กำลังคิด..."; btn.disabled = true;
+
+            if(!data.id) return alert("ระบุ ID ก่อน");
+
             try {
                 const res = await fetch('/api/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
                 const json = await res.json();
-                showResult(json, 'result');
-            } catch(e) { alert("Error: " + e); } finally { btn.innerText = "🚀 บันทึกข้อมูล & ประมวลผล"; btn.disabled = false; }
+                if(json.status === 'ok') {
+                    alert("บันทึกและประมวลผลสำเร็จ");
+                    // สร้าง info object จำลองเพื่อแสดงผลทันที
+                    data.special = selectedComplications.length > 0 ? selectedComplications.join(", ") : "NoOtherComplication";
+                    showResult(json, data);
+                } else {
+                    alert("Error: " + json.message);
+                }
+            } catch(e) { alert("Server Error"); }
         }
 
         async function searchPatient() {
             const id = document.getElementById('search_id').value;
-            if(!id) return alert("ใส่ ID ก่อนครับ");
-            const res = await fetch(`/api/patient/${id}`);
-            const json = await res.json();
-            if(json.status === 'error') { alert("ไม่เจอข้อมูล"); document.getElementById('searchResult').style.display = 'none'; return; }
-            
-            document.getElementById('searchResult').style.display = 'block';
-            document.getElementById('show_id').innerText = id;
-            document.getElementById('show_name').innerText = json.info.firstname + " " + json.info.lastname;
-            document.getElementById('show_type').innerText = json.info.type;
-            document.getElementById('show_bmi').innerText = json.info.bmi;
-            document.getElementById('show_bp').innerText = `${json.info.sbp} / ${json.info.dbp}`;
-            document.getElementById('show_lipid').innerText = `Chol: ${json.info.chol}, LDL: ${json.info.ldl}`;
-            displayLists(json.warnings, json.exercises, 'show_warnings', 'show_recs');
+            if(!id) return alert("ใส่ ID");
+            try {
+                const res = await fetch(`/api/patient/${id}`);
+                const json = await res.json();
+                if(json.status === 'error') return alert("ไม่พบข้อมูล");
+                showResult(json, json.info);
+            } catch(e) { alert("Server Error"); }
         }
 
         async function reprocessPatient() {
-            const id = document.getElementById('search_id').value;
-            if(!id) return alert("ใส่ ID ก่อนครับ");
-            const btn = document.querySelector('.btn-orange'); btn.disabled = true;
-            try {
-                const res = await fetch(`/api/reprocess/${id}`, { method: 'POST' });
-                const json = await res.json();
-                if(json.status === 'ok') { alert("✅ คิดใหม่เสร็จแล้ว!"); searchPatient(); }
-                else alert(json.message);
-            } catch(e) { alert(e); } finally { btn.disabled = false; }
+            const id = document.getElementById('search_id').value || document.getElementById('pid').value;
+            if(!id) return;
+            const res = await fetch(`/api/reprocess/${id}`, { method: 'POST' });
+            const json = await res.json();
+            if(json.status === 'ok') { alert("Done"); searchPatient(); }
         }
 
         async function deletePatient() {
             const id = document.getElementById('search_id').value;
-            if(!id || !confirm("ลบจริงนะ?")) return;
+            if(!id || !confirm("ลบ?")) return;
             await fetch(`/api/delete/${id}`, { method: 'DELETE' });
-            alert("ลบเรียบร้อย"); document.getElementById('searchResult').style.display = 'none';
+            alert("Deleted");
+            document.getElementById('result').classList.add('d-none');
+            document.getElementById('search_id').value = '';
         }
 
-        function showResult(result, elId) {
-            document.getElementById(elId).style.display = 'block';
-            document.getElementById('warnText').innerText = result.warnings.join(", ") || "ไม่มี";
-            const list = document.getElementById('exList'); list.innerHTML = "";
-            (result.exercises.length ? result.exercises : ["ไม่มีคำแนะนำ"]).forEach(x => list.innerHTML += `<li>${x}</li>`);
+        function showResult(json, info) {
+            document.getElementById('result').classList.remove('d-none');
+            const v = (val) => val ? val : '-';
+            document.getElementById('profileTableBody').innerHTML = `
+                <tr><th>ชื่อ-สกุล</th><td>${v(info.firstname)} ${v(info.lastname)}</td></tr>
+                <tr><th>Type / BMI</th><td>${v(info.type)} / ${v(info.bmi)}</td></tr>
+                <tr><th>ความดัน</th><td>${v(info.sbp)} / ${v(info.dbp)}</td></tr>
+                <tr><th>Lab (FPG)</th><td>${v(info.fpg)}</td></tr>
+                <tr><th>Lab (Chol/LDL)</th><td>${v(info.chol)} / ${v(info.ldl)}</td></tr>
+                <tr><th>Lab (HDL/Tri)</th><td>${v(info.hdl)} / ${v(info.tri)}</td></tr>
+                <tr><th>Lab (Other)</th><td>K:${v(info.ketone)}, M:${v(info.micro)}</td></tr>
+                <tr><th>Special Comp.</th><td class="text-danger">${v(info.special)}</td></tr>
+            `;
+            updateList('warnList', json.warnings);
+            updateList('exList', json.exercises);
+            updateList('comorbList', json.comorbs);
+            updateList('compliList', json.complis);
         }
-        function displayLists(w, e, wId, eId) {
-            const wl = document.getElementById(wId); wl.innerHTML = "";
-            (w.length ? w : ["ไม่มี"]).forEach(x => wl.innerHTML += `<li>${x}</li>`);
-            const el = document.getElementById(eId); el.innerHTML = "";
-            (e.length ? e : ["ไม่มี"]).forEach(x => el.innerHTML += `<li>${x}</li>`);
+
+        function updateList(id, items) {
+            const el = document.getElementById(id);
+            el.innerHTML = (!items || !items.length) ? "<li class='list-group-item text-muted fst-italic'>- ไม่มี -</li>" : 
+            items.map(x => `<li class="list-group-item"><i class="bi bi-caret-right-fill opacity-50"></i> ${x}</li>`).join('');
         }
     </script>
 </body>

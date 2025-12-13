@@ -64,6 +64,7 @@ def load_ontology_from_graphdb():
         clean_data = "\n".join(clean_lines)
         onto = get_ontology("http://example.org/diabetes_from_db").load(fileobj=io.BytesIO(clean_data.encode('utf-8')), format="ntriples")
         print(f"✅ Loaded! Rules count: {len(list(onto.rules()))}")
+        
         return onto
     except Exception as e:
         print(f"❌ Error loading ontology: {e}")
@@ -91,6 +92,8 @@ if onto:
         class hasHDL(DataProperty): namespace = ex; range = [float]
         class hasTriglyceride(DataProperty): namespace = ex; range = [float]
         class hasFPG(DataProperty): namespace = ex; range = [float]
+        class hasWeight(DataProperty): namespace = ex; range = [float]
+        class hasHeight(DataProperty): namespace = ex; range = [float]
         
         class hasKetone(DataProperty): namespace = ex; range = [str]
         class hasMicroalbuminurin(DataProperty): namespace = ex; range = [str]
@@ -118,29 +121,23 @@ def process_patient_realtime(patient_id, input_data=None):
     try:
         # 1. เตรียมข้อมูล
         data = {}
-        target_specials = [] # ลิสต์สำหรับเก็บโรคแทรกซ้อน (หลายตัว)
+        target_specials = [] 
 
         if input_data:
             print(f"⚡ Processing {patient_id} using Direct Input...")
-            # กรณีรับจากหน้าเว็บ (มักจะมีแค่ตัวเดียว เพราะ Dropdown เลือกได้ทีละอัน)
+            # ... (Logic จัดการ Special Complication เหมือนเดิม) ...
             raw_special = input_data.get('special')
-            
             if isinstance(raw_special, list):
-                # ถ้าส่งมาเป็น List (จาก Checkbox)
-                if not raw_special: # ถ้า List ว่าง
-                    target_specials.append("NoOtherComplication")
-                else:
-                    target_specials.extend(raw_special)
-            
+                if not raw_special: target_specials.append("NoOtherComplication")
+                else: target_specials.extend(raw_special)
             elif isinstance(raw_special, str):
-                # ถ้าส่งมาเป็น String ตัวเดียว (เผื่อไว้)
-                if raw_special and raw_special != "None":
-                    target_specials.append(raw_special)
-                else:
-                    target_specials.append("NoOtherComplication")
+                if raw_special and raw_special != "None": target_specials.append(raw_special)
+                else: target_specials.append("NoOtherComplication")
 
             data = {
                 'type': input_data.get('type', 'T2DM'),
+                'weight': safe_float(input_data.get('weight')), # ✅ รับน้ำหนัก
+                'height': safe_float(input_data.get('height')), # ✅ รับส่วนสูง
                 'bmi': safe_float(input_data.get('bmi')), 
                 'sbp': safe_float(input_data.get('sbp')),
                 'dbp': safe_float(input_data.get('dbp')), 
@@ -153,15 +150,20 @@ def process_patient_realtime(patient_id, input_data=None):
                 'micro': input_data.get('micro') or "Negative",
             }
         else:
-            # กรณีดึงจาก DB (ต้องรองรับหลายตัว)
+            # กรณีดึงจาก DB
             print(f"📥 Fetching {patient_id} from DB...")
+            # ✅ เพิ่ม ?weight ?height ใน Query
             query = f"""
             PREFIX ex: <http://example.org/diabetes#>
-            SELECT ?typeUri ?bmi ?sbp ?dbp ?chol ?ldl ?hdl ?tri ?fpg ?ketone ?micro ?specialUri
+            SELECT ?typeUri ?weight ?height ?bmi ?sbp ?dbp ?chol ?ldl ?hdl ?tri ?fpg ?ketone ?micro ?specialUri
             WHERE {{
                 ex:Patient{patient_id} a ex:Patient ; ex:diabetType ?typeUri .
                 OPTIONAL {{ ex:Patient{patient_id} ex:hasPhysicalExam ?pe . 
-                            OPTIONAL {{ ?pe ex:hasBMI ?bmi }} OPTIONAL {{ ?pe ex:hasSBP ?sbp }} OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
+                            OPTIONAL {{ ?pe ex:hasWeight ?weight }}   # ✅
+                            OPTIONAL {{ ?pe ex:hasHeight ?height }}   # ✅
+                            OPTIONAL {{ ?pe ex:hasBMI ?bmi }} 
+                            OPTIONAL {{ ?pe ex:hasSBP ?sbp }} 
+                            OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
                             OPTIONAL {{ ?pe ex:hasSpecialComplication ?specialUri }} }}
                 OPTIONAL {{ ex:Patient{patient_id} ex:hasLabExam ?le . 
                             OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
@@ -174,7 +176,6 @@ def process_patient_realtime(patient_id, input_data=None):
             if not results["results"]["bindings"]:
                 return [], [], [], []
 
-            # ✅ เก็บทุกโรคแทรกซ้อนที่มีใน DB (วนลูปทุกบรรทัด)
             for r in results["results"]["bindings"]:
                 s_uri = r.get('specialUri', {}).get('value')
                 if s_uri:
@@ -182,16 +183,15 @@ def process_patient_realtime(patient_id, input_data=None):
                     if s_name not in target_specials:
                         target_specials.append(s_name)
             
-            # ถ้าใน DB ไม่มีเลย ให้ใส่ NoOther
-            if not target_specials:
-                target_specials.append("NoOtherComplication")
+            if not target_specials: target_specials.append("NoOtherComplication")
 
-            # ข้อมูลอื่นๆ (เอาจากบรรทัดแรกก็พอ เพราะเหมือนกันหมด)
             row = results["results"]["bindings"][0]
             db_type = safe_get_name(row.get('typeUri', {}).get('value')) or 'T2DM'
             
             data = {
                 'type': db_type,
+                'weight': safe_float(row.get('weight', {}).get('value')), # ✅
+                'height': safe_float(row.get('height', {}).get('value')), # ✅
                 'bmi': safe_float(row.get('bmi', {}).get('value')), 
                 'sbp': safe_float(row.get('sbp', {}).get('value')),
                 'dbp': safe_float(row.get('dbp', {}).get('value')), 
@@ -204,16 +204,21 @@ def process_patient_realtime(patient_id, input_data=None):
                 'micro': row.get('micro', {}).get('value') or "Negative",
             }
 
-        # Auto-Fill Defaults
+        # ✅ Auto-Calculate BMI (ถ้าไม่มี BMI แต่มี นน/สส)
+        if data['bmi'] is None and data['weight'] and data['height']:
+            try:
+                h_m = data['height'] / 100.0
+                data['bmi'] = round(data['weight'] / (h_m * h_m), 2)
+                print(f"🧮 Auto-calculated BMI: {data['bmi']}")
+            except: pass
+
         if data['fpg'] is None: data['fpg'] = 100.0
 
         print(f"🧐 Analyzed Data: {data}")
-        print(f"🩺 Special Complications: {target_specials}")
 
         with onto:
             p = ex.Patient(pid_mem)
             
-            # Type
             target_type = data['type']
             type_obj = getattr(ex, target_type, None)
             if not type_obj: type_obj = onto.search_one(iri=f"*{target_type}") 
@@ -221,17 +226,18 @@ def process_patient_realtime(patient_id, input_data=None):
             p.diabetType = [type_obj]
                 
             pe = ex.PhysicalExam(f"PE_{unique_suffix}")
+            # ✅ ใส่ค่าลง Instance
+            if data['weight'] is not None: pe.hasWeight = [data['weight']]
+            if data['height'] is not None: pe.hasHeight = [data['height']]
             if data['bmi'] is not None: pe.hasBMI = [data['bmi']]
             if data['sbp'] is not None: pe.hasSBP = [data['sbp']]
             if data['dbp'] is not None: pe.hasDBP = [data['dbp']]
             
-            # ✅ Special Complications (วนลูปใส่ให้ครบทุกตัว)
-            pe.hasSpecialComplication = [] # เริ่มต้นเป็นลิสต์ว่าง
+            pe.hasSpecialComplication = [] 
             for sp_name in target_specials:
                 sp_obj = getattr(ex, sp_name, None)
                 if not sp_obj: sp_obj = onto.search_one(iri=f"*{sp_name}")
                 if not sp_obj: sp_obj = ex.Complication(sp_name)
-                # Append เข้าไปในลิสต์
                 pe.hasSpecialComplication.append(sp_obj)
             
             p.hasPhysicalExam = [pe]
@@ -248,7 +254,8 @@ def process_patient_realtime(patient_id, input_data=None):
 
         print("🧠 Running Reasoner...")
         sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
-
+        
+        # ... (ส่วน Extract Result เหมือนเดิม) ...
         print("🔍 Extracting Results...")
         recs, warns, comorbs, complis = [], [], [], [] 
         s_recs, s_warns, s_comorbs, s_complis = [], [], [], []
@@ -322,34 +329,29 @@ def save_raw_patient_data(data):
         
         def val(k): return safe_float(data.get(k)) or 0
 
-        # ✅ จัดการ Special Complication (รองรับทั้ง List และ String)
+        # จัดการ Special Complication... (เหมือนเดิม)
         raw_special = data.get('special')
         special_triples = ""
-        
         if isinstance(raw_special, list):
-            # กรณีมาเป็น List (Checkbox)
-            if not raw_special: # ถ้า List ว่าง
-                special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:NoOtherComplication ."
+            if not raw_special: special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:NoOtherComplication ."
             else:
                 for sp in raw_special:
-                    safe_sp = escape_sparql(sp)
-                    special_triples += f"ex:{pid}_PE ex:hasSpecialComplication ex:{safe_sp} .\n"
-        
+                    special_triples += f"ex:{pid}_PE ex:hasSpecialComplication ex:{escape_sparql(sp)} .\n"
         elif isinstance(raw_special, str) and raw_special != "None":
-            # กรณีมาเป็น String ตัวเดียว
             special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:{escape_sparql(raw_special)} ."
-        
         else:
-            # กรณีไม่เลือกอะไรเลย หรือเป็น None
             special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:NoOtherComplication ."
 
-        # 3. สร้าง Triples (เอา special_triples ไปแทรก)
+        # 3. สร้าง Triples (✅ เพิ่ม ex:hasWeight และ ex:hasHeight)
         triples = f"""
             ex:{pid} a ex:Patient ; ex:diabetType ex:{escape_sparql(data['type'])} ; 
                      ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
                      ex:hasPhysicalExam ex:{pid}_PE ; ex:hasLabExam ex:{pid}_LE .
             
-            ex:{pid}_PE a ex:PhysicalExam ; ex:hasBMI "{val('bmi')}"^^xsd:decimal ; 
+            ex:{pid}_PE a ex:PhysicalExam ; 
+                        ex:hasWeight "{val('weight')}"^^xsd:decimal ; 
+                        ex:hasHeight "{val('height')}"^^xsd:decimal ; 
+                        ex:hasBMI "{val('bmi')}"^^xsd:decimal ; 
                         ex:hasSBP "{val('sbp')}"^^xsd:decimal ; ex:hasDBP "{val('dbp')}"^^xsd:decimal .
             
             {special_triples} 
@@ -375,18 +377,20 @@ def delete_patient(patient_id):
     sparql_write.query()
 
 def get_patient_profile(patient_id):
-    # (ใช้ Logic เดิม)
     if not validate_id(patient_id): return None
     pid = f"Patient{patient_id}"
+    # ✅ เพิ่ม ?weight ?height ใน SELECT และ OPTIONAL
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    SELECT ?fname ?lname ?type ?bmi ?sbp ?dbp ?chol ?ldl ?fpg ?ketone ?micro ?specialName ?recName ?warnDesc ?comorbName ?compliName
+    SELECT ?fname ?lname ?type ?weight ?height ?bmi ?sbp ?dbp ?chol ?ldl ?fpg ?ketone ?micro ?specialName ?recName ?warnDesc ?comorbName ?compliName
     WHERE {{
         ex:{pid} a ex:Patient ; ex:diabetType ?typeUri .
         BIND(STRAFTER(STR(?typeUri), "#") AS ?type)
         OPTIONAL {{ ex:{pid} ex:firstname ?fname }} OPTIONAL {{ ex:{pid} ex:lastname ?lname }}
         OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . 
+                    OPTIONAL {{ ?pe ex:hasWeight ?weight }} 
+                    OPTIONAL {{ ?pe ex:hasHeight ?height }}
                     OPTIONAL {{ ?pe ex:hasBMI ?bmi }} OPTIONAL {{ ?pe ex:hasSBP ?sbp }} OPTIONAL {{ ?pe ex:hasDBP ?dbp }} 
                     OPTIONAL {{ ?pe ex:hasSpecialComplication ?special . BIND(STRAFTER(STR(?special), "#") AS ?specialName) }} }}
         OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . 
@@ -405,7 +409,10 @@ def get_patient_profile(patient_id):
     first = bindings[0]
     info = {
         "firstname": first.get("fname", {}).get("value", "-"), "lastname": first.get("lname", {}).get("value", "-"),
-        "type": first.get("type", {}).get("value", "-"), "bmi": first.get("bmi", {}).get("value", "-"),
+        "type": first.get("type", {}).get("value", "-"), 
+        "weight": first.get("weight", {}).get("value", "-"), # ✅
+        "height": first.get("height", {}).get("value", "-"), # ✅
+        "bmi": first.get("bmi", {}).get("value", "-"),
         "sbp": first.get("sbp", {}).get("value", "-"), "dbp": first.get("dbp", {}).get("value", "-"),
         "chol": first.get("chol", {}).get("value", "-"), "ldl": first.get("ldl", {}).get("value", "-"),
         "fpg": first.get("fpg", {}).get("value", "-"), "ketone": first.get("ketone", {}).get("value", "-"),
@@ -416,4 +423,3 @@ def get_patient_profile(patient_id):
         "info": info, "exercises": list(extract_set("recName")), "warnings": list(extract_set("warnDesc")),
         "comorbs": list(extract_set("comorbName")), "complis": list(extract_set("compliName"))
     }
-    

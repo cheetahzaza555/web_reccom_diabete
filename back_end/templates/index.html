@@ -27,15 +27,13 @@
         }
         input:focus, select:focus { border-color: var(--secondary); outline: none; }
 
+        /* Highlight BMI Field */
+        #bmi { background-color: #e8f5e9; color: #2e7d32; font-weight: bold; pointer-events: none; }
+
         /* Checkbox Style */
         .checkbox-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: #f9f9f9;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #eee;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee;
         }
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
         .checkbox-item input { width: auto; margin: 0; cursor: pointer; }
@@ -83,7 +81,11 @@
             
             <h3>🩺 ผลตรวจร่างกาย (Physical & Lab)</h3>
             <div class="form-grid">
-                <div><label>BMI</label><input type="number" step="0.1" id="bmi" placeholder="22.0"></div>
+                <div><label>น้ำหนัก (kg)</label><input type="number" id="weight" step="0.1" placeholder="เช่น 65"></div>
+                <div><label>ส่วนสูง (cm)</label><input type="number" id="height" step="0.1" placeholder="เช่น 170"></div>
+                
+                <div><label>BMI (คำนวณอัตโนมัติ)</label><input type="number" id="bmi" placeholder="..." readonly></div>
+
                 <div><label>FPG</label><input type="number" id="fpg" placeholder="100"></div>
                 <div><label>SBP</label><input type="number" id="sbp" placeholder="120"></div>
                 <div><label>DBP</label><input type="number" id="dbp" placeholder="80"></div>
@@ -102,21 +104,11 @@
                 <div style="grid-column: span 2;">
                     <label>⚠️ ภาวะแทรกซ้อนพิเศษ (เลือกได้หลายข้อ)</label>
                     <div class="checkbox-group">
-                        <label class="checkbox-item">
-                            <input type="checkbox" name="special" value="HeartDisease"> โรคหัวใจ (HeartDisease)
-                        </label>
-                        <label class="checkbox-item">
-                            <input type="checkbox" name="special" value="PeripheralNeuropathy"> ปลายประสาทเสื่อม (PeripheralNeuropathy)
-                        </label>
-                        <label class="checkbox-item">
-                            <input type="checkbox" name="special" value="AutonomicNeuropathy"> ระบบประสาทอัตโนมัติ (AutonomicNeuropathy)
-                        </label>
-                        <label class="checkbox-item">
-                            <input type="checkbox" name="special" value="Retinopathy"> จอประสาทตาเสื่อม (Retinopathy)
-                        </label>
-                        <label class="checkbox-item" style="color: green;">
-                            <input type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"> ✅ ไม่มีภาวะแทรกซ้อนอื่น (NoOther)
-                        </label>
+                        <label class="checkbox-item"><input type="checkbox" name="special" value="HeartDisease"> โรคหัวใจ (HeartDisease)</label>
+                        <label class="checkbox-item"><input type="checkbox" name="special" value="PeripheralNeuropathy"> ปลายประสาทเสื่อม (PeripheralNeuropathy)</label>
+                        <label class="checkbox-item"><input type="checkbox" name="special" value="AutonomicNeuropathy"> ระบบประสาทอัตโนมัติ (AutonomicNeuropathy)</label>
+                        <label class="checkbox-item"><input type="checkbox" name="special" value="Retinopathy"> จอประสาทตาเสื่อม (Retinopathy)</label>
+                        <label class="checkbox-item" style="color: green;"><input type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"> ✅ ไม่มีภาวะแทรกซ้อนอื่น (NoOther)</label>
                     </div>
                 </div>
             </div>
@@ -148,14 +140,33 @@
     </div>
 
     <script>
-        // ฟังก์ชันจัดการ Checkbox: ถ้าเลือก "ไม่มีโรคอื่น" ให้ติ๊กออกอันอื่น
+        // ✅ 1. ฟังก์ชันคำนวณ BMI Real-time
+        function calculateBMI() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const bmiInput = document.getElementById('bmi');
+
+            if (weight > 0 && height > 0) {
+                // สูตร: น้ำหนัก (kg) / (ส่วนสูง (m) ^ 2)
+                const heightInMeters = height / 100;
+                const bmi = weight / (heightInMeters * heightInMeters);
+                bmiInput.value = bmi.toFixed(2); // ทศนิยม 2 ตำแหน่ง
+            } else {
+                bmiInput.value = '';
+            }
+        }
+
+        // ✅ 2. ใส่ Event Listener ให้ทำงานทันทีที่พิมพ์
+        document.getElementById('weight').addEventListener('input', calculateBMI);
+        document.getElementById('height').addEventListener('input', calculateBMI);
+
+
+        // --- ฟังก์ชันเดิม ---
         function toggleNoOther(checkbox) {
             if (checkbox.checked) {
                 document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => el.checked = false);
             }
         }
-
-        // ถ้าเลือกโรคอื่น ให้ติ๊ก "ไม่มีโรคอื่น" ออก
         document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
             el.addEventListener('change', () => {
                 if(el.checked) document.getElementById('chkNoOther').checked = false;
@@ -163,7 +174,6 @@
         });
 
         async function analyzeData() {
-            // ✅ รวบรวมค่าจาก Checkbox ทั้งหมดเป็น Array
             const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
             
             const data = {
@@ -171,7 +181,12 @@
                 type: document.getElementById('dtype').value,
                 firstname: document.getElementById('fname').value,
                 lastname: document.getElementById('lname').value,
+                
+                // ✅ ส่งค่าน้ำหนัก ส่วนสูง ไปด้วย
+                weight: document.getElementById('weight').value,
+                height: document.getElementById('height').value,
                 bmi: document.getElementById('bmi').value,
+
                 sbp: document.getElementById('sbp').value,
                 dbp: document.getElementById('dbp').value,
                 chol: document.getElementById('chol').value,
@@ -181,7 +196,7 @@
                 fpg: document.getElementById('fpg').value,
                 ketone: document.getElementById('ketone').value,
                 micro: document.getElementById('micro').value,
-                special: selectedSpecials // ส่งเป็น Array ไปเลย (เดี๋ยว Python รับได้)
+                special: selectedSpecials
             };
 
             if(!data.id) return alert("กรุณาใส่ ID ผู้ป่วย");
@@ -216,9 +231,16 @@
             document.getElementById('fname').value = json.info.firstname;
             document.getElementById('lname').value = json.info.lastname;
             
-            // ✅ คืนค่า Checkbox (ถ้ามีข้อมูล)
-            document.querySelectorAll('input[name="special"]').forEach(el => el.checked = false); // เคลียร์ก่อน
-            // (ต้องรอ Logic หลังบ้านส่ง List กลับมา แต่ตอนนี้เอาแค่แสดงผลก่อน)
+            // ✅ คืนค่าน้ำหนัก ส่วนสูง BMI
+            document.getElementById('weight').value = json.info.weight || '';
+            document.getElementById('height').value = json.info.height || '';
+            document.getElementById('bmi').value = json.info.bmi || '';
+
+            // คืนค่า Lab อื่นๆ (ถ้าต้องการให้ครบต้องเพิ่ม id ให้ครบตาม field)
+            document.getElementById('sbp').value = json.info.sbp || '';
+            document.getElementById('dbp').value = json.info.dbp || '';
+            
+            document.querySelectorAll('input[name="special"]').forEach(el => el.checked = false);
             
             showResult(json);
         }

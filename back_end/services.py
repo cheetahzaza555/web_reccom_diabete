@@ -106,92 +106,75 @@ if onto:
         class hasComorbidity(ObjectProperty): namespace = ex; range = [Comorbidity]
         class hasComplication(ObjectProperty): namespace = ex; range = [Complication]
         class hasSpecialComplication(ObjectProperty): namespace = ex; range = [Complication]
+        
+        class intensityOfExercise(ObjectProperty): namespace = ex
+        class exerciseFrequency(ObjectProperty): namespace = ex
 
 # ==========================================
-# 4. Core Logic (Updated for Multiple Specials)
+# 4. Core Logic (Fixed & Debugged)
 # ==========================================
 def process_patient_realtime(patient_id, input_data=None):
-    if not validate_id(patient_id): return [], [], [], []
-    if not onto: return [], [], [], [] 
+    if not validate_id(patient_id) or not onto: return [], [], [], []
 
     unique_suffix = uuid.uuid4().hex[:8]
     pid_mem = f"Patient_Mem_{patient_id}_{unique_suffix}"
-    p, pe, le = None, None, None
+    p = None
 
     try:
-        # 1. เตรียมข้อมูล
+        # 1. เตรียมตัวแปร
         data = {}
-        target_specials = [] 
+        target_specials = []
+        target_favorites = []  # ✅ ประกาศไว้ก่อนเลยกันพลาด
 
         if input_data:
-            print(f"⚡ Processing {patient_id} using Direct Input...")
-            # ... (Logic จัดการ Special Complication เหมือนเดิม) ...
-            raw_special = input_data.get('special')
-            if isinstance(raw_special, list):
-                if not raw_special: target_specials.append("NoOtherComplication")
-                else: target_specials.extend(raw_special)
-            elif isinstance(raw_special, str):
-                if raw_special and raw_special != "None": target_specials.append(raw_special)
-                else: target_specials.append("NoOtherComplication")
-
-            data = {
-                'type': input_data.get('type', 'T2DM'),
-                'weight': safe_float(input_data.get('weight')), # ✅ รับน้ำหนัก
-                'height': safe_float(input_data.get('height')), # ✅ รับส่วนสูง
-                'bmi': safe_float(input_data.get('bmi')), 
-                'sbp': safe_float(input_data.get('sbp')),
-                'dbp': safe_float(input_data.get('dbp')), 
-                'chol': safe_float(input_data.get('chol')),
-                'ldl': safe_float(input_data.get('ldl')),
-                'hdl': safe_float(input_data.get('hdl')),
-                'tri': safe_float(input_data.get('tri')),
-                'fpg': safe_float(input_data.get('fpg')),
-                'ketone': input_data.get('ketone') or "Negative",
-                'micro': input_data.get('micro') or "Negative",
-            }
+            print(f"⚡ Processing {patient_id} (Direct)...")
+            data = input_data
+            raw_sp = input_data.get('special')
+            if isinstance(raw_sp, list): target_specials = raw_sp
+            elif isinstance(raw_sp, str) and raw_sp != "None": target_specials = [raw_sp]
+            
+            # รับค่า favorites จาก Input
+            target_favorites = input_data.get('favorites', [])
+        
         else:
-            # กรณีดึงจาก DB
             print(f"📥 Fetching {patient_id} from DB...")
-            # ✅ เพิ่ม ?weight ?height ใน Query
             query = f"""
             PREFIX ex: <http://example.org/diabetes#>
-            SELECT ?typeUri ?weight ?height ?bmi ?sbp ?dbp ?chol ?ldl ?hdl ?tri ?fpg ?ketone ?micro ?specialUri
+            SELECT ?typeUri ?weight ?height ?bmi ?sbp ?dbp ?chol ?ldl ?hdl ?tri ?fpg ?ketone ?micro ?specialUri ?favName
             WHERE {{
                 ex:Patient{patient_id} a ex:Patient ; ex:diabetType ?typeUri .
                 OPTIONAL {{ ex:Patient{patient_id} ex:hasPhysicalExam ?pe . 
-                            OPTIONAL {{ ?pe ex:hasWeight ?weight }}   # ✅
-                            OPTIONAL {{ ?pe ex:hasHeight ?height }}   # ✅
-                            OPTIONAL {{ ?pe ex:hasBMI ?bmi }} 
-                            OPTIONAL {{ ?pe ex:hasSBP ?sbp }} 
-                            OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
+                            OPTIONAL {{ ?pe ex:hasWeight ?weight }} OPTIONAL {{ ?pe ex:hasHeight ?height }} 
+                            OPTIONAL {{ ?pe ex:hasBMI ?bmi }} OPTIONAL {{ ?pe ex:hasSBP ?sbp }} OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
                             OPTIONAL {{ ?pe ex:hasSpecialComplication ?specialUri }} }}
                 OPTIONAL {{ ex:Patient{patient_id} ex:hasLabExam ?le . 
                             OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
                             OPTIONAL {{ ?le ex:hasHDL ?hdl }} OPTIONAL {{ ?le ex:hasTriglyceride ?tri }}
                             OPTIONAL {{ ?le ex:hasFPG ?fpg }} OPTIONAL {{ ?le ex:hasKetone ?ketone }} OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }} }}
+                OPTIONAL {{ ex:Patient{patient_id} ex:favoriteExercise ?fav . BIND(STRAFTER(STR(?fav), "#") AS ?favName) }}
             }}
             """
             sparql_read.setQuery(query)
             results = sparql_read.query().convert()
-            if not results["results"]["bindings"]:
-                return [], [], [], []
+            if not results["results"]["bindings"]: return [], [], [], []
 
             for r in results["results"]["bindings"]:
                 s_uri = r.get('specialUri', {}).get('value')
                 if s_uri:
                     s_name = safe_get_name(s_uri)
-                    if s_name not in target_specials:
-                        target_specials.append(s_name)
+                    if s_name not in target_specials: target_specials.append(s_name)
+                
+                # ✅ ดึง Favorites จาก DB
+                f_name = r.get('favName', {}).get('value')
+                if f_name and f_name not in target_favorites: target_favorites.append(f_name)
             
             if not target_specials: target_specials.append("NoOtherComplication")
-
             row = results["results"]["bindings"][0]
-            db_type = safe_get_name(row.get('typeUri', {}).get('value')) or 'T2DM'
             
             data = {
-                'type': db_type,
-                'weight': safe_float(row.get('weight', {}).get('value')), # ✅
-                'height': safe_float(row.get('height', {}).get('value')), # ✅
+                'type': safe_get_name(row.get('typeUri', {}).get('value')) or 'T2DM',
+                'weight': safe_float(row.get('weight', {}).get('value')),
+                'height': safe_float(row.get('height', {}).get('value')),
                 'bmi': safe_float(row.get('bmi', {}).get('value')), 
                 'sbp': safe_float(row.get('sbp', {}).get('value')),
                 'dbp': safe_float(row.get('dbp', {}).get('value')), 
@@ -204,96 +187,139 @@ def process_patient_realtime(patient_id, input_data=None):
                 'micro': row.get('micro', {}).get('value') or "Negative",
             }
 
-        # ✅ Auto-Calculate BMI (ถ้าไม่มี BMI แต่มี นน/สส)
         if data['bmi'] is None and data['weight'] and data['height']:
-            try:
-                h_m = data['height'] / 100.0
-                data['bmi'] = round(data['weight'] / (h_m * h_m), 2)
-                print(f"🧮 Auto-calculated BMI: {data['bmi']}")
+            try: data['bmi'] = round(data['weight'] / ((data['height']/100)**2), 2)
             except: pass
-
         if data['fpg'] is None: data['fpg'] = 100.0
 
-        print(f"🧐 Analyzed Data: {data}")
+        print(f"🧐 Analyzed: {data}")
+        print(f"⭐ Favorites: {target_favorites}")
 
         with onto:
             p = ex.Patient(pid_mem)
-            
-            target_type = data['type']
-            type_obj = getattr(ex, target_type, None)
-            if not type_obj: type_obj = onto.search_one(iri=f"*{target_type}") 
-            if not type_obj: type_obj = ex.DiabetType(target_type)
-            p.diabetType = [type_obj]
+            t_obj = onto.search_one(iri=f"*{data['type']}") or ex.DiabetType(data['type'])
+            p.diabetType = [t_obj]
                 
             pe = ex.PhysicalExam(f"PE_{unique_suffix}")
-            # ✅ ใส่ค่าลง Instance
-            if data['weight'] is not None: pe.hasWeight = [data['weight']]
-            if data['height'] is not None: pe.hasHeight = [data['height']]
-            if data['bmi'] is not None: pe.hasBMI = [data['bmi']]
-            if data['sbp'] is not None: pe.hasSBP = [data['sbp']]
-            if data['dbp'] is not None: pe.hasDBP = [data['dbp']]
+            if data['weight']: pe.hasWeight = [data['weight']]
+            if data['height']: pe.hasHeight = [data['height']]
+            if data['bmi']: pe.hasBMI = [data['bmi']]
+            if data['sbp']: pe.hasSBP = [data['sbp']]
+            if data['dbp']: pe.hasDBP = [data['dbp']]
             
             pe.hasSpecialComplication = [] 
-            for sp_name in target_specials:
-                sp_obj = getattr(ex, sp_name, None)
-                if not sp_obj: sp_obj = onto.search_one(iri=f"*{sp_name}")
-                if not sp_obj: sp_obj = ex.Complication(sp_name)
+            for sp in target_specials:
+                sp_obj = onto.search_one(iri=f"*{sp}") or ex.Complication(sp)
                 pe.hasSpecialComplication.append(sp_obj)
-            
             p.hasPhysicalExam = [pe]
             
             le = ex.LabExam(f"LE_{unique_suffix}")
-            if data['chol'] is not None: le.hasTotalCholesterol = [data['chol']]
-            if data['ldl'] is not None: le.hasLDL = [data['ldl']]
-            if data['hdl'] is not None: le.hasHDL = [data['hdl']]
-            if data['tri'] is not None: le.hasTriglyceride = [data['tri']]
-            if data['fpg'] is not None: le.hasFPG = [data['fpg']]
+            if data['chol']: le.hasTotalCholesterol = [data['chol']]
+            if data['ldl']: le.hasLDL = [data['ldl']]
+            if data['hdl']: le.hasHDL = [data['hdl']]
+            if data['tri']: le.hasTriglyceride = [data['tri']]
+            if data['fpg']: le.hasFPG = [data['fpg']]
             le.hasKetone = [data['ketone']]
             le.hasMicroalbuminurin = [data['micro']]
             p.hasLabExam = [le]
 
+            p.favoriteExercise = []
+            for f in target_favorites:
+                # ✅ ค้นหาท่าออกกำลังกายให้เจอจริงๆ
+                f_obj = onto.search_one(iri=f"*{f}")
+                if not f_obj: 
+                    print(f"⚠️ Warning: Exercise '{f}' not found in Ontology! Creating temp instance.")
+                    f_obj = ex.Exercise(f)
+                p.favoriteExercise.append(f_obj)
+
         print("🧠 Running Reasoner...")
         sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
         
-        # ... (ส่วน Extract Result เหมือนเดิม) ...
+        # --- 🕵️‍♂️ DEBUG SECTION (ใส่ตรงนี้ไม่พังแน่นอน) ---
+        print("\n🕵️‍♂️ --- DEBUGGING EXERCISE ---")
+        print(f"User Favorites: {target_favorites}")
+        
+        # 1. เช็ค Avoid List
+        avoids = [val.name for val in getattr(p, "avoidExercise", [])]
+        print(f"⛔ Avoid List: {avoids}")
+        
+        # 2. เช็ค Recommended List
+        recs_debug = [val.name for val in getattr(p, "recommendedExercise", [])]
+        print(f"✅ Recommended (Rule-based): {recs_debug}")
+        
+        # 3. เช็ค Fallback Logic
+        fallback_candidates = []
+        if not recs_debug and target_favorites:
+            for f_obj in p.favoriteExercise:
+                if f_obj.name not in avoids:
+                    fallback_candidates.append(f_obj.name)
+        print(f"🔄 Fallback Candidates: {fallback_candidates}")
+        print("--------------------------------\n")
+        # ------------------------------------------
+
         print("🔍 Extracting Results...")
         recs, warns, comorbs, complis = [], [], [], [] 
         s_recs, s_warns, s_comorbs, s_complis = [], [], [], []
 
-        for prop in p.get_properties():
-            values = prop[p]
-            prop_iri = prop.iri
-            target_list, save_list = None, None
-            
-            if prop_iri.endswith("recommendedExercise"): target_list, save_list = recs, s_recs
-            elif prop_iri.endswith("hasPatientWarning"): target_list, save_list = warns, s_warns
-            elif prop_iri.endswith("hasComorbidity"): target_list, save_list = comorbs, s_comorbs
-            elif prop_iri.endswith("hasComplication"): target_list, save_list = complis, s_complis
-            
-            if target_list is not None:
-                for val in values:
-                    if hasattr(val, 'name'):
-                        target_list.append(get_thai_text(val))
-                        save_list.append(val.name)
-
-        recs = list(set(recs)); warns = list(set(warns)); comorbs = list(set(comorbs)); complis = list(set(complis))
-        s_recs = list(set(s_recs)); s_warns = list(set(s_warns)); s_comorbs = list(set(s_comorbs)); s_complis = list(set(s_complis))
-
-        print(f"✅ Result: W={len(warns)}, Cb={len(comorbs)}, Cp={len(complis)}")
+        # 1. Exercises (Logic ที่รวม Debug แล้ว)
+        recs_list = list(p.recommendedExercise)
         
-        save_results_to_db(patient_id, s_recs, s_warns, s_comorbs, s_complis)
+        # Fallback
+        if not recs_list and target_favorites:
+            avoid = [val.name for val in getattr(p, "avoidExercise", [])]
+            for f in p.favoriteExercise:
+                if f.name not in avoid: recs_list.append(f)
+
+        for r in list(set(recs_list)):
+            s_recs.append(r.name)
+            name = get_thai_text(r)
+            
+            # ดึง Detail แบบปลอดภัย
+            details = []
+            try:
+                # Intensity
+                ints = getattr(r, "intensityOfExercise", [])
+                if not isinstance(ints, list): ints = [ints]
+                for i in ints:
+                    if hasattr(i, 'label') and i.label: details.append(str(i.label[0]))
+                    elif hasattr(i, 'name'): details.append(str(i.name))
+                    else: details.append(str(i))
+                
+                # Frequency
+                freqs = getattr(r, "exerciseFrequency", [])
+                if not isinstance(freqs, list): freqs = [freqs]
+                for f in freqs:
+                    if hasattr(f, 'label') and f.label: details.append(str(f.label[0]))
+                    elif hasattr(f, 'name'): details.append(str(f.name))
+                    else: details.append(str(f))
+            except: pass
+            
+            if details: recs.append(f"{name} ({', '.join(details)})")
+            else: recs.append(name)
+
+        # 2. Warnings / Others
+        for w in p.hasPatientWarning: 
+            warns.append(get_thai_text(w)); s_warns.append(w.name)
+        for c in p.hasComorbidity: 
+            comorbs.append(get_thai_text(c)); s_comorbs.append(c.name)
+        for cp in p.hasComplication: 
+            complis.append(get_thai_text(cp)); s_complis.append(cp.name)
+
+        recs = list(set(recs)); warns = list(set(warns))
+        comorbs = list(set(comorbs)); complis = list(set(complis))
+
+        print(f"✅ Result: Ex={len(recs)}, W={len(warns)}")
+        
+        save_results_to_db(patient_id, list(set(s_recs)), list(set(s_warns)), list(set(s_comorbs)), list(set(s_complis)))
         return recs, warns, comorbs, complis
 
     except Exception as e:
         print(f"❌ Error: {e}")
         traceback.print_exc()
         return [], [], [], [f"Error: {str(e)}"]
-    
     finally:
         if p: destroy_entity(p)
-        if pe: destroy_entity(pe)
-        if le: destroy_entity(le)
-
+        
 def save_results_to_db(pid_num, recs, warns, comorbs, complis):
     if not validate_id(pid_num): return
     pid = f"Patient{pid_num}"
@@ -379,24 +405,47 @@ def delete_patient(patient_id):
 def get_patient_profile(patient_id):
     if not validate_id(patient_id): return None
     pid = f"Patient{patient_id}"
-    # ✅ เพิ่ม ?weight ?height ใน SELECT และ OPTIONAL
+    
+    # 🔥 [แก้ Query] เพิ่มการดึง Intensity และ Frequency
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    SELECT ?fname ?lname ?type ?weight ?height ?bmi ?sbp ?dbp ?chol ?ldl ?fpg ?ketone ?micro ?specialName ?recName ?warnDesc ?comorbName ?compliName
+    SELECT ?fname ?lname ?type ?weight ?height ?bmi ?sbp ?dbp ?chol ?ldl ?fpg ?ketone ?micro ?specialName 
+           ?recName ?recInten ?recFreq 
+           ?warnDesc ?comorbName ?compliName
     WHERE {{
         ex:{pid} a ex:Patient ; ex:diabetType ?typeUri .
         BIND(STRAFTER(STR(?typeUri), "#") AS ?type)
         OPTIONAL {{ ex:{pid} ex:firstname ?fname }} OPTIONAL {{ ex:{pid} ex:lastname ?lname }}
         OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . 
-                    OPTIONAL {{ ?pe ex:hasWeight ?weight }} 
-                    OPTIONAL {{ ?pe ex:hasHeight ?height }}
+                    OPTIONAL {{ ?pe ex:hasWeight ?weight }} OPTIONAL {{ ?pe ex:hasHeight ?height }}
                     OPTIONAL {{ ?pe ex:hasBMI ?bmi }} OPTIONAL {{ ?pe ex:hasSBP ?sbp }} OPTIONAL {{ ?pe ex:hasDBP ?dbp }} 
                     OPTIONAL {{ ?pe ex:hasSpecialComplication ?special . BIND(STRAFTER(STR(?special), "#") AS ?specialName) }} }}
         OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . 
                     OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
                     OPTIONAL {{ ?le ex:hasFPG ?fpg }} OPTIONAL {{ ?le ex:hasKetone ?ketone }} OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }} }}
-        OPTIONAL {{ ex:{pid} ex:recommendedExercise ?rec . OPTIONAL {{ ?rec rdfs:label ?recLabel }} BIND(COALESCE(?recLabel, STRAFTER(STR(?rec), "#")) AS ?recName) }} 
+        
+        # 🔥 [แก้ตรงนี้] ดึง Exercise Details แบบปลอดภัย
+        OPTIONAL {{ 
+            ex:{pid} ex:recommendedExercise ?rec . 
+            OPTIONAL {{ ?rec rdfs:label ?recLabel }} 
+            BIND(COALESCE(?recLabel, STRAFTER(STR(?rec), "#")) AS ?recName)
+            
+            # ดึง Intensity: ถ้ามี Label เอา Label, ถ้าไม่มีเอาค่าตรงๆ (String), ถ้าเป็น URI เอาชื่อหลัง #
+            OPTIONAL {{ 
+                ?rec ex:intensityOfExercise ?intRaw . 
+                OPTIONAL {{ ?intRaw rdfs:label ?intLabel }}
+                BIND(COALESCE(?intLabel, STRAFTER(STR(?intRaw), "#"), STR(?intRaw)) AS ?recInten)
+            }}
+            
+            # ดึง Frequency: ทำเหมือนกัน
+            OPTIONAL {{ 
+                ?rec ex:exerciseFrequency ?frqRaw . 
+                OPTIONAL {{ ?frqRaw rdfs:label ?frqLabel }}
+                BIND(COALESCE(?frqLabel, STRAFTER(STR(?frqRaw), "#"), STR(?frqRaw)) AS ?recFreq)
+            }}
+        }} 
+        
         OPTIONAL {{ ex:{pid} ex:hasPatientWarning ?warn . OPTIONAL {{ ?warn ex:description ?wDesc }} OPTIONAL {{ ?warn rdfs:label ?wLabel }} BIND(COALESCE(?wDesc, ?wLabel, STRAFTER(STR(?warn), "#")) AS ?warnDesc) }}
         OPTIONAL {{ ex:{pid} ex:hasComorbidity ?comorb . OPTIONAL {{ ?comorb rdfs:label ?cLabel }} BIND(COALESCE(?cLabel, STRAFTER(STR(?comorb), "#")) AS ?comorbName) }}
         OPTIONAL {{ ex:{pid} ex:hasComplication ?compli . OPTIONAL {{ ?compli rdfs:label ?cpLabel }} BIND(COALESCE(?cpLabel, STRAFTER(STR(?compli), "#")) AS ?compliName) }}
@@ -406,20 +455,47 @@ def get_patient_profile(patient_id):
     results = sparql_read.query().convert()
     bindings = results["results"]["bindings"]
     if not bindings: return None
+    
     first = bindings[0]
     info = {
         "firstname": first.get("fname", {}).get("value", "-"), "lastname": first.get("lname", {}).get("value", "-"),
         "type": first.get("type", {}).get("value", "-"), 
-        "weight": first.get("weight", {}).get("value", "-"), # ✅
-        "height": first.get("height", {}).get("value", "-"), # ✅
+        "weight": first.get("weight", {}).get("value", "-"),
+        "height": first.get("height", {}).get("value", "-"),
         "bmi": first.get("bmi", {}).get("value", "-"),
         "sbp": first.get("sbp", {}).get("value", "-"), "dbp": first.get("dbp", {}).get("value", "-"),
         "chol": first.get("chol", {}).get("value", "-"), "ldl": first.get("ldl", {}).get("value", "-"),
         "fpg": first.get("fpg", {}).get("value", "-"), "ketone": first.get("ketone", {}).get("value", "-"),
         "micro": first.get("micro", {}).get("value", "-"), "special": first.get("specialName", {}).get("value", ""),
     }
-    def extract_set(key): return set([r[key]["value"] for r in bindings if key in r])
+
+    # 🔥 [Logic รวมข้อมูล] Group ชื่อท่า + รายละเอียด ไม่ให้บรรทัดซ้ำ
+    ex_dict = {}
+    for r in bindings:
+        if "recName" in r:
+            name = r["recName"]["value"]
+            if name not in ex_dict: ex_dict[name] = {"int": set(), "freq": set()}
+            
+            if "recInten" in r: ex_dict[name]["int"].add(r["recInten"]["value"])
+            if "recFreq" in r: ex_dict[name]["freq"].add(r["recFreq"]["value"])
+            
+    final_exercises = []
+    for name, det in ex_dict.items():
+        info_parts = []
+        if det["int"]: info_parts.append(f"ความหนัก: {', '.join(det['int'])}")
+        if det["freq"]: info_parts.append(f"ความถี่: {', '.join(det['freq'])}")
+        
+        if info_parts:
+            final_exercises.append(f"{name} ({' | '.join(info_parts)})")
+        else:
+            final_exercises.append(name)
+
+    def extract_set(key): return list(set([r[key]["value"] for r in bindings if key in r]))
+
     return {
-        "info": info, "exercises": list(extract_set("recName")), "warnings": list(extract_set("warnDesc")),
-        "comorbs": list(extract_set("comorbName")), "complis": list(extract_set("compliName"))
+        "info": info, 
+        "exercises": final_exercises, # ✅ ส่งค่าที่จัด Format แล้วกลับไป
+        "warnings": extract_set("warnDesc"),
+        "comorbs": extract_set("comorbName"), 
+        "complis": extract_set("compliName")
     }

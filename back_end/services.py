@@ -499,3 +499,5 @@ def get_patient_profile(patient_id):
         "comorbs": extract_set("comorbName"), 
         "complis": extract_set("compliName")
     }
+    
+    a

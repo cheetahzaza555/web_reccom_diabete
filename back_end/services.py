@@ -13,7 +13,7 @@ from owlready2 import *
 # 1. Config
 # ==========================================
 REPO_NAME = "Project" 
-GRAPHDB_BASE = "http://localhost:7200/repositories"
+GRAPHDB_BASE = "http://26.216.54.98:7200/repositories"
 GRAPHDB_READ = f"{GRAPHDB_BASE}/{REPO_NAME}"
 GRAPHDB_WRITE = f"{GRAPHDB_BASE}/{REPO_NAME}/statements"
 

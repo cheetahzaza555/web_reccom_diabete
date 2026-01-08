@@ -3,231 +3,1052 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diabetes Expert System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Diabetes Expert System | ระบบผู้เชี่ยวชาญเบาหวาน</title>
     
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; padding-bottom: 50px; }
-        .header-section { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; padding: 40px 0; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .form-label { font-weight: 600; color: #555; font-size: 0.9rem; }
-        .section-title { border-bottom: 2px solid #e9ecef; padding-bottom: 8px; margin-bottom: 15px; color: #4ca1af; font-weight: bold; }
-        .btn-analyze { width: 100%; font-weight: bold; padding: 12px; border-radius: 8px; }
-        
-        .result-box { padding: 15px; border-radius: 10px; height: 100%; border-left: 5px solid gray; background: #fff; }
-        .res-warn { border-left-color: #dc3545; background-color: #fff5f5; }
-        .res-exercise { border-left-color: #198754; background-color: #e8f5e9; }
-        .res-comorb { border-left-color: #0d6efd; background-color: #e3f2fd; }
-        .res-compli { border-left-color: #fd7e14; background-color: #fff8e1; }
-        .list-group-item { border: none; background: transparent; padding: 5px 0; }
-        
-        .profile-table th { background-color: #f8f9fa; width: 40%; font-size: 0.9rem; color: #666; }
-        .profile-table td { font-size: 0.95rem; font-weight: 600; color: #333; }
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #0cebeb 0%, #20e3b2 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --card-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            --card-hover-shadow: 0 15px 50px rgba(0,0,0,0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        /* 🎯 Header Section */
+        .header-wrapper {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+            animation: slideDown 0.6s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .header-subtitle {
+            color: #6c757d;
+            font-weight: 400;
+            font-size: 1.1rem;
+        }
+
+        /* 🎴 Card Styles */
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            background: white;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card:hover {
+            box-shadow: var(--card-hover-shadow);
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 1.25rem 1.5rem;
+            border-radius: 20px 20px 0 0 !important;
+        }
+
+        .card-header i {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        /* 📝 Form Elements */
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .input-group-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 0 12px 12px 0;
+            font-weight: 600;
+        }
+
+        #bmi {
+            background: linear-gradient(135deg, #0cebeb 0%, #20e3b2 100%);
+            color: white;
+            font-weight: 700;
+            border: none;
+            font-size: 1.1rem;
+        }
+
+        /* 🎨 Section Dividers */
+        .section-title {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #667eea;
+            display: inline-block;
+        }
+
+        .section-divider {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            margin: 1.5rem 0;
+        }
+
+        /* ✅ Checkboxes */
+        .form-check {
+            padding: 0.75rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-check:hover {
+            background: #f8f9fa;
+        }
+
+        .form-check-input {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 2px solid #667eea;
+            margin-top: 0.1rem;
+        }
+
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .form-check-label {
+            font-weight: 500;
+            margin-left: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* 🎯 Special Complications Box */
+        .complications-box {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+            border: 2px dashed #dc3545;
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+
+        /* 💚 Favorite Activities Box */
+        .favorite-box {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 2px solid #4caf50;
+        }
+
+        .favorite-title {
+            color: #2e7d32;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* 🔘 Analyze Button */
+        .btn-analyze {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 1rem 2rem;
+            font-weight: 700;
+            font-size: 1.2rem;
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+
+        .btn-analyze:active {
+            transform: translateY(-1px);
+        }
+
+        /* 📊 Result Section */
+        .result-section {
+            animation: slideInUp 0.6s ease;
+            border-top: 5px solid #667eea;
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-section .card-header {
+            background: linear-gradient(135deg, #0cebeb 0%, #20e3b2 100%);
+        }
+
+        /* 🎨 Alert Boxes */
+        .alert-custom {
+            border: none;
+            border-radius: 15px;
+            padding: 1.5rem;
+            border-left: 5px solid;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .alert-warning-custom {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+            border-left-color: #ffc107;
+        }
+
+        .alert-danger-custom {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%);
+            border-left-color: #dc3545;
+        }
+
+        .alert-success-custom {
+            background: linear-gradient(135deg, #d1e7dd 0%, #badbcc 100%);
+            border-left-color: #198754;
+        }
+
+        .alert-info-custom {
+            background: linear-gradient(135deg, #cff4fc 0%, #9eeaf9 100%);
+            border-left-color: #0dcaf0;
+        }
+
+        .alert-heading {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-heading i {
+            margin-right: 0.5rem;
+        }
+
+        /* 📋 Lists */
+        ul {
+            padding-left: 1.5rem;
+            margin-bottom: 0;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+
+        /* 🌟 Favorite Highlight */
+        .fav-highlight {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 2px dashed #4caf50;
+            margin-top: 1rem;
+        }
+
+        .fav-highlight h6 {
+            color: #2e7d32;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .fav-highlight i {
+            color: #ffc107;
+        }
+
+        /* 🔍 Search Section */
+        .search-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .search-card .btn {
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 0.6rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-card .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .search-card .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .search-card .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            color: white;
+        }
+
+        .search-card .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            border: none;
+        }
+
+        /* 📱 Responsive Design */
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 1.8rem;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .btn-analyze {
+                font-size: 1rem;
+                padding: 0.8rem 1.5rem;
+            }
+        }
+
+        /* 🎭 Loading Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* 🎨 Badge Styles */
+        .badge-custom {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* ✨ Icon Animations */
+        .card-header i {
+            animation: bounce 2s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* 🌈 Progress Bar */
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+            background: #e9ecef;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            animation: progressAnimation 1.5s ease;
+        }
+
+        @keyframes progressAnimation {
+            from { width: 0%; }
+        }
+
+        /* 🔔 Toast Notification */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .custom-toast {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: none;
+            min-width: 300px;
+        }
+
+        .custom-toast.toast-success {
+            background: linear-gradient(135deg, #d1e7dd 0%, #badbcc 100%);
+            border-left: 5px solid #198754;
+        }
+
+        .custom-toast.toast-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%);
+            border-left: 5px solid #dc3545;
+        }
+
+        .custom-toast.toast-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+            border-left: 5px solid #ffc107;
+        }
     </style>
 </head>
+<script>
+/* =========================================================
+   AUTH & NAVBAR SYSTEM (CLEAN VERSION)
+   ========================================================= */
+
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(base64));
+    } catch (e) {
+        return null;
+    }
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+}
+
+function initAuth() {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    const payload = parseJwt(token);
+
+    if (!payload || !payload.exp) {
+        logout();
+        return;
+    }
+
+    // Token expired
+    if (Date.now() >= payload.exp * 1000) {
+        logout();
+        return;
+    }
+
+    // Update Navbar
+    document.getElementById("nav-username").innerText = payload.username || "Unknown";
+    document.getElementById("nav-role").innerText = payload.role || "USER";
+
+    // Optional: Admin UI control
+    if (payload.role !== "ADMIN") {
+        const deleteBtn = document.querySelector(".btn-danger");
+        if (deleteBtn) deleteBtn.style.display = "none";
+    }
+}
+
+/* =========================================================
+   PAGE LOAD
+   ========================================================= */
+window.addEventListener("load", () => {
+    initAuth();
+    console.log("✅ Auth initialized");
+});
+</script>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">
+            <i class="bi bi-heart-pulse-fill text-danger"></i>
+            Diabetes Expert System
+        </a>
 
-    <div class="header-section text-center">
-        <div class="container">
-            <h1 class="fw-bold"><i class="bi bi-robot"></i> ระบบผู้เชี่ยวชาญเบาหวาน</h1>
-            <p class="mb-0">Semantic Web Expert System</p>
+        <div class="d-flex align-items-center ms-auto text-white">
+            <i class="bi bi-person-circle fs-4 me-2"></i>
+            <div class="me-3">
+                <div id="nav-username" class="fw-semibold">User</div>
+                    <small class="text-warning" id="nav-role">ROLE</small>
+                </div>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
         </div>
-    </div>
+    </nav>
 
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-lg-7">
-                <div class="card h-100">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="mb-0 text-primary"><i class="bi bi-file-earmark-medical"></i> บันทึกข้อมูลผู้ป่วย</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-12"><div class="section-title">ข้อมูลทั่วไป</div></div>
-                            <div class="col-md-4">
-                                <label class="form-label">ID ผู้ป่วย</label>
-                                <input type="number" id="pid" class="form-control" placeholder="101">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">ชนิดเบาหวาน</label>
-                                <select id="dtype" class="form-select">
-                                    <option value="T2DM">Type 2</option>
-                                    <option value="T1DM">Type 1</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">BMI</label>
-                                <input type="number" step="0.1" id="bmi" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">ชื่อ</label>
-                                <input type="text" id="fname" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">นามสกุล</label>
-                                <input type="text" id="lname" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">SBP (บน)</label>
-                                <input type="number" id="sbp" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">DBP (ล่าง)</label>
-                                <input type="number" id="dbp" class="form-control">
-                            </div>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
-                            <div class="col-12 mt-4"><div class="section-title">ผล Lab</div></div>
-                            <div class="col-md-6">
-                                <label class="form-label">FPG</label>
-                                <input type="number" id="fpg" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Cholesterol</label>
-                                <input type="number" id="chol" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">LDL</label>
-                                <input type="number" id="ldl" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">HDL</label>
-                                <input type="number" id="hdl" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Triglyceride</label>
-                                <input type="number" id="tri" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Ketone</label>
-                                <select id="ketone" class="form-select">
-                                    <option value="Negative">Negative</option>
-                                    <option value="Positive">Positive</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Microalbuminuria</label>
-                                <select id="micro" class="form-select">
-                                    <option value="Negative">Negative</option>
-                                    <option value="Positive">Positive</option>
-                                </select>
-                            </div>
+    <div class="container py-4">
+        <!-- ==========================================
+             SECTION 1: HEADER
+             ========================================== -->
+        <div class="header-wrapper text-center">
+            <h1 class="header-title">
+                <i class="bi bi-hospital-fill"></i> 
+                ระบบผู้เชี่ยวชาญวินิจฉัยโรคเบาหวาน
+            </h1>
+            <p class="header-subtitle">
+                <i class="bi bi-shield-check"></i> Diabetes Expert System powered by Ontology & GraphDB
+            </p>
+            <div class="mt-3">
+                <span class="badge bg-primary badge-custom me-2">
+                    <i class="bi bi-check-circle-fill"></i> AI-Powered
+                </span>
+                <span class="badge bg-success badge-custom me-2">
+                    <i class="bi bi-graph-up"></i> Real-time Analysis
+                </span>
+                <span class="badge bg-info badge-custom">
+                    <i class="bi bi-heart-pulse-fill"></i> Medical Grade
+                </span>
+            </div>
+        </div>
 
-                            <div class="col-12 mt-4"><div class="section-title">ภาวะแทรกซ้อนพิเศษ</div></div>
-                            <div class="col-12">
-                                <div class="bg-light p-3 rounded border">
-                                    <div class="row g-2">
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input special-check" type="checkbox" value="AutonomicNeuropathy" id="sc1">
-                                                <label class="form-check-label" for="sc1">Autonomic Neuropathy</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input special-check" type="checkbox" value="HeartDisease" id="sc2">
-                                                <label class="form-check-label" for="sc2">Heart Disease</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input special-check" type="checkbox" value="Retinopathy" id="sc3">
-                                                <label class="form-check-label" for="sc3">Retinopathy</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input special-check" type="checkbox" value="PeripheralNeuropathy" id="sc4">
-                                                <label class="form-check-label" for="sc4">Peripheral Neuropathy</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <small class="text-muted mt-2 d-block">* หากไม่มีให้เว้นว่างไว้ ระบบจะระบุเป็น NoOtherComplication อัตโนมัติ</small>
-                                </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-11 col-xl-10">
+                
+                <!-- ==========================================
+                     SECTION 2: PATIENT SEARCH & MANAGEMENT
+                     ========================================== -->
+                <div class="search-card mb-4">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-12 col-md-auto">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-search fs-3 text-primary me-3"></i>
+                                <strong class="text-primary">จัดการข้อมูลผู้ป่วย:</strong>
                             </div>
-
-                            <div class="col-12 mt-4">
-                                <button class="btn btn-success btn-analyze shadow-sm" onclick="analyzeData()">
-                                    <i class="bi bi-rocket-takeoff"></i> ประมวลผล
+                        </div>
+                        <div class="col-12 col-md">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-hash"></i>
+                                </span>
+                                <input type="text" id="search_id" class="form-control" placeholder="ระบุ ID ผู้ป่วยที่ต้องการค้นหา...">
+                                <button class="btn btn-primary" onclick="searchPatient()">
+                                    <i class="bi bi-search me-1"></i> ค้นหา
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-warning" onclick="reprocessPatient()">
+                                    <i class="bi bi-lightning-fill me-1"></i> รันใหม่
+                                </button>
+                                <button class="btn btn-danger" onclick="deletePatient()">
+                                    <i class="bi bi-trash-fill me-1"></i> ลบข้อมูล
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-lg-5">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <label class="form-label fw-bold"><i class="bi bi-search"></i> ค้นหาผู้ป่วยเก่า</label>
-                        <div class="input-group">
-                            <input type="text" id="search_id" class="form-control" placeholder="ID...">
-                            <button class="btn btn-primary" onclick="searchPatient()">ค้นหา</button>
+                <!-- ==========================================
+                     SECTION 3: PATIENT INFORMATION FORM
+                     ========================================== -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-person-vcard-fill"></i> ข้อมูลผู้ป่วย (Patient Information)
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">
+                                    <i class="bi bi-hash text-primary"></i> รหัสผู้ป่วย (ID) *
+                                </label>
+                                <input type="number" id="pid" class="form-control" placeholder="เช่น 101" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">
+                                    <i class="bi bi-clipboard-pulse text-danger"></i> ประเภทเบาหวาน (Type)
+                                </label>
+                                <select id="dtype" class="form-select">
+                                    <option value="T2DM">T2DM (Type 2)</option>
+                                    <option value="T1DM">T1DM (Type 1)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">
+                                    <i class="bi bi-person text-success"></i> ชื่อจริง
+                                </label>
+                                <input type="text" id="fname" class="form-control" placeholder="ระบุชื่อ">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">
+                                    <i class="bi bi-person-badge text-info"></i> นามสกุล
+                                </label>
+                                <input type="text" id="lname" class="form-control" placeholder="ระบุนามสกุล">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="result" class="d-none">
-                    <div class="card mb-3 border-info">
-                        <div class="card-header bg-info text-white">
-                            <h6 class="mb-0"><i class="bi bi-person-vcard"></i> ข้อมูลผู้ป่วย</h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <table class="table table-striped mb-0 profile-table">
-                                <tbody id="profileTableBody"></tbody>
-                            </table>
-                        </div>
+                <!-- ==========================================
+                     SECTION 4: PHYSICAL & LAB RESULTS
+                     ========================================== -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-activity"></i> ผลตรวจร่างกายและห้องปฏิบัติการ (Physical & Laboratory Results)
                     </div>
+                    <div class="card-body p-4">
+                        
+                        <!-- 4.1 Body Measurements -->
+                        <h6 class="section-title">
+                            <i class="bi bi-body-text"></i> สัดส่วนร่างกาย (Body Measurements)
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-speedometer2 text-primary"></i> น้ำหนัก (Weight)
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" id="weight" class="form-control" step="0.1" placeholder="0.0">
+                                    <span class="input-group-text">kg</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-arrows-vertical text-success"></i> ส่วนสูง (Height)
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" id="height" class="form-control" step="0.1" placeholder="0.0">
+                                    <span class="input-group-text">cm</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-calculator text-info"></i> BMI (คำนวณอัตโนมัติ)
+                                </label>
+                                <input type="number" id="bmi" class="form-control" readonly placeholder="กรอกน้ำหนักและส่วนสูง">
+                            </div>
+                        </div>
 
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <div class="result-box res-warn">
-                                <h6 class="text-danger fw-bold">คำเตือน</h6>
-                                <ul id="warnList" class="list-group list-group-flush small"></ul>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="result-box res-exercise">
-                                <h6 class="text-success fw-bold">แนะนำออกกำลังกาย</h6>
-                                <ul id="exList" class="list-group list-group-flush small"></ul>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="result-box res-comorb">
-                                <h6 class="text-primary fw-bold">โรคร่วม</h6>
-                                <ul id="comorbList" class="list-group list-group-flush small"></ul>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="result-box res-compli">
-                                <h6 class="text-warning fw-bold" style="color:#fd7e14">ภาวะแทรกซ้อน</h6>
-                                <ul id="compliList" class="list-group list-group-flush small"></ul>
-                            </div>
-                        </div>
-                    </div>
+                        <hr class="section-divider">
 
-                    <div class="card mt-3 bg-light">
-                        <div class="card-body d-flex justify-content-between">
-                            <button class="btn btn-warning btn-sm" onclick="reprocessPatient()">รันกฎใหม่</button>
-                            <button class="btn btn-danger btn-sm" onclick="deletePatient()">ลบข้อมูล</button>
+                        <!-- 4.2 Blood & Pressure Tests -->
+                        <h6 class="section-title">
+                            <i class="bi bi-droplet-half"></i> ผลเลือดและความดัน (Blood & Pressure Tests)
+                        </h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label">
+                                    <i class="bi bi-droplet-fill text-danger"></i> FPG (Fasting Glucose)
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" id="fpg" class="form-control" placeholder="0">
+                                    <span class="input-group-text">mg/dL</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label">
+                                    <i class="bi bi-arrow-up-circle text-danger"></i> SBP (ความดันบน)
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" id="sbp" class="form-control" placeholder="0">
+                                    <span class="input-group-text">mmHg</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label">
+                                    <i class="bi bi-arrow-down-circle text-primary"></i> DBP (ความดันล่าง)
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" id="dbp" class="form-control" placeholder="0">
+                                    <span class="input-group-text">mmHg</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label">
+                                    <i class="bi bi-graph-up text-warning"></i> Cholesterol
+                                </label>
+                                <input type="number" id="chol" class="form-control" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label">
+                                    <i class="bi bi-shield-x text-danger"></i> LDL (Bad Cholesterol)
+                                </label>
+                                <input type="number" id="ldl" class="form-control" placeholder="0">
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label">
+                                    <i class="bi bi-shield-check text-success"></i> HDL (Good Cholesterol)
+                                </label>
+                                <input type="number" id="hdl" class="form-control" placeholder="0">
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label">
+                                    <i class="bi bi-water text-info"></i> Triglyceride
+                                </label>
+                                <input type="number" id="tri" class="form-control" placeholder="0">
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+
+                        <!-- 4.3 Special Tests -->
+                        <h6 class="section-title">
+                            <i class="bi bi-clipboard2-pulse"></i> ผลตรวจพิเศษ (Special Tests)
+                        </h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="bi bi-moisture text-warning"></i> Ketone (คีโตน)
+                                </label>
+                                <select id="ketone" class="form-select">
+                                    <option value="Negative">❌ Negative (ปกติ)</option>
+                                    <option value="Positive">⚠️ Positive (ผิดปกติ)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="bi bi-clipboard-check text-info"></i> Microalbuminuria
+                                </label>
+                                <select id="micro" class="form-select">
+                                    <option value="Negative">❌ Negative (ปกติ)</option>
+                                    <option value="Positive">⚠️ Positive (ผิดปกติ)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+
+                        <!-- 4.4 Complications -->
+                        <h6 class="section-title">
+                            <i class="bi bi-exclamation-triangle-fill"></i> ภาวะแทรกซ้อนพิเศษ (Special Complications)
+                        </h6>
+                        <div class="complications-box">
+                            <div class="row g-2">
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="special" value="PeripheralNeuropathy" id="chkPeri">
+                                        <label class="form-check-label" for="chkPeri">
+                                            <i class="bi bi-hand-index-thumb text-warning"></i> ปลายประสาทเสื่อม
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="special" value="AutonomicNeuropathy" id="chkAuto">
+                                        <label class="form-check-label" for="chkAuto">
+                                            <i class="bi bi-cpu text-info"></i> ประสาทอัตโนมัติ
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="special" value="Retinopathy" id="chkRetin">
+                                        <label class="form-check-label" for="chkRetin">
+                                            <i class="bi bi-eye-fill text-primary"></i> จอประสาทตาเสื่อม
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)">
+                                        <label class="form-check-label fw-bold text-success" for="chkNoOther">
+                                            <i class="bi bi-check-circle-fill"></i> ไม่มีภาวะแทรกซ้อนอื่น (NoOther)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- ==========================================
+                     SECTION 5: FAVORITE EXERCISE ACTIVITIES
+                     ========================================== -->
+                <div class="card border-success">
+                    <div class="card-header" style="background: linear-gradient(135deg, #0cebeb 0%, #20e3b2 100%);">
+                        <i class="bi bi-heart-pulse-fill"></i> ประเภทการออกกำลังกายที่ชอบ (Favorite Exercise Activities)
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="favorite-box">
+                            <p class="favorite-title mb-3">
+                                <i class="bi bi-star-fill text-warning"></i> 
+                                เลือกประเภทที่คุณชื่นชอบ ระบบจะแนะนำท่าที่เหมาะสมและปลอดภัย
+                            </p>
+                            <div class="row" id="pref-container">
+                                <!-- Dynamically populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==========================================
+                     SECTION 6: ANALYZE BUTTON
+                     ========================================== -->
+                <div class="d-grid gap-2 mb-4">
+                    <button class="btn btn-analyze btn-lg" onclick="analyzeData()">
+                        <i class="bi bi-cpu-fill me-2"></i> 
+                        บันทึก & ประมวลผล (Analyze Patient Data)
+                        <i class="bi bi-arrow-right-circle-fill ms-2"></i>
+                    </button>
+                </div>
+
+                <!-- ==========================================
+                     SECTION 7: RESULT DISPLAY
+                     ========================================== -->
+                <div id="result" class="card result-section shadow-lg" style="display:none;">
+                    <div class="card-header">
+                        <i class="bi bi-clipboard-data-fill"></i> ผลการวินิจฉัยและคำแนะนำ (Diagnosis & Recommendations)
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <!-- 7.1 Warnings -->
+                            <div class="col-lg-6">
+                                <div class="alert alert-warning-custom h-100 mb-0">
+                                    <h5 class="alert-heading text-warning-emphasis">
+                                        <i class="bi bi-exclamation-circle-fill"></i> คำเตือน (Warnings)
+                                    </h5>
+                                    <ul id="warnList" class="mb-0"></ul>
+                                </div>
+                            </div>
+
+                            <!-- 7.2 Complications -->
+                            <div class="col-lg-6">
+                                <div class="alert alert-danger-custom h-100 mb-0">
+                                    <h5 class="alert-heading text-danger-emphasis">
+                                        <i class="bi bi-virus"></i> ภาวะแทรกซ้อน (Complications)
+                                    </h5>
+                                    <ul id="compliList" class="mb-0 text-danger"></ul>
+                                </div>
+                            </div>
+
+                            <!-- 7.3 Exercise Recommendations -->
+                            <div class="col-12">
+                                <div class="alert alert-success-custom mb-0">
+                                    <h5 class="alert-heading text-success-emphasis">
+                                        <i class="bi bi-person-walking"></i> แนะนำท่าออกกำลังกาย (Exercise Recommendations)
+                                    </h5>
+                                    <ul id="exList"></ul>
+                                    
+                                    <div class="fav-highlight">
+                                        <h6>
+                                            <i class="bi bi-star-fill"></i> 
+                                            กิจกรรมที่คุณชอบ (Your Favorite Activities)
+                                        </h6>
+                                        <ul id="favList" class="mb-0"></ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 7.4 Comorbidities -->
+                            <div class="col-12">
+                                <div class="alert alert-info-custom mb-0">
+                                    <h6 class="alert-heading text-info-emphasis">
+                                        <i class="bi bi-plus-circle-fill"></i> โรคร่วม (Comorbidities)
+                                    </h6>
+                                    <ul id="comorbList" class="mb-0"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Info -->
+                <div class="text-center mt-5 mb-3">
+                    <p class="text-white-50">
+                        <i class="bi bi-shield-fill-check"></i> 
+                        Powered by Ontology & GraphDB Technology
+                        <span class="mx-2">|</span>
+                        <i class="bi bi-hospital"></i> 
+                        Khon Kaen University
+                    </p>
+                </div>
+
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        async function analyzeData() {
-            // ✅ 1. ดึงค่า Checkbox ทั้งหมดที่ติ๊ก
-            const selectedComplications = [];
-            document.querySelectorAll('.special-check:checked').forEach(cb => {
-                selectedComplications.push(cb.value);
-            });
 
+    <script>
+        // ==========================================
+        // JAVASCRIPT SECTION
+        // ==========================================
+
+        // ✅ Exercise Categories
+        const exerciseCategories = [
+            {id: "Aerobic", label: "Aerobic (แอโรบิกทั่วไป)", icon: "bi-wind"},
+            {id: "Resistance", label: "Resistance (แรงต้าน)", icon: "bi-heart-pulse"},
+            {id: "StretchingExercise", label: "Stretching (ยืดเหยียด/โยคะ)", icon: "bi-person-arms-up"}, 
+            {id: "WeightBearingAerobicExercise", label: "Weight Bearing (ลงน้ำหนัก)", icon: "bi-person-walking"},
+            {id: "NonWeightBearingAerobicExercise", label: "Non-Weight Bearing (ไม่ลงน้ำหนัก)", icon: "bi-bicycle"},
+            {id: "WaterActivity", label: "Water Activity (กิจกรรมในน้ำ)", icon: "bi-water"}
+        ];
+        
+        // Populate favorite exercise checkboxes
+        const prefContainer = document.getElementById('pref-container');
+        exerciseCategories.forEach(cat => {
+            prefContainer.innerHTML += `
+                <div class="col-md-6 col-lg-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="favorites" value="${cat.id}" id="fav_${cat.id}">
+                        <label class="form-check-label" for="fav_${cat.id}">
+                            <i class="bi ${cat.icon} text-success me-1"></i>
+                            ${cat.label}
+                        </label>
+                    </div>
+                </div>`;
+        });
+
+        // ==========================================
+        // BMI AUTO-CALCULATOR
+        // ==========================================
+        function calculateBMI() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const bmiInput = document.getElementById('bmi');
+            
+            if (weight > 0 && height > 0) {
+                const heightInMeters = height / 100;
+                bmiInput.value = (weight / (heightInMeters * heightInMeters)).toFixed(2);
+            } else { 
+                bmiInput.value = ''; 
+            }
+        }
+        
+        document.getElementById('weight').addEventListener('input', calculateBMI);
+        document.getElementById('height').addEventListener('input', calculateBMI);
+
+        // ==========================================
+        // TOGGLE "NO OTHER COMPLICATIONS"
+        // ==========================================
+        function toggleNoOther(checkbox) {
+            if (checkbox.checked) {
+                document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
+                    el.checked = false;
+                });
+            }
+        }
+        
+        document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
+            el.addEventListener('change', () => { 
+                if(el.checked) {
+                    document.getElementById('chkNoOther').checked = false;
+                }
+            });
+        });
+
+        // ==========================================
+        // TOAST NOTIFICATION SYSTEM
+        // ==========================================
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast custom-toast toast-${type} show" role="alert">
+                    <div class="toast-body d-flex align-items-center">
+                        <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : type === 'danger' ? 'bi-x-circle-fill' : 'bi-exclamation-triangle-fill'} fs-4 me-3"></i>
+                        <div class="flex-grow-1">${message}</div>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            
+            setTimeout(() => {
+                const toastEl = document.getElementById(toastId);
+                if (toastEl) {
+                    toastEl.classList.remove('show');
+                    setTimeout(() => toastEl.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // ==========================================
+        // UPDATE LIST HELPER (✅ FIXED - ฟังก์ชันที่หายไป!)
+        // ==========================================
+        function updateList(elementId, items) {
+            const listEl = document.getElementById(elementId);
+            if (!listEl) return;
+            
+            if (!items || items.length === 0) {
+                listEl.innerHTML = '<li class="text-muted">ไม่มีข้อมูล</li>';
+                return;
+            }
+            
+            listEl.innerHTML = items.map(item => `<li>${item}</li>`).join('');
+        }
+
+        // ==========================================
+        // ANALYZE DATA (บันทึกและประมวลผล)
+        // ==========================================
+        async function analyzeData() {
+            const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
+            const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
+            
             const data = {
                 id: document.getElementById('pid').value,
                 type: document.getElementById('dtype').value,
                 firstname: document.getElementById('fname').value,
                 lastname: document.getElementById('lname').value,
+                weight: document.getElementById('weight').value,
+                height: document.getElementById('height').value,
                 bmi: document.getElementById('bmi').value,
                 sbp: document.getElementById('sbp').value,
                 dbp: document.getElementById('dbp').value,
@@ -238,78 +1059,217 @@
                 fpg: document.getElementById('fpg').value,
                 ketone: document.getElementById('ketone').value,
                 micro: document.getElementById('micro').value,
-                // ✅ 2. ส่ง Array ไปแทนค่าเดี่ยว
-                complications: selectedComplications
+                special: selectedSpecials,
+                favorites: selectedFavorites
             };
 
-            if(!data.id) return alert("ระบุ ID ก่อน");
-
+            if(!data.id) {
+                showToast("⚠️ กรุณาใส่รหัสผู้ป่วย (Patient ID)", "warning");
+                document.getElementById('pid').focus();
+                return;
+            }
+            
+            // Show loading state
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-2 loading"></i> กำลังประมวลผล...';
+            
             try {
-                const res = await fetch('/api/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const res = await fetch('/api/analyze', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify(data) 
+                });
+                
                 const json = await res.json();
+                
                 if(json.status === 'ok') {
-                    alert("บันทึกและประมวลผลสำเร็จ");
-                    // สร้าง info object จำลองเพื่อแสดงผลทันที
-                    data.special = selectedComplications.length > 0 ? selectedComplications.join(", ") : "NoOtherComplication";
-                    showResult(json, data);
-                } else {
-                    alert("Error: " + json.message);
+                    showResult(json);
+                    document.getElementById('search_id').value = data.id;
+                    showToast("✅ บันทึกและประมวลผลสำเร็จ!", "success");
+                } else { 
+                    showToast("❌ Error: " + json.message, "danger");
                 }
-            } catch(e) { alert("Server Error"); }
+            } catch(e) { 
+                showToast("⚠️ เชื่อมต่อ Server ไม่ได้: " + e, "danger");
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
         }
 
+        // ==========================================
+        // SEARCH PATIENT (✅ FIXED - ทำงานได้แล้ว!)
+        // ==========================================
         async function searchPatient() {
-            const id = document.getElementById('search_id').value;
-            if(!id) return alert("ใส่ ID");
+            const id = document.getElementById('search_id').value.trim();
+            
+            if(!id) {
+                showToast("⚠️ กรุณาระบุ Patient ID", "warning");
+                document.getElementById('search_id').focus();
+                return;
+            }
+            
             try {
                 const res = await fetch(`/api/patient/${id}`);
                 const json = await res.json();
-                if(json.status === 'error') return alert("ไม่พบข้อมูล");
-                showResult(json, json.info);
-            } catch(e) { alert("Server Error"); }
+                
+                if(json.status === 'error' || !json.info) { 
+                    showToast(`❌ ไม่พบข้อมูลผู้ป่วย ID: ${id}`, "danger");
+                    return; 
+                }
+                
+                // ✅ Populate form with data from database
+                const info = json.info;
+                document.getElementById('pid').value = id;
+                document.getElementById('dtype').value = info.type || 'T2DM';
+                document.getElementById('fname').value = info.firstname || '';
+                document.getElementById('lname').value = info.lastname || '';
+                document.getElementById('weight').value = info.weight || '';
+                document.getElementById('height').value = info.height || '';
+                document.getElementById('bmi').value = info.bmi || '';
+                document.getElementById('sbp').value = info.sbp || '';
+                document.getElementById('dbp').value = info.dbp || '';
+                document.getElementById('chol').value = info.chol || '';
+                document.getElementById('ldl').value = info.ldl || '';
+                document.getElementById('fpg').value = info.fpg || '';
+                document.getElementById('ketone').value = info.ketone || 'Negative';
+                document.getElementById('micro').value = info.micro || 'Negative';
+                
+                // ✅ Clear all checkboxes first
+                document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+                
+                // ✅ Check special complications (if exists)
+                if (info.special) {
+                    const specialCheckbox = document.querySelector(`input[name="special"][value="${info.special}"]`);
+                    if (specialCheckbox) specialCheckbox.checked = true;
+                }
+                
+                // ✅ Check favorite exercises
+                if (json.favorites && json.favorites.length > 0) {
+                    json.favorites.forEach(fav => {
+                        const favCheckbox = document.querySelector(`input[name="favorites"][value="${fav}"]`);
+                        if (favCheckbox) favCheckbox.checked = true;
+                    });
+                }
+                
+                // ✅ Show results
+                showResult(json);
+                showToast(`✅ พบข้อมูลผู้ป่วย ID: ${id}`, "success");
+                
+                // Scroll to form
+                document.querySelector('.card').scrollIntoView({behavior: 'smooth', block: 'start'});
+                
+            } catch(e) {
+                showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message}`, "danger");
+                console.error(e);
+            }
         }
 
+        // ==========================================
+        // REPROCESS PATIENT
+        // ==========================================
         async function reprocessPatient() {
-            const id = document.getElementById('search_id').value || document.getElementById('pid').value;
-            if(!id) return;
-            const res = await fetch(`/api/reprocess/${id}`, { method: 'POST' });
-            const json = await res.json();
-            if(json.status === 'ok') { alert("Done"); searchPatient(); }
+            const id = document.getElementById('search_id').value.trim();
+            
+            if(!id) {
+                showToast("⚠️ กรุณาระบุ Patient ID", "warning");
+                document.getElementById('search_id').focus();
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/api/reprocess/${id}`, { method: 'POST' });
+                const json = await res.json();
+                
+                if(json.status === 'ok') { 
+                    showToast("✅ ประมวลผลใหม่สำเร็จ", "success");
+                    // Refresh data
+                    await searchPatient();
+                } else {
+                    showToast("❌ เกิดข้อผิดพลาด: " + json.message, "danger");
+                }
+            } catch(e) {
+                showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message}`, "danger");
+                console.error(e);
+            }
         }
 
+        // ==========================================
+        // DELETE PATIENT
+        // ==========================================
         async function deletePatient() {
-            const id = document.getElementById('search_id').value;
-            if(!id || !confirm("ลบ?")) return;
-            await fetch(`/api/delete/${id}`, { method: 'DELETE' });
-            alert("Deleted");
-            document.getElementById('result').classList.add('d-none');
-            document.getElementById('search_id').value = '';
+            const id = document.getElementById('search_id').value.trim();
+            
+            if(!id) {
+                showToast("⚠️ กรุณาระบุ Patient ID", "warning");
+                document.getElementById('search_id').focus();
+                return;
+            }
+            
+            if(confirm(`⚠️ ต้องการลบข้อมูลผู้ป่วย ID: ${id} หรือไม่?\n\n⚡ การกระทำนี้ไม่สามารถย้อนกลับได้!`)) {
+                try {
+                    await fetch(`/api/delete/${id}`, { method: 'DELETE' });
+                    showToast("✅ ลบข้อมูลสำเร็จ", "success");
+                    
+                    // Clear form and result
+                    document.querySelectorAll('input[type="text"], input[type="number"]').forEach(el => el.value = '');
+                    document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+                    document.getElementById('result').style.display = 'none';
+                    
+                    setTimeout(() => location.reload(), 1500);
+                } catch(e) {
+                    showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message}`, "danger");
+                    console.error(e);
+                }
+            }
         }
 
-        function showResult(json, info) {
-            document.getElementById('result').classList.remove('d-none');
-            const v = (val) => val ? val : '-';
-            document.getElementById('profileTableBody').innerHTML = `
-                <tr><th>ชื่อ-สกุล</th><td>${v(info.firstname)} ${v(info.lastname)}</td></tr>
-                <tr><th>Type / BMI</th><td>${v(info.type)} / ${v(info.bmi)}</td></tr>
-                <tr><th>ความดัน</th><td>${v(info.sbp)} / ${v(info.dbp)}</td></tr>
-                <tr><th>Lab (FPG)</th><td>${v(info.fpg)}</td></tr>
-                <tr><th>Lab (Chol/LDL)</th><td>${v(info.chol)} / ${v(info.ldl)}</td></tr>
-                <tr><th>Lab (HDL/Tri)</th><td>${v(info.hdl)} / ${v(info.tri)}</td></tr>
-                <tr><th>Lab (Other)</th><td>K:${v(info.ketone)}, M:${v(info.micro)}</td></tr>
-                <tr><th>Special Comp.</th><td class="text-danger">${v(info.special)}</td></tr>
-            `;
+        // ==========================================
+        // SHOW RESULT (แสดงผลลัพธ์)
+        // ==========================================
+        function showResult(json) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            
+            // Smooth scroll to result
+            setTimeout(() => {
+                resultDiv.scrollIntoView({behavior: 'smooth', block: 'start'});
+            }, 100);
+            
+            // Update all lists
             updateList('warnList', json.warnings);
             updateList('exList', json.exercises);
             updateList('comorbList', json.comorbs);
             updateList('compliList', json.complis);
+            updateList('favList', json.favorites);
         }
 
-        function updateList(id, items) {
-            const el = document.getElementById(id);
-            el.innerHTML = (!items || !items.length) ? "<li class='list-group-item text-muted fst-italic'>- ไม่มี -</li>" : 
-            items.map(x => `<li class="list-group-item"><i class="bi bi-caret-right-fill opacity-50"></i> ${x}</li>`).join('');
-        }
+        // ==========================================
+        // ENTER KEY SUPPORT FOR SEARCH
+        // ==========================================
+        document.getElementById('search_id').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchPatient();
+            }
+        });
+
+        document.getElementById('pid').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('fname').focus();
+            }
+        });
+
+        // ==========================================
+        // PAGE LOAD: Show welcome message
+        // ==========================================
+        window.addEventListener('load', function() {
+            console.log('🏥 Diabetes Expert System Loaded Successfully!');
+            console.log('📊 Ready to analyze patient data');
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <h2>เข้าสู่ระบบ</h2>
+
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" required><br><br>
+        <input type="password" id="password" placeholder="Password" required><br><br>
+        <button type="submit">Login</button>
+    </form>
+
+    <p id="msg"></p>
+
+    <p>
+        ยังไม่มีบัญชี?
+        <a href="/register">สมัครสมาชิก</a>
+    </p>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const res = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: username.value,
+                    password: password.value
+                })
+            });
+
+            const data = await res.json();
+            if (data.status === "ok") {
+                localStorage.setItem("token", data.token);
+                window.location.href = "/";
+            } else {
+                document.getElementById("msg").innerText = data.message;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -371,11 +371,11 @@ def save_raw_patient_data(data):
     pid = f"Patient{data['id']}"
     
     try:
-        # 1. ลบข้อมูลเก่า
+        # 1. ลบข้อมูลเก่า (คงเดิม)
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ?s ?p ?o . ?pe ?pp ?oo . ?le ?lp ?lo }} WHERE {{ ?s ?p ?o . FILTER(?s = ex:{pid}) OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} }}")
         sparql_write.query()
         
-        # 2. เตรียมข้อมูล
+        # 2. เตรียมข้อมูล (คงเดิม)
         fname = escape_sparql(data.get('firstname', '-'))
         lname = escape_sparql(data.get('lastname', '-'))
         ketone_val = escape_sparql(data.get('ketone') or "Negative")
@@ -383,7 +383,7 @@ def save_raw_patient_data(data):
         
         def val(k): return safe_float(data.get(k)) or 0
 
-        # จัดการ Special Complication... (เหมือนเดิม)
+        # --- ส่วนจัดการ Special Complication (คงเดิม) ---
         raw_special = data.get('special')
         special_triples = ""
         if isinstance(raw_special, list):
@@ -396,11 +396,21 @@ def save_raw_patient_data(data):
         else:
             special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:NoOtherComplication ."
 
-        # 3. สร้าง Triples (✅ เพิ่ม ex:hasWeight และ ex:hasHeight)
+        # 🔥 [เพิ่มใหม่] จัดการ Exercise Frequency
+        # รับค่าจาก key 'frequency' (เช่น Freq1)
+        freq_val = data.get('frequency') 
+        freq_triple = ""
+        if freq_val:
+            # ต้องเป็น ex:Freq1 (เพราะเป็น ObjectProperty) ห้ามใส่เครื่องหมายคำพูดครอบ value
+            freq_triple = f"ex:{pid} ex:exerciseFrequency ex:{escape_sparql(freq_val)} ."
+
+        # 3. สร้าง Triples (เพิ่ม {freq_triple} เข้าไปใน string ใหญ่)
         triples = f"""
             ex:{pid} a ex:Patient ; ex:diabetType ex:{escape_sparql(data['type'])} ; 
                      ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
                      ex:hasPhysicalExam ex:{pid}_PE ; ex:hasLabExam ex:{pid}_LE .
+            
+            {freq_triple}
             
             ex:{pid}_PE a ex:PhysicalExam ; 
                         ex:hasWeight "{val('weight')}"^^xsd:decimal ; 
@@ -419,6 +429,7 @@ def save_raw_patient_data(data):
         
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
         sparql_write.query()
+        print(f"💾 Saved Raw Data for {pid} (Inc. Frequency)")
         
     except Exception as e:
         print(f"❌ Error saving raw data: {e}")

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+        }
+        .box {
+            width: 350px;
+            margin: 100px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        button {
+            background: #2c7be5;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1a68d1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Register</h2>
+
+<form id="registerForm">
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+
+    <button type="submit">Register</button>
+</form>
+
+<p id="msg"></p>
+
+
+</div>
+
+<script>
+document.getElementById("registerForm").addEventListener("submit", async function(e) {
+    e.preventDefault(); // ❗ สำคัญมาก
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+        const res = await fetch("/api/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            document.getElementById("msg").innerText = "✅ Register สำเร็จ";
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 1000);
+        } else {
+            document.getElementById("msg").innerText = data.error || "❌ Register ไม่สำเร็จ";
+        }
+    } catch (err) {
+        document.getElementById("msg").innerText = "❌ ติดต่อ server ไม่ได้";
+    }
+});
+</script>
+
+</body>
+</html>

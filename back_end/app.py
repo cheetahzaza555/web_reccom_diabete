@@ -1,9 +1,10 @@
-# app.py
 from flask import Flask, request, jsonify, render_template
 from modules.database import get_patient_profile, delete_patient, save_raw_patient_data
 from modules.logic import process_patient_realtime
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/')
 def index():

@@ -1,5 +1,3 @@
-# config.py
-
 # ตั้งค่า GraphDB
 REPO_NAME = "Project" 
 GRAPHDB_BASE = "http://localhost:7200/repositories"

@@ -7,6 +7,7 @@ from modules.logic import process_patient_realtime
 from flask_cors import CORS
 from flask import request, jsonify
 from dotenv import load_dotenv
+from routes.auth import auth
 
 load_dotenv()
 
@@ -29,30 +30,7 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 CORS(app)
 
-@app.route("/")
-def index():
-    if "user_id" not in session:
-        return redirect("/login")
-
-    return render_template(
-        "index.html",
-        username=session.get("username"),
-        role=session.get("role")
-    )
-
-
-@app.route("/login")
-def login_page():
-    return render_template("login.html")
-
-@app.route("/register")
-def register_page():
-    return render_template("register.html")
-
-@app.route("/api/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return jsonify({"message": "Logged out"})
+app.register_blueprint(auth)
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():

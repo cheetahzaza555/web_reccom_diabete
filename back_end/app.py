@@ -5,7 +5,6 @@ from flask import Flask, request, jsonify, render_template , session ,redirect
 from modules.database import get_patient_profile, delete_patient, save_raw_patient_data
 from modules.logic import process_patient_realtime
 from flask_cors import CORS
-from modules.auth_routes import auth
 from flask import request, jsonify
 from dotenv import load_dotenv
 

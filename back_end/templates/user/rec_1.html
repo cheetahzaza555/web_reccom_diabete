@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผลตรวจสุขภาพ - DiaBalance</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        .main-content {
+            background-color: #ffffff;
+        }
+
+        .header-banner {
+            background-color: #85a2ff;
+            color: white;
+            padding: 40px 50px;
+            font-size: 2.5rem;
+            font-weight: 600;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+        }
+
+        .btn-cancel {
+            background-color: #b0b0b0;
+            color: white;
+            padding: 15px 0;
+            border-radius: 10px;
+            width: 100%;
+            border: none;
+            font-size: 1.2rem;
+        }
+
+        .btn-next {
+            background-color: #85a2ff;
+            color: white;
+            padding: 15px 0;
+            border-radius: 10px;
+            width: 100%;
+            border: none;
+            font-size: 1.2rem;
+        }
+
+        .btn-next:hover {
+            background-color: #6d8ee6;
+        }
+
+        .btn-cancel:hover {
+            background-color: #909090;
+        }
+    </style>
+</head>
+<body>
+
+    {% include 'includes/navbar_user.html' %}
+
+    <div class="main-content d-flex flex-column min-vh-100">
+        <div class="header-banner">
+            ผลตรวจสุขภาพ
+        </div>
+
+        <div class="container-fluid form-container p-5 d-flex flex-column flex-grow-1">
+            <form action="/user/save_health_data" method="POST" class="d-flex flex-column flex-grow-1">
+                
+                <div class="row gy-4"> 
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ผลการวินิจฉัยเบาหวาน</label>
+                                <select class="form-select" name="diabetes_type">
+                                    <option selected>โรคเบาหวานชนิดที่ 1</option>
+                                    <option value="2">โรคเบาหวานชนิดที่ 2</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-6 mb-3">
+                                <label class="form-label">การฉีดอินซูลิน</label>
+                                <select class="form-select" name="insulin_use">
+                                    <option selected>ใช้อินซูลิน</option>
+                                    <option value="no">ไม่ใช้อินซูลิน</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">วันที่ได้รับการตรวจสุขภาพ</label>
+                            <input type="date" class="form-control" name="checkup_date">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">น้ำหนัก (กิโลกรัม)</label>
+                                <input type="number" class="form-control" id="weight" name="weight">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ส่วนสูง (เซนติเมตร)</label>
+                                <input type="number" class="form-control" id="height" name="height">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">ค่า BMI (ระบบคำนวณให้อัตโนมัติ)</label>
+                            <input type="text" class="form-control" id="bmi_result" readonly placeholder="จะปรากฏเมื่อกรอกน้ำหนักและส่วนสูง">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ค่าความดันโลหิตตัวบน (mmHg)</label>
+                                <input type="number" class="form-control" name="bp_high">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ค่าความดันโลหิตตัวล่าง (mmHg)</label>
+                                <input type="number" class="form-control" name="bp_low">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">วันที่ได้รับการตรวจเลือด</label>
+                            <input type="date" class="form-control" name="blood_test_date">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ระดับไขมัน HDL (mg/dL)</label>
+                                <input type="number" class="form-control" name="hdl">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ระดับไขมัน LDL (mg/dL)</label>
+                                <input type="number" class="form-control" name="ldl">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">คอเลสเตอรอล (mg/dL)</label>
+                                <input type="number" class="form-control" name="cholesterol">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ไตรกลีเซอไรด์ (mg/dL)</label>
+                                <input type="number" class="form-control" name="triglyceride">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ระดับโปรตีน Microalbuminurin</label>
+                                <select class="form-select" name="microalbumin">
+                                    <option selected>Positive</option>
+                                    <option value="negative">Negative</option>
+                                </select>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">ระดับคีโตน (Ketone)</label>
+                                <select class="form-select" name="ketone">
+                                    <option selected>Positive</option>
+                                    <option value="negative">Negative</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">ระดับน้ำตาลในเลือด (FPG) mg/dL</label>
+                            <input type="number" class="form-control" name="fpg">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-auto pt-5 mb-3">
+                    <div class="col-md-6">
+                        <button type="button" class="btn-cancel">ยกเลิก</button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="submit" class="btn-next">ถัดไป</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const weightInput = document.getElementById('weight');
+        const heightInput = document.getElementById('height');
+        const bmiOutput = document.getElementById('bmi_result');
+
+        function calculateBMI() {
+            const weight = parseFloat(weightInput.value);
+            const height = parseFloat(heightInput.value) / 100;
+
+            if (weight > 0 && height > 0) {
+                const bmi = (weight / (height * height)).toFixed(2);
+                bmiOutput.value = bmi;
+            } else {
+                bmiOutput.value = "";
+            }
+        }
+
+        weightInput.addEventListener('input', calculateBMI);
+        heightInput.addEventListener('input', calculateBMI);
+    </script>
+</body>
+</html>

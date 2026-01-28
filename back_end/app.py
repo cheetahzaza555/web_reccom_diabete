@@ -1,6 +1,7 @@
 import bcrypt
 import psycopg2
 import os
+from routes.user import user_bp
 from flask import Flask, request, jsonify, render_template , session ,redirect
 from modules.database import get_patient_profile, delete_patient, save_raw_patient_data
 from modules.logic import process_patient_realtime
@@ -31,6 +32,8 @@ cursor = conn.cursor()
 CORS(app)
 
 app.register_blueprint(auth)
+
+app.register_blueprint(user_bp, url_prefix='/user')
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():

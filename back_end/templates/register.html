@@ -1,88 +1,146 @@
 <!DOCTYPE html>
-
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Register</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียน | Diabetes Expert System</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
+        /* Theme เดียวกับหน้า Login */
+        body { font-family: 'Prompt', sans-serif; }
+        .bg-theme-dark { background-color: #345b95; }
+        
+        .btn-theme-light { 
+            background-color: #8aa6f8; 
+            color: white; 
         }
-        .box {
-            width: 350px;
-            margin: 100px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
+        .btn-theme-light:hover { 
+            background-color: #6d8ee6; 
+            color: white; 
         }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
+        
+        /* ปรับ Input Group */
+        .input-group-text {
+            color: #345b95;
+            border-color: #ced4da;
         }
-        button {
-            background: #2c7be5;
-            color: white;
-            border: none;
-            cursor: pointer;
+        .form-control:focus, .input-group-text {
+            box-shadow: none;
+            border-color: #ced4da;
         }
-        button:hover {
-            background: #1a68d1;
-        }
+
+        /* ⚠️ ลบโค้ดซ่อนลูกตาออกแล้ว เพื่อให้ Browser แสดงผลตามปกติ */
     </style>
 </head>
-<body>
+<body class="bg-white d-flex align-items-center justify-content-center vh-100 position-relative">
 
-<div class="box">
-    <h2>Register</h2>
+    <div class="card border-0 shadow-lg bg-theme-dark text-white rounded-4" style="width: 100%; max-width: 700px; min-height: 700px;">
+        <div class="card-body p-5 text-center d-flex flex-column justify-content-center">
+            
+            <h2 class="fw-bold mb-5">ลงทะเบียน</h2>
 
-<form id="registerForm">
-    <input type="text" id="username" placeholder="Username" required>
-    <input type="password" id="password" placeholder="Password" required>
+            <form id="registerForm">
+                
+                <div class="input-group mb-3">
+                    <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
+                        <i class="fa-solid fa-user fa-xl"></i>
+                    </span>
+                    <input type="text" id="username" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="ชื่อบัญชีผู้ใช้" required>
+                </div>
 
-    <button type="submit">Register</button>
-</form>
+                <div class="input-group mb-3">
+                    <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
+                        <i class="fa-solid fa-envelope fa-xl"></i>
+                    </span>
+                    <input type="email" id="email" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="อีเมล" required>
+                </div>
 
-<p id="msg"></p>
+                <div class="input-group mb-3">
+                    <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
+                        <i class="fa-solid fa-lock fa-xl"></i>
+                    </span>
+                    <input type="password" id="password" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="รหัสผ่าน" required>
+                </div>
 
+                <div class="input-group mb-4">
+                    <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
+                        <i class="fa-solid fa-lock fa-xl"></i>
+                    </span>
+                    <input type="password" id="confirm_password" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="ยืนยันรหัสผ่าน" required>
+                </div>
 
-</div>
+                <button type="submit" class="btn btn-theme-light w-100 rounded-pill py-3 fw-bold fs-5 shadow-sm">
+                    ลงทะเบียน
+                </button>
+            </form>
 
-<script>
-document.getElementById("registerForm").addEventListener("submit", async function(e) {
-    e.preventDefault(); // ❗ สำคัญมาก
+            <div class="mt-4 text-white-50">
+                มีบัญชีผู้ใช้แล้ว? 
+                <a href="/login" class="text-white fw-bold text-decoration-underline">เข้าสู่ระบบ</a>
+            </div>
 
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+            <div id="msg" class="text-warning mt-3 small fw-bold"></div>
+        </div>
+    </div>
 
-    try {
-        const res = await fetch("/api/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
+    <script>
+        // ไม่ต้องมี Script สำหรับเปิด/ปิดตาแล้ว เพราะใช้ของ Browser เอง
+
+        document.getElementById("registerForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById("username").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirm_password").value;
+            const msgDiv = document.getElementById("msg");
+            const btn = document.querySelector("button[type='submit']");
+            const originalBtnText = btn.innerHTML;
+
+            if (password !== confirmPassword) {
+                msgDiv.innerText = "❌ รหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง";
+                return;
+            }
+
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
+            btn.disabled = true;
+            msgDiv.innerText = "";
+
+            try {
+                const res = await fetch("/api/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        username: username, 
+                        email: email,
+                        password: password 
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    msgDiv.className = "text-white mt-3 small fw-bold";
+                    msgDiv.innerText = "✅ ลงทะเบียนสำเร็จ! กำลังไปหน้าเข้าสู่ระบบ...";
+                    setTimeout(() => {
+                        window.location.href = "/login";
+                    }, 1500);
+                } else {
+                    msgDiv.className = "text-warning mt-3 small fw-bold";
+                    msgDiv.innerText = data.error || "❌ ลงทะเบียนไม่สำเร็จ";
+                    btn.innerHTML = originalBtnText;
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                msgDiv.innerText = "❌ ติดต่อ server ไม่ได้";
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            }
         });
-
-        const data = await res.json();
-
-        if (res.ok) {
-            document.getElementById("msg").innerText = "✅ Register สำเร็จ";
-            setTimeout(() => {
-                window.location.href = "/login";
-            }, 1000);
-        } else {
-            document.getElementById("msg").innerText = data.error || "❌ Register ไม่สำเร็จ";
-        }
-    } catch (err) {
-        document.getElementById("msg").innerText = "❌ ติดต่อ server ไม่ได้";
-    }
-});
-</script>
-
+    </script>
 </body>
 </html>

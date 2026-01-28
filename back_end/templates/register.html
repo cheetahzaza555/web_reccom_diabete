@@ -1,44 +1,88 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="th">
 <head>
+    <meta charset="UTF-8">
     <title>Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+        }
+        .box {
+            width: 350px;
+            margin: 100px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        button {
+            background: #2c7be5;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1a68d1;
+        }
+    </style>
 </head>
 <body>
-    <h2>สมัครสมาชิก</h2>
 
-    <form id="registerForm">
-        <input type="text" id="username" placeholder="Username" required><br><br>
-        <input type="password" id="password" placeholder="Password" required><br><br>
-        <button type="submit">Register</button>
-    </form>
+<div class="box">
+    <h2>Register</h2>
 
-    <p id="msg"></p>
+<form id="registerForm">
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
 
-    <p>
-        มีบัญชีแล้ว?
-        <a href="/login">เข้าสู่ระบบ</a>
-    </p>
+    <button type="submit">Register</button>
+</form>
 
-    <script>
-        document.getElementById("registerForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
+<p id="msg"></p>
 
-            const res = await fetch("/api/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: username.value,
-                    password: password.value
-                })
-            });
 
-            const data = await res.json();
-            if (data.status === "ok") {
-                window.location.href = "/login";
-            } else {
-                document.getElementById("msg").innerText = data.message;
-            }
+</div>
+
+<script>
+document.getElementById("registerForm").addEventListener("submit", async function(e) {
+    e.preventDefault(); // ❗ สำคัญมาก
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+        const res = await fetch("/api/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
         });
-    </script>
+
+        const data = await res.json();
+
+        if (res.ok) {
+            document.getElementById("msg").innerText = "✅ Register สำเร็จ";
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 1000);
+        } else {
+            document.getElementById("msg").innerText = data.error || "❌ Register ไม่สำเร็จ";
+        }
+    } catch (err) {
+        document.getElementById("msg").innerText = "❌ ติดต่อ server ไม่ได้";
+    }
+});
+</script>
+
 </body>
 </html>

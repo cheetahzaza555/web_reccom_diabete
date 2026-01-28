@@ -29,6 +29,13 @@
             font-weight: 600;
         }
 
+        .form-container {
+            padding: 60px 80px !important; 
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 150px);
+        }
+
         .form-label {
             font-weight: 500;
             color: #333;
@@ -79,10 +86,9 @@
             ผลตรวจสุขภาพ
         </div>
 
-        <div class="container-fluid form-container p-5 d-flex flex-column flex-grow-1">
-            <form action="/user/save_health_data" method="POST" class="d-flex flex-column flex-grow-1">
-                
-                <div class="row gy-4"> 
+        <div class="form-container p-5">
+            <form action="/user/save_health_data" method="POST" class="d-flex flex-column">
+                <div class="row"> 
                     <div class="col-md-6">
                         <div class="row">
                             <div class="col-6 mb-3">
@@ -187,7 +193,7 @@
                     </div>
                 </div>
 
-                <div class="row mt-auto pt-5 mb-3">
+                <div class="row pt-5 mb-3">
                     <div class="col-md-6">
                         <button type="button" class="btn-cancel">ยกเลิก</button>
                     </div>

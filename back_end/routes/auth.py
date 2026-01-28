@@ -2,31 +2,26 @@
 from flask import Blueprint, redirect, render_template, request, jsonify, session
 from werkzeug.security import check_password_hash
 from modules.auth_db import create_user, get_user
-from modules.auth_utils import generate_token 
+from modules.auth_utils import generate_token
 
 auth = Blueprint("auth", __name__)
 
 @auth.route("/")
 def index():
-    # 1. เช็คก่อนว่าล็อกอินหรือยัง
     if "user_id" not in session:
         return redirect("/login")
 
-    # 2. ดึง Role ออกมาดูว่าเป็นใคร
     role = session.get("role")
 
-    # 3. พาไปเปิดห้องให้ถูกคน
     if role == "admin":
-        # ถ้าเป็น admin ให้ไปเปิดไฟล์ในโฟลเดอร์ admin
         return render_template(
             "admin/index.html", 
             username=session.get("username"),
             role=role
         )
     else:
-        # ถ้าเป็น user ธรรมดา ให้ไปเปิดไฟล์ในโฟลเดอร์ user
         return render_template(
-            "user/index.html",   # 👈 ต้องระบุชื่อโฟลเดอร์นำหน้าแบบนี้ครับ
+            "user/index.html",   
             username=session.get("username"),
             role=role
         )

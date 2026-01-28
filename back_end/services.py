@@ -259,8 +259,10 @@ def process_patient_realtime(patient_id, input_data=None):
         # ------------------------------------------
 
         print("🔍 Extracting Results...")
+        # ✅ เตรียมตัวแปรเก็บผลลัพธ์ที่จะ Save
         recs, warns, comorbs, complis = [], [], [], [] 
         s_recs, s_warns, s_comorbs, s_complis = [], [], [], []
+        s_avoids, s_intens, s_freqs = [], [], [] # <-- เพิ่มตรงนี้
 
         # 1. Exercises (Logic ที่รวม Debug แล้ว)
         recs_list = list(p.recommendedExercise)
@@ -325,30 +327,56 @@ def save_results_to_db(pid_num, recs, warns, comorbs, complis):
     if not validate_id(pid_num): return
     pid = f"Patient{pid_num}"
     
-    del_q = f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ex:{pid} ex:hasPatientWarning ?w . ex:{pid} ex:recommendedExercise ?r . ex:{pid} ex:hasComorbidity ?c . ex:{pid} ex:hasComplication ?cp }} WHERE {{ OPTIONAL {{ ex:{pid} ex:hasPatientWarning ?w }} OPTIONAL {{ ex:{pid} ex:recommendedExercise ?r }} OPTIONAL {{ ex:{pid} ex:hasComorbidity ?c }} OPTIONAL {{ ex:{pid} ex:hasComplication ?cp }} }}"
+    # 1. DELETE เก่า (รวมตัวแปรใหม่ด้วย)
+    del_q = f"""
+    PREFIX ex: <http://example.org/diabetes#> 
+    DELETE {{ 
+        ex:{pid} ex:hasPatientWarning ?w . 
+        ex:{pid} ex:recommendedExercise ?r . 
+        ex:{pid} ex:hasComorbidity ?c . 
+        ex:{pid} ex:hasComplication ?cp .
+        ex:{pid} ex:avoidExercise ?av .
+        ex:{pid} ex:intensityOfExercise ?int .
+        ex:{pid} ex:exerciseFrequency ?fr .
+    }} 
+    WHERE {{ 
+        OPTIONAL {{ ex:{pid} ex:hasPatientWarning ?w }} 
+        OPTIONAL {{ ex:{pid} ex:recommendedExercise ?r }} 
+        OPTIONAL {{ ex:{pid} ex:hasComorbidity ?c }} 
+        OPTIONAL {{ ex:{pid} ex:hasComplication ?cp }}
+        OPTIONAL {{ ex:{pid} ex:avoidExercise ?av }}
+        OPTIONAL {{ ex:{pid} ex:intensityOfExercise ?int }}
+        OPTIONAL {{ ex:{pid} ex:exerciseFrequency ?fr }}
+    }}"""
     sparql_write.setQuery(del_q); sparql_write.query()
     
+    # 2. INSERT ใหม่
     triples = []
     for x in recs: triples.append(f"ex:{pid} ex:recommendedExercise ex:{x} .")
     for x in warns: triples.append(f"ex:{pid} ex:hasPatientWarning ex:{x} .")
     for x in comorbs: triples.append(f"ex:{pid} ex:hasComorbidity ex:{x} .")
     for x in complis: triples.append(f"ex:{pid} ex:hasComplication ex:{x} .")
     
+    # ✅ เพิ่ม Triples ชุดใหม่
+    for x in avoids: triples.append(f"ex:{pid} ex:avoidExercise ex:{x} .") 
+    for x in intens: triples.append(f"ex:{pid} ex:intensityOfExercise ex:{x} .")
+    for x in freqs: triples.append(f"ex:{pid} ex:exerciseFrequency ex:{x} .")
+    
     if triples:
         ins_q = f"PREFIX ex: <http://example.org/diabetes#> INSERT DATA {{ {' '.join(triples)} }}"
         sparql_write.setQuery(ins_q); sparql_write.query()
-        print(f"💾 Saved {len(triples)} results")
+        print(f"💾 Saved {len(triples)} results (Inc. Avoid, Intensity, Frequency)")
 
 def save_raw_patient_data(data):
     if not validate_id(data.get('id')): return
     pid = f"Patient{data['id']}"
     
     try:
-        # 1. ลบข้อมูลเก่า
+        # 1. ลบข้อมูลเก่า (คงเดิม)
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ?s ?p ?o . ?pe ?pp ?oo . ?le ?lp ?lo }} WHERE {{ ?s ?p ?o . FILTER(?s = ex:{pid}) OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} }}")
         sparql_write.query()
         
-        # 2. เตรียมข้อมูล
+        # 2. เตรียมข้อมูล (คงเดิม)
         fname = escape_sparql(data.get('firstname', '-'))
         lname = escape_sparql(data.get('lastname', '-'))
         ketone_val = escape_sparql(data.get('ketone') or "Negative")
@@ -356,7 +384,7 @@ def save_raw_patient_data(data):
         
         def val(k): return safe_float(data.get(k)) or 0
 
-        # จัดการ Special Complication... (เหมือนเดิม)
+        # --- ส่วนจัดการ Special Complication (คงเดิม) ---
         raw_special = data.get('special')
         special_triples = ""
         if isinstance(raw_special, list):
@@ -369,11 +397,21 @@ def save_raw_patient_data(data):
         else:
             special_triples = f"ex:{pid}_PE ex:hasSpecialComplication ex:NoOtherComplication ."
 
-        # 3. สร้าง Triples (✅ เพิ่ม ex:hasWeight และ ex:hasHeight)
+        # 🔥 [เพิ่มใหม่] จัดการ Exercise Frequency
+        # รับค่าจาก key 'frequency' (เช่น Freq1)
+        freq_val = data.get('frequency') 
+        freq_triple = ""
+        if freq_val:
+            # ต้องเป็น ex:Freq1 (เพราะเป็น ObjectProperty) ห้ามใส่เครื่องหมายคำพูดครอบ value
+            freq_triple = f"ex:{pid} ex:exerciseFrequency ex:{escape_sparql(freq_val)} ."
+
+        # 3. สร้าง Triples (เพิ่ม {freq_triple} เข้าไปใน string ใหญ่)
         triples = f"""
             ex:{pid} a ex:Patient ; ex:diabetType ex:{escape_sparql(data['type'])} ; 
                      ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
                      ex:hasPhysicalExam ex:{pid}_PE ; ex:hasLabExam ex:{pid}_LE .
+            
+            {freq_triple}
             
             ex:{pid}_PE a ex:PhysicalExam ; 
                         ex:hasWeight "{val('weight')}"^^xsd:decimal ; 
@@ -392,6 +430,7 @@ def save_raw_patient_data(data):
         
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
         sparql_write.query()
+        print(f"💾 Saved Raw Data for {pid} (Inc. Frequency)")
         
     except Exception as e:
         print(f"❌ Error saving raw data: {e}")
@@ -424,6 +463,7 @@ def get_patient_profile(patient_id):
                     OPTIONAL {{ ?pe ex:hasSpecialComplication ?special . BIND(STRAFTER(STR(?special), "#") AS ?specialName) }} }}
         OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . 
                     OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
+                    OPTIONAL {{ ?le ex:hasHDL ?hdl }} OPTIONAL {{ ?le ex:hasTriglyceride ?tri }}
                     OPTIONAL {{ ?le ex:hasFPG ?fpg }} OPTIONAL {{ ?le ex:hasKetone ?ketone }} OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }} }}
         
         # 🔥 ดึง Exercise Details
@@ -457,12 +497,14 @@ def get_patient_profile(patient_id):
         OPTIONAL {{ ex:{pid} ex:hasComplication ?compli . OPTIONAL {{ ?compli rdfs:label ?cpLabel }} BIND(COALESCE(?cpLabel, STRAFTER(STR(?compli), "#")) AS ?compliName) }}
     }}
     """
+    
     sparql_read.setQuery(query)
     results = sparql_read.query().convert()
     bindings = results["results"]["bindings"]
     if not bindings: return None
     
     first = bindings[0]
+    
     info = {
         "firstname": first.get("fname", {}).get("value", "-"), "lastname": first.get("lname", {}).get("value", "-"),
         "type": first.get("type", {}).get("value", "-"), 
@@ -471,8 +513,9 @@ def get_patient_profile(patient_id):
         "bmi": first.get("bmi", {}).get("value", "-"),
         "sbp": first.get("sbp", {}).get("value", "-"), "dbp": first.get("dbp", {}).get("value", "-"),
         "chol": first.get("chol", {}).get("value", "-"), "ldl": first.get("ldl", {}).get("value", "-"),
+        "hdl": first.get("hdl", {}).get("value", "-"), "tri": first.get("tri", {}).get("value", "-"),
         "fpg": first.get("fpg", {}).get("value", "-"), "ketone": first.get("ketone", {}).get("value", "-"),
-        "micro": first.get("micro", {}).get("value", "-"), "special": first.get("specialName", {}).get("value", ""),
+        "micro": first.get("micro", {}).get("value", "-"), 
     }
 
     ex_dict = {}

@@ -11,3 +11,11 @@ def user_dashboard():
 @user_bp.route('/recommendations')
 def user_recommendations():
     return render_template('user/rec_1.html')
+
+@user_bp.route('/exercises')
+def user_exercise():
+    return render_template('user/exercise.html')
+
+@user_bp.route('/knowledge')
+def user_knowledge():
+    return render_template('user/extraknowledge.html')

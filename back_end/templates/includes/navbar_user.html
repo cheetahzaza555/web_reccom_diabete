@@ -6,6 +6,7 @@
     <title>DiaBalance - User Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --sidebar-width: 260px;
@@ -21,7 +22,7 @@
         }
 
         body {
-            font-family: 'Sarabun', sans-serif;
+            font-family: 'Kanit', sans-serif;
             overflow-x: hidden;
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s ease;
@@ -106,7 +107,7 @@
             text-decoration: none;
             border-radius: 0.5rem;
             transition: all 0.3s ease;
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 500;
             position: relative;
         }
@@ -130,23 +131,6 @@
             box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
         }
 
-        /* Submenu Style */
-        .nav-submenu {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            margin-top: 0.5rem;
-            padding-left: 1rem;
-        }
-
-        .nav-submenu .nav-link {
-            font-size: 0.95rem;
-            padding: 0.7rem 1rem;
-        }
-
-        .nav-submenu .nav-link i {
-            font-size: 1.25rem;
-        }
 
         /* Bottom Section */
         .sidebar-bottom {
@@ -314,19 +298,15 @@
                 </a>
             </div>
 
-            <!-- ความรู้เพิ่มเติม และเกี่ยวกับโรคเบาหวาน (submenu) -->
+            <!-- ความรู้เพิ่มเติมเกี่ยวกับโรคเบาหวาน (submenu) -->
             <div class="nav-item">
                     <a href="/user/knowledge" class="nav-link">
                         <i class="bi bi-journal-text"></i>
-                        <span>ความรู้เพิ่มเติม</span>
+                        <span>ความรู้เพิ่มเติมเกี่ยวกับ
+                            <br>โรคเบาหวาน</span>
                     </a>
             </div>
-            <div class="nav-item">
-                    <a href="/user/diabetes-info" class="nav-link">
-                        <i class="bi bi-info-circle-fill"></i>
-                        <span>เกี่ยวกับโรคเบาหวาน</span>
-                    </a>
-            </div>
+
         </nav>
 
         <!-- Bottom Section -->

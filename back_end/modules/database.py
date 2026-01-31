@@ -39,20 +39,20 @@ def safe_get_name(uri):
 def save_raw_patient_data(data):
     if not validate_id(data.get('id')): return
 
-    # ✅ 1. สร้างตัวแปร raw_id (เฉพาะตัวเลข 99) และ pid (Patient99) แยกกันชัดเจน
-    raw_id = str(data.get('id')).replace("Patient", "")  # ได้ "99"
-    pid = f"Patient{raw_id}"                             # ได้ "Patient99"
+    # ✅ 1. สร้างตัวแปร raw_id (เฉพาะตัวเลข) และ pid (PatientX)
+    raw_id = str(data.get('id')).replace("Patient", "")  
+    pid = f"Patient{raw_id}"                             
     
-    # ✅ 2. ใช้ raw_id ในการตั้งชื่อ Node (จะได้ชื่อสวยๆ ตามที่คุณต้องการ)
-    pe_node = f"ex:PE1P00{raw_id}"   # -> ex:PE1P0099
-    le_node = f"ex:Lab1P00{raw_id}"  # -> ex:LAB1P0099
+    # ✅ 2. ใช้ raw_id ในการตั้งชื่อ Node 
+    pe_node = f"ex:PE1P00{raw_id}"   
+    le_node = f"ex:Lab1P00{raw_id}"  
 
     try:
-        # ... (ส่วนลบข้อมูลเก่า เหมือนเดิม) ...
+        # 1. ลบข้อมูลเก่า
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ?s ?p ?o . ?pe ?pp ?oo . ?le ?lp ?lo }} WHERE {{ ?s ?p ?o . FILTER(?s = ex:{pid}) OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} }}")
         sparql_write.query()
         
-        # ... (ส่วนเตรียมข้อมูล เหมือนเดิม) ...
+        # 2. เตรียมข้อมูล
         fname = escape_sparql(data.get('firstname', '-'))
         lname = escape_sparql(data.get('lastname', '-'))
         ketone_val = escape_sparql(data.get('ketone') or "Negative")
@@ -60,8 +60,7 @@ def save_raw_patient_data(data):
         
         def val(k): return safe_float(data.get(k)) or 0
 
-        # ... (ส่วนจัดการ Special / Frequency เหมือนเดิม) ...
-        # (Copy logic เดิมของคุณมาวางตรงนี้ได้เลย)
+        # จัดการ Special Complication
         raw_special = data.get('special')
         special_triples = ""
         if isinstance(raw_special, list):
@@ -74,14 +73,20 @@ def save_raw_patient_data(data):
         else:
             special_triples = f"{pe_node} ex:hasSpecialComplication ex:NoOtherComplication ."
 
+        # จัดการ Exercise Frequency
         freq_val = data.get('frequency') 
         freq_triple = ""
         if freq_val:
             freq_triple = f"ex:{pid} ex:exerciseFrequency ex:{escape_sparql(freq_val)} ."
 
-        # 3. สร้าง Triples (จุดนี้สำคัญ เช็คเรื่อง Data Type ให้ตรงกับ Ontology!)
-        # หมายเหตุ: ถ้าใน Ontology คุณแก้ hasSBP เป็น xsd:decimal แล้ว โค้ดด้านล่างนี้ใช้ได้เลย
-        # แต่ถ้า hasSBP ยังเป็น integer ต้องแก้ ^^xsd:decimal เป็น ^^xsd:integer เฉพาะบรรทัด sbp/dbp
+        # 🔥 [ใหม่] จัดการ Favorites (ท่าที่ชอบ)
+        raw_favs = data.get('favorites')
+        fav_triples = ""
+        if isinstance(raw_favs, list):
+            for fav in raw_favs:
+                fav_triples += f"ex:{pid} ex:favoriteExercise ex:{escape_sparql(fav)} .\n"
+
+        # 3. สร้าง Triples (เพิ่ม {fav_triples} ลงไปแล้ว)
         triples = f"""
             ex:{pid} a ex:Patient ; 
                      ex:diabetType ex:{escape_sparql(data['type'])} ; 
@@ -89,6 +94,7 @@ def save_raw_patient_data(data):
                      ex:hasPhysicalExam {pe_node} ; ex:hasLabExam {le_node} .
             
             {freq_triple}
+            {fav_triples}
             
             {pe_node} a ex:PhysicalExam ; 
                         ex:hasWeight "{val('weight')}"^^xsd:decimal ; 
@@ -108,7 +114,7 @@ def save_raw_patient_data(data):
         
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
         sparql_write.query()
-        print(f"💾 Saved Raw Data for {pid} (Inc. Frequency)")
+        print(f"💾 Saved Raw Data for {pid} (Inc. Favorites & Frequency)")
         
     except Exception as e:
         print(f"❌ Error saving raw data: {e}")
@@ -247,7 +253,8 @@ def get_patient_profile(patient_id):
 
     def clean_val(val):
         if not val: return ""
-        return val.split('#')[-1] if '#' in val else val
+        if "#" in val: return val.split('#')[-1]
+        return val
 
     def extract_set(key): 
         return list(set([clean_val(r[key]["value"]) for r in bindings if key in r and r[key]["value"]]))

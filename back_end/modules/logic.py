@@ -157,19 +157,6 @@ def process_patient_realtime(patient_id, input_data=None):
 
         print("🧠 Running Reasoner...")
         sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
-        
-        print("🔍 Extracting Results...")
-        recs, warns, comorbs, complis = [], [], [], [] 
-        s_recs, s_warns, s_comorbs, s_complis = [], [], [], []
-        s_avoids, s_intens, s_freqs = [], [], []
-
-        # 1. Exercises
-        recs_list = list(p.recommendedExercise)
-        
-        if not recs_list and target_favorites:
-            avoid = [val.name for val in getattr(p, "avoidExercise", [])]
-            for f in p.favoriteExercise:
-                if f.name not in avoid: recs_list.append(f)
 
         print("🔍 Extracting Results...")
         recs, warns, comorbs, complis = [], [], [], [] 
@@ -181,14 +168,7 @@ def process_patient_realtime(patient_id, input_data=None):
         
         # 🔥 [แก้ใหม่] เอา Favorite Exercise มาใส่ด้วยเสมอ (ถ้าไม่ติด Avoid)
         # ไม่ต้องรอให้ recs_list ว่างเปล่า
-        if target_favorites:
-            # ดึงรายชื่อท่าที่ต้องห้ามออกมาเช็ค
-            avoid_names = [val.name for val in getattr(p, "avoidExercise", [])]
-            
-            for f in p.favoriteExercise:
-                # ถ้าสิ่งที่ชอบ ไม่ได้อยู่ในรายการห้าม -> ให้แนะนำได้เลย!
-                if f.name not in avoid_names: 
-                    recs_list.append(f)
+
 
         # วนลูปสร้าง Text เพื่อแสดงผล
         for r in list(set(recs_list)):

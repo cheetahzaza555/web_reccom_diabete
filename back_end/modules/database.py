@@ -45,7 +45,7 @@ def save_raw_patient_data(data):
     
     # ✅ 2. ใช้ raw_id ในการตั้งชื่อ Node (จะได้ชื่อสวยๆ ตามที่คุณต้องการ)
     pe_node = f"ex:PE1P00{raw_id}"   # -> ex:PE1P0099
-    le_node = f"ex:LAB1P00{raw_id}"  # -> ex:LAB1P0099
+    le_node = f"ex:Lab1P00{raw_id}"  # -> ex:LAB1P0099
 
     try:
         # ... (ส่วนลบข้อมูลเก่า เหมือนเดิม) ...

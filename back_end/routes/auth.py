@@ -102,6 +102,7 @@ def get_current_user():
             # ต้องเรียงลำดับให้ตรงกับ SELECT นะครับ
             # user[0]=firstname, user[1]=lastname, user[2]=username, user[3]=role
             user_data = {
+                "id": user_id,
                 "firstname": user[0],
                 "lastname": user[1],
                 "username": user[2],

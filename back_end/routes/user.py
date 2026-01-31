@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, jsonify
-from utils.security import admin_required # เรียกยามมาใช้
-from modules.database import delete_patient # สมมติว่ามีฟังก์ชันนี้
+from flask import Blueprint, render_template, jsonify, request
+from modules.logic import process_patient_realtime
+from modules.database import save_raw_patient_data # สมมติว่ามีฟังก์ชันนี้
 
 user_bp = Blueprint('user', __name__)
 
@@ -19,3 +19,24 @@ def user_exercise():
 @user_bp.route('/knowledge')
 def user_knowledge():
     return render_template('user/extraknowledge.html')
+
+@user_bp.route('/api/analyze', methods=['POST'])
+def analyze():
+    data = request.json
+    # 1. บันทึกข้อมูลดิบก่อน
+    save_raw_patient_data(data)
+    # 2. ประมวลผลและได้ผลลัพธ์
+    recs, warns, comorbs, complis = process_patient_realtime(data['id'], input_data=data)
+    
+    return jsonify({
+        "status": "ok",
+        "exercises": recs,
+        "warnings": warns,
+        "comorbs": comorbs,
+        "complis": complis
+    })
+
+@user_bp.route('/api/reprocess/<id>', methods=['POST'])
+def reprocess(id):
+    process_patient_realtime(id)
+    return jsonify({"status": "ok"})

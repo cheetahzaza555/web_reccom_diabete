@@ -20,7 +20,7 @@ def user_exercise():
 def user_knowledge():
     return render_template('user/extraknowledge.html')
 
-@user_bp.route('/api/analyze', methods=['POST'])
+@user_bp.route('/analyze', methods=['POST'])
 def analyze():
     data = request.json
     # 1. บันทึกข้อมูลดิบก่อน
@@ -36,7 +36,7 @@ def analyze():
         "complis": complis
     })
 
-@user_bp.route('/api/reprocess/<id>', methods=['POST'])
+@user_bp.route('/reprocess/<id>', methods=['POST'])
 def reprocess(id):
     process_patient_realtime(id)
     return jsonify({"status": "ok"})

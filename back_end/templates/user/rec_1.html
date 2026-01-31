@@ -10,14 +10,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CSS Theme (Blue) --- */
+        /* --- CSS Layout Fix --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #ffffff; font-family: 'Prompt', sans-serif; overflow-x: hidden; }
-        .main-content { display: flex; flex-direction: column; min-height: 100vh; }
+        body { background-color: #ffffff; font-family: 'Prompt', sans-serif; overflow: hidden; }
+        .main-content { display: flex; flex-direction: column; height: 100vh; }
         .header-banner { background-color: #85a2ff; color: white; padding: 1.25rem 1rem; font-size: 2.5rem; font-weight: 600; flex-shrink: 0; }
-        .form-wrapper { flex: 1; display: flex; flex-direction: column; }
-        .form-scroll-area { flex: 1; padding: 40px 50px; }
-        .button-area { background-color: #ffffff; padding: 20px 50px; border-top: 1px solid #dee2e6; margin-top: auto; }
+        .form-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .form-scroll-area { flex: 1; overflow-y: auto; padding: 40px 50px; padding-bottom: 20px; }
+        .button-area { background-color: #ffffff; padding: 20px 50px; border-top: 1px solid #dee2e6; flex-shrink: 0; z-index: 10; }
+
+        /* --- Form Styles --- */
         .form-label { font-weight: 500; color: #333; margin-bottom: 8px; font-size: 1.1rem; }
         .form-control, .form-select { border-radius: 10px; padding: 12px; border: 1px solid #dee2e6; font-size: 1.1rem; min-height: 50px; }
         .form-control:focus, .form-select:focus { border-color: #85a2ff; box-shadow: 0 0 0 0.2rem rgba(133, 162, 255, 0.25); }
@@ -26,6 +28,7 @@
         .btn-next:hover { background-color: #6d8ee6; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(133, 162, 255, 0.3); }
         .btn-cancel:hover { background-color: #909090; transform: translateY(-2px); }
         .form-section { background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; }
+        
         .selection-card { background: white; border: 1px solid #dee2e6; border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: all 0.2s; display: flex; align-items: flex-start; gap: 15px; }
         .selection-card:hover { border-color: #85a2ff; background-color: #f4f8ff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .form-check-input { width: 1.5em; height: 1.5em; margin-top: 0.2em; cursor: pointer; border-color: #adb5bd; }
@@ -33,15 +36,13 @@
         .selection-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 5px; }
         .selection-desc { font-size: 0.9rem; color: #666; margin: 0; line-height: 1.4; }
 
-        /* --- Result Section (เพิ่มใหม่ให้เข้ากับธีม) --- */
+        /* --- Result Section --- */
         .result-header { text-align: center; margin-bottom: 30px; }
         .result-box { padding: 20px; border-radius: 12px; margin-bottom: 20px; }
         .box-warning { background-color: #fff3cd; border: 1px solid #ffecb5; color: #664d03; }
         .box-danger { background-color: #f8d7da; border: 1px solid #f5c2c7; color: #842029; }
         .box-success { background-color: #d1e7dd; border: 1px solid #badbcc; color: #0f5132; }
         .box-info { background-color: #cff4fc; border: 1px solid #b6effb; color: #055160; }
-        .result-title { font-weight: bold; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .result-list { list-style: none; padding: 0; margin: 0; }
         .result-list li { padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .result-list li:last-child { border-bottom: none; }
 
@@ -62,7 +63,7 @@
         </div>
 
         <div class="form-wrapper">
-            <form id="healthForm" onsubmit="return false;"> 
+            <form id="healthForm" onsubmit="return false;" style="display: contents;"> 
                 
                 <div class="form-scroll-area">
                     <div class="form-content">
@@ -71,7 +72,27 @@
                             <div class="row gy-4">
                                 <div class="col-lg-6">
                                     <div class="form-section">
-                                        <h5 class="mb-3 text-primary fw-bold">ข้อมูลทั่วไป</h5>
+                                        <h5 class="mb-3 text-primary fw-bold">ข้อมูลส่วนตัว</h5>
+                                        <div class="row">
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label text-danger">รหัสผู้ป่วย (ID) *</label>
+                                                <input type="text" class="form-control border-danger" name="patient_id" placeholder="เช่น P101, Test01" required>
+                                            </div>
+                                            
+                                            <div class="col-6 mb-3"><label class="form-label">ชื่อจริง</label><input type="text" class="form-control" name="firstname"></div>
+                                            <div class="col-6 mb-3"><label class="form-label">นามสกุล</label><input type="text" class="form-control" name="lastname"></div>
+                                            <div class="col-6 mb-3"><label class="form-label">อายุ (ปี)</label><input type="number" class="form-control" name="age"></div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label">เพศ</label>
+                                                <select class="form-select" name="gender">
+                                                    <option value="" disabled selected>เลือก</option>
+                                                    <option value="Male">ชาย</option>
+                                                    <option value="Female">หญิง</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <h5 class="mb-3 mt-3 text-primary fw-bold">ประวัติเบาหวาน</h5>
                                         <div class="row">
                                             <div class="col-6 mb-3">
                                                 <label class="form-label">ประเภทเบาหวาน</label>
@@ -82,19 +103,19 @@
                                                 </select>
                                             </div>
                                             <div class="col-6 mb-3">
-                                                <label class="form-label">การใช้อินซูลิน</label>
+                                                <label class="form-label">ใช้อินซูลิน</label>
                                                 <select class="form-select" name="insulin_use" required>
                                                     <option value="" disabled selected>เลือก</option>
                                                     <option value="yes">ใช้</option>
                                                     <option value="no">ไม่ใช้</option>
                                                 </select>
                                             </div>
-                                            <div class="col-12 mb-3">
-                                                <label class="form-label">วันที่ตรวจ</label>
-                                                <input type="date" class="form-control" name="checkup_date" required>
-                                            </div>
+                                            <div class="col-12 mb-3"><label class="form-label">วันที่ตรวจ</label><input type="date" class="form-control" name="checkup_date" required></div>
                                         </div>
-                                        <h5 class="mb-3 mt-4 text-primary fw-bold">สัดส่วนร่างกาย</h5>
+                                    </div>
+
+                                    <div class="form-section">
+                                        <h5 class="mb-3 text-primary fw-bold">สัดส่วนร่างกาย</h5>
                                         <div class="row">
                                             <div class="col-6 mb-3"><label class="form-label">น้ำหนัก (kg)</label><input type="number" class="form-control" id="weight" name="weight" step="0.1" required></div>
                                             <div class="col-6 mb-3"><label class="form-label">ส่วนสูง (cm)</label><input type="number" class="form-control" id="height" name="height" step="0.1" required></div>
@@ -104,6 +125,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                                 <div class="col-lg-6">
                                     <div class="form-section">
                                         <h5 class="mb-3 text-primary fw-bold">ผลตรวจเลือด</h5>
@@ -168,30 +190,10 @@
                                     </div>
 
                                     <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="result-box box-warning">
-                                                <div class="result-title text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill"></i> คำเตือน (Warnings)</div>
-                                                <ul class="result-list" id="warnList"></ul>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="result-box box-danger">
-                                                <div class="result-title text-danger"><i class="bi bi-virus"></i> ภาวะแทรกซ้อน</div>
-                                                <ul class="result-list" id="compliList"></ul>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="result-box box-success">
-                                                <div class="result-title text-success"><i class="bi bi-person-walking"></i> ท่าออกกำลังกายที่แนะนำ</div>
-                                                <ul class="result-list" id="exList"></ul>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="result-box box-info">
-                                                <div class="result-title text-primary"><i class="bi bi-heart-pulse"></i> โรคร่วม (Comorbidities)</div>
-                                                <ul class="result-list" id="comorbList"></ul>
-                                            </div>
-                                        </div>
+                                        <div class="col-md-6"><div class="result-box box-warning"><div class="result-title text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill"></i> คำเตือน (Warnings)</div><ul class="result-list" id="warnList"></ul></div></div>
+                                        <div class="col-md-6"><div class="result-box box-danger"><div class="result-title text-danger"><i class="bi bi-virus"></i> ภาวะแทรกซ้อน</div><ul class="result-list" id="compliList"></ul></div></div>
+                                        <div class="col-12"><div class="result-box box-success"><div class="result-title text-success"><i class="bi bi-person-walking"></i> ท่าออกกำลังกายที่แนะนำ</div><ul class="result-list" id="exList"></ul></div></div>
+                                        <div class="col-12"><div class="result-box box-info"><div class="result-title text-primary"><i class="bi bi-heart-pulse"></i> โรคร่วม (Comorbidities)</div><ul class="result-list" id="comorbList"></ul></div></div>
                                     </div>
                                 </div>
                             </div>
@@ -220,14 +222,13 @@
             const w = parseFloat(weightInput.value);
             const h = parseFloat(heightInput.value) / 100;
             if (w > 0 && h > 0) {
-                const bmi = (w / (h * h)).toFixed(2);
-                bmiOutput.value = bmi;
+                bmiOutput.value = (w / (h * h)).toFixed(2);
             } else { bmiOutput.value = ""; }
         }
         weightInput.addEventListener('input', calculateBMI);
         heightInput.addEventListener('input', calculateBMI);
 
-        // --- 2. Step Navigation Logic ---
+        // --- 2. Step Navigation ---
         let currentStep = 1;
         function updateUI() {
             for(let i=1; i<=4; i++) document.getElementById('step'+i).style.display = 'none';
@@ -237,9 +238,7 @@
             const btnNext = document.getElementById('btnNext');
             const title = document.getElementById('pageTitle');
 
-            // จัดการปุ่มด้านล่าง
-            document.querySelector('.button-area').style.display = 'block';
-
+            // จัดการข้อความปุ่มและหัวข้อ
             if (currentStep === 1) {
                 btnBack.innerText = 'ยกเลิก'; btnNext.innerText = 'ถัดไป';
                 btnNext.onclick = handleNext; title.innerText = 'ผลตรวจสุขภาพ (1/3)';
@@ -253,14 +252,13 @@
                 title.innerText = 'สรุปผลการวิเคราะห์';
                 btnBack.innerText = 'แก้ไขข้อมูล';
                 btnNext.innerText = 'ยืนยัน (บันทึกจริง)';
-                // ถ้าจะให้กดแล้วบันทึกจริง ค่อยใส่ Logic submit form ตรงนี้
-                btnNext.onclick = function() { alert("นี่คือโหมด Preview ครับ ถ้าจะบันทึกจริงต้องแก้โค้ด backend"); };
+                btnNext.onclick = function() { alert("นี่คือโหมด Preview ครับ หากต้องการบันทึกจริงต้องติดต่อ Backend"); };
             }
+            
             document.querySelector('.form-scroll-area').scrollTop = 0;
         }
 
         function handleNext() {
-            // Validation เฉพาะหน้า 1
             if (currentStep === 1) {
                 const inputs = document.getElementById('step1').querySelectorAll('input[required], select[required]');
                 let valid = true;
@@ -268,7 +266,7 @@
                     if (!input.value) { valid = false; input.style.borderColor = 'red'; }
                     else { input.style.borderColor = '#dee2e6'; }
                 });
-                if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน โดยเฉพาะ ID');
             }
             if (currentStep < 3) { currentStep++; updateUI(); }
         }
@@ -278,39 +276,36 @@
             else { window.history.back(); }
         }
 
-        // --- 3. Logic Checkbox (NoOther) ---
+        // --- 3. Logic Checkbox ---
         function toggleNoOther(checkbox) {
             if (checkbox.checked) {
                 document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => el.checked = false);
             }
         }
         document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
-            el.addEventListener('change', () => {
-                if(el.checked) document.getElementById('chkNoOther').checked = false;
-            });
+            el.addEventListener('change', () => { if(el.checked) document.getElementById('chkNoOther').checked = false; });
         });
 
-        // --- 4. AJAX Analyze (Logic จาก indexOLD) ---
+        // --- 4. AJAX Analyze ---
         async function analyzeData() {
-            // รวบรวมข้อมูล
-            const getVal = (name) => {
-                const el = document.querySelector(`[name="${name}"]`);
-                return el ? el.value : '';
-            };
+            const getVal = (name) => { const el = document.querySelector(`[name="${name}"]`); return el ? el.value : ''; };
             const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
             const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
 
             const data = {
-                save_mode: false, // 🔥 สั่ง Backend ว่าไม่ต้องบันทึก (Preview)
-                // ข้อมูลทั่วไป
+                // 🔥 ส่งค่า ID ที่กรอกไปที่ Backend
+                id: getVal('patient_id'), 
+                save_mode: false,
+                firstname: getVal('firstname'),
+                lastname: getVal('lastname'),
+                age: getVal('age'),
+                gender: getVal('gender'),
                 type: getVal('diabetes_type'),
-                // ข้อมูลร่างกาย
                 weight: getVal('weight'),
                 height: getVal('height'),
-                bmi: getVal('bmi'), // BMI จาก input ที่คำนวณแล้ว
+                bmi: getVal('bmi'),
                 sbp: getVal('bp_high'),  
                 dbp: getVal('bp_low'),   
-                // ผลเลือด
                 chol: getVal('cholesterol'), 
                 ldl: getVal('ldl'),
                 hdl: getVal('hdl'),
@@ -318,51 +313,32 @@
                 fpg: getVal('fpg'),
                 ketone: getVal('ketone'),
                 micro: getVal('microalbumin'), 
-                // Checkbox
                 special: selectedSpecials,
                 favorites: selectedFavorites
             };
 
-            // แสดงสถานะ Loading
             const btn = document.getElementById('btnNext');
             const originalText = btn.innerText;
-            btn.innerText = '⏳ กำลังประมวลผล...';
-            btn.disabled = true;
+            btn.innerText = '⏳ กำลังประมวลผล...'; btn.disabled = true;
 
             try {
-                // ส่งไปที่ API เดิมของคุณ
                 const res = await fetch('/api/analyze', { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify(data) 
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) 
                 });
                 const json = await res.json();
-
                 if(json.status === 'ok') {
-                    // ไปหน้า 4 และแสดงผล
-                    currentStep = 4;
-                    updateUI();
-                    renderResults(json);
-                } else {
-                    alert("❌ Error: " + json.message);
-                }
-            } catch(e) {
-                alert("เชื่อมต่อ Server ไม่ได้: " + e);
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
+                    currentStep = 4; updateUI(); renderResults(json);
+                } else { alert("❌ Error: " + json.message); }
+            } catch(e) { alert("เชื่อมต่อ Server ไม่ได้: " + e); } 
+            finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
-        // ฟังก์ชันแสดงผล (เอามาจาก indexOLD แต่ปรับให้เข้ากับ ID ใหม่)
         function renderResults(json) {
             const updateList = (id, items) => {
-                const el = document.getElementById(id); 
-                el.innerHTML = "";
+                const el = document.getElementById(id); el.innerHTML = "";
                 if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
                 else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
             };
-
             updateList('warnList', json.warnings);
             updateList('exList', json.exercises);
             updateList('compliList', json.complis);

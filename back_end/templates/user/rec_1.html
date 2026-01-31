@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CSS Layout Fix --- */
+        /* --- CSS Styles --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: #ffffff; font-family: 'Prompt', sans-serif; overflow: hidden; }
         .main-content { display: flex; flex-direction: column; height: 100vh; }
@@ -19,14 +19,13 @@
         .form-scroll-area { flex: 1; overflow-y: auto; padding: 40px 50px; padding-bottom: 20px; }
         .button-area { background-color: #ffffff; padding: 20px 50px; border-top: 1px solid #dee2e6; flex-shrink: 0; z-index: 10; }
 
-        /* --- Form Styles --- */
         .form-label { font-weight: 500; color: #333; margin-bottom: 8px; font-size: 1.1rem; }
         .form-control, .form-select { border-radius: 10px; padding: 12px; border: 1px solid #dee2e6; font-size: 1.1rem; min-height: 50px; }
         .form-control:focus, .form-select:focus { border-color: #85a2ff; box-shadow: 0 0 0 0.2rem rgba(133, 162, 255, 0.25); }
         .btn-cancel { background-color: #b0b0b0; color: white; padding: 15px 0; border-radius: 10px; width: 100%; border: none; font-size: 1.2rem; font-weight: 500; transition: all 0.3s ease; }
         .btn-next { background-color: #85a2ff; color: white; padding: 15px 0; border-radius: 10px; width: 100%; border: none; font-size: 1.2rem; font-weight: 500; transition: all 0.3s ease; }
         .btn-next:hover { background-color: #6d8ee6; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(133, 162, 255, 0.3); }
-        .btn-cancel:hover { background-color: #909090; transform: translateY(-2px); }
+        
         .form-section { background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; }
         
         .selection-card { background: white; border: 1px solid #dee2e6; border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: all 0.2s; display: flex; align-items: flex-start; gap: 15px; }
@@ -36,7 +35,6 @@
         .selection-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 5px; }
         .selection-desc { font-size: 0.9rem; color: #666; margin: 0; line-height: 1.4; }
 
-        /* --- Result Section --- */
         .result-header { text-align: center; margin-bottom: 30px; }
         .result-box { padding: 20px; border-radius: 12px; margin-bottom: 20px; }
         .box-warning { background-color: #fff3cd; border: 1px solid #ffecb5; color: #664d03; }
@@ -44,8 +42,7 @@
         .box-success { background-color: #d1e7dd; border: 1px solid #badbcc; color: #0f5132; }
         .box-info { background-color: #cff4fc; border: 1px solid #b6effb; color: #055160; }
         .result-list li { padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .result-list li:last-child { border-bottom: none; }
-
+        
         @media (max-width: 768px) {
             .header-banner { font-size: 1.8rem; padding: 20px; }
             .form-scroll-area { padding: 20px; }
@@ -72,16 +69,17 @@
                             <div class="row gy-4">
                                 <div class="col-lg-6">
                                     <div class="form-section">
-                                        <h5 class="mb-3 text-primary fw-bold">ข้อมูลส่วนตัว</h5>
-                                        <div class="row">
-                                            <div class="col-12 mb-3">
-                                                <label class="form-label text-danger">รหัสผู้ป่วย (ID) *</label>
-                                                <input type="text" class="form-control border-danger" name="patient_id" placeholder="เช่น P101, Test01" required>
+                                        <h5 class="mb-3 text-primary fw-bold">ข้อมูลผู้เข้ารับการตรวจ</h5>
+                                        
+                                        <div class="alert alert-light border d-flex align-items-center gap-3 mb-4">
+                                            <i class="bi bi-person-circle fs-2 text-primary"></i>
+                                            <div>
+                                                <div class="text-muted small">ผู้ใช้งาน</div>
+                                                <div class="fw-bold fs-5" id="displayFullname">กำลังโหลดข้อมูล...</div>
                                             </div>
-                                            
-                                            <div class="col-6 mb-3"><label class="form-label">ชื่อจริง</label><input type="text" class="form-control" name="firstname"></div>
-                                            <div class="col-6 mb-3"><label class="form-label">นามสกุล</label><input type="text" class="form-control" name="lastname"></div>
-                                            <div class="col-6 mb-3"><label class="form-label">อายุ (ปี)</label><input type="number" class="form-control" name="age"></div>
+                                        </div>
+
+                                        <div class="row">
                                             <div class="col-6 mb-3">
                                                 <label class="form-label">เพศ</label>
                                                 <select class="form-select" name="gender">
@@ -89,6 +87,10 @@
                                                     <option value="Male">ชาย</option>
                                                     <option value="Female">หญิง</option>
                                                 </select>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label">วันที่ตรวจ</label>
+                                                <input type="date" class="form-control" name="checkup_date" required>
                                             </div>
                                         </div>
 
@@ -110,7 +112,6 @@
                                                     <option value="no">ไม่ใช้</option>
                                                 </select>
                                             </div>
-                                            <div class="col-12 mb-3"><label class="form-label">วันที่ตรวจ</label><input type="date" class="form-control" name="checkup_date" required></div>
                                         </div>
                                     </div>
 
@@ -188,7 +189,6 @@
                                         <h2 class="text-primary fw-bold"><i class="bi bi-clipboard-check"></i> ผลการวิเคราะห์เบื้องต้น</h2>
                                         <p class="text-muted">ข้อมูลนี้เป็นเพียงการประมวลผลเบื้องต้น ยังไม่ได้บันทึกลงฐานข้อมูล</p>
                                     </div>
-
                                     <div class="row">
                                         <div class="col-md-6"><div class="result-box box-warning"><div class="result-title text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill"></i> คำเตือน (Warnings)</div><ul class="result-list" id="warnList"></ul></div></div>
                                         <div class="col-md-6"><div class="result-box box-danger"><div class="result-title text-danger"><i class="bi bi-virus"></i> ภาวะแทรกซ้อน</div><ul class="result-list" id="compliList"></ul></div></div>
@@ -214,6 +214,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // --- ตัวแปรสำหรับเก็บข้อมูลผู้ใช้ ---
+        let currentUser = {}; 
+
+        // --- ฟังก์ชันดึงข้อมูลผู้ใช้ทันทีที่โหลดหน้าเว็บ ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/api/current_user');
+                if(res.ok) {
+                    currentUser = await res.json();
+                    
+                    // แสดงชื่อบนหน้าจอ (UI)
+                    const fullName = (currentUser.firstname && currentUser.lastname) 
+                                   ? `${currentUser.firstname} ${currentUser.lastname}` 
+                                   : currentUser.username;
+                    
+                    // 🔥 แก้ไข: แสดงแค่ชื่อเท่านั้น (ไม่โชว์ ID)
+                    document.getElementById('displayFullname').innerText = fullName;
+                } else {
+                    console.warn('ไม่สามารถดึงข้อมูลผู้ใช้ได้');
+                    document.getElementById('displayFullname').innerText = 'ไม่ระบุตัวตน';
+                }
+            } catch (e) {
+                console.error('Error fetching user:', e);
+            }
+        });
+
         // --- 1. คำนวณ BMI ---
         const weightInput = document.getElementById('weight');
         const heightInput = document.getElementById('height');
@@ -238,7 +264,6 @@
             const btnNext = document.getElementById('btnNext');
             const title = document.getElementById('pageTitle');
 
-            // จัดการข้อความปุ่มและหัวข้อ
             if (currentStep === 1) {
                 btnBack.innerText = 'ยกเลิก'; btnNext.innerText = 'ถัดไป';
                 btnNext.onclick = handleNext; title.innerText = 'ผลตรวจสุขภาพ (1/3)';
@@ -254,7 +279,6 @@
                 btnNext.innerText = 'ยืนยัน (บันทึกจริง)';
                 btnNext.onclick = function() { alert("นี่คือโหมด Preview ครับ หากต้องการบันทึกจริงต้องติดต่อ Backend"); };
             }
-            
             document.querySelector('.form-scroll-area').scrollTop = 0;
         }
 
@@ -266,7 +290,7 @@
                     if (!input.value) { valid = false; input.style.borderColor = 'red'; }
                     else { input.style.borderColor = '#dee2e6'; }
                 });
-                if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน โดยเฉพาะ ID');
+                if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
             }
             if (currentStep < 3) { currentStep++; updateUI(); }
         }
@@ -292,13 +316,18 @@
             const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
             const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
 
+            // 🔥 เติมคำว่า SUPA นำหน้า ID ก่อนส่งไปหลังบ้าน
+            let finalID = 'TEMP_GUEST';
+            if (currentUser.id) {
+                finalID = 'SUPA' + currentUser.id;
+            }
+
             const data = {
-                // 🔥 ส่งค่า ID ที่กรอกไปที่ Backend
-                id: getVal('patient_id'), 
+                id: finalID, // ส่งค่าเป็น SUPA9 (แต่ user ไม่เห็น)
                 save_mode: false,
-                firstname: getVal('firstname'),
-                lastname: getVal('lastname'),
-                age: getVal('age'),
+                firstname: currentUser.firstname, 
+                lastname: currentUser.lastname,   
+                
                 gender: getVal('gender'),
                 type: getVal('diabetes_type'),
                 weight: getVal('weight'),

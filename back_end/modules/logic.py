@@ -94,8 +94,8 @@ def process_patient_realtime(patient_id, input_data=None):
                 'weight': safe_float(row.get('weight', {}).get('value')),
                 'height': safe_float(row.get('height', {}).get('value')),
                 'bmi': safe_float(row.get('bmi', {}).get('value')), 
-                'sbp': safe_float(row.get('sbp', {}).get('value')),
-                'dbp': safe_float(row.get('dbp', {}).get('value')), 
+                'sbp': int(safe_float(row.get('sbp', {}).get('value'))),
+                'dbp': int(safe_float(row.get('dbp', {}).get('value'))), 
                 'chol': safe_float(row.get('chol', {}).get('value')),
                 'ldl': safe_float(row.get('ldl', {}).get('value')),
                 'hdl': safe_float(row.get('hdl', {}).get('value')),
@@ -165,10 +165,6 @@ def process_patient_realtime(patient_id, input_data=None):
 
         # 1. Exercises
         recs_list = list(p.recommendedExercise)
-        
-        # 🔥 [แก้ใหม่] เอา Favorite Exercise มาใส่ด้วยเสมอ (ถ้าไม่ติด Avoid)
-        # ไม่ต้องรอให้ recs_list ว่างเปล่า
-
 
         # วนลูปสร้าง Text เพื่อแสดงผล
         for r in list(set(recs_list)):

@@ -15,42 +15,24 @@
             --hover-bg: #4A7BD4;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Kanit', sans-serif;
             overflow-x: hidden;
-            /* เพิ่ม margin-left ให้ body เพื่อไม่ให้ sidebar ทับเนื้อหา */
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s ease;
         }
 
         /* Sidebar Container */
         .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: var(--sidebar-width);
+            position: fixed; top: 0; left: 0;
+            height: 100vh; width: var(--sidebar-width);
             background: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
             box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
             z-index: 1000;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             overflow-y: auto;
-        }
-
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
         }
 
         /* Header Section */
@@ -62,93 +44,26 @@
         }
 
         .brand-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem;
         }
-
-        .brand-logo i {
-            font-size: 2rem;
-            color: white;
-        }
-
-        .brand-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            margin: 0;
-            letter-spacing: 0.5px;
-        }
-
-        .brand-subtitle {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.8);
-            margin: 0.25rem 0 0 0;
-            line-height: 1.3;
-        }
-
-        /* User Info */
-        .user-info-top {
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 0.85rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        .brand-logo i { font-size: 2rem; color: white; }
+        .brand-name { font-size: 1.5rem; font-weight: 700; color: white; margin: 0; letter-spacing: 0.5px; }
 
         /* Navigation Menu */
-        .sidebar-nav {
-            flex: 1;
-            padding: 1rem 0;
-        }
-
-        .nav-item {
-            margin: 0.25rem 0.75rem;
-        }
-
+        .sidebar-nav { flex: 1; padding: 1rem 0; }
+        .nav-item { margin: 0.25rem 0.75rem; }
         .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            display: flex; align-items: center; gap: 1rem;
             padding: 0.85rem 1.25rem;
-            color: white;
-            text-decoration: none;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            font-weight: 500;
-            position: relative;
+            color: white; text-decoration: none;
+            border-radius: 0.5rem; transition: all 0.3s ease;
+            font-size: 1rem; font-weight: 500; position: relative;
         }
-
-        .nav-link i {
-            font-size: 1.5rem;
-            min-width: 24px;
-            text-align: center;
-        }
-
-        .nav-link:hover {
-            background: var(--hover-bg);
-            transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .nav-link.active {
-            background: white;
-            color: var(--primary-blue);
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
-        }
-
-        .nav-link .arrow {
-            margin-left: auto;
-            transition: transform 0.3s ease;
-        }
-
-        .nav-link:hover .arrow {
-            transform: translateX(3px);
-        }
+        .nav-link i { font-size: 1.5rem; min-width: 24px; text-align: center; }
+        .nav-link:hover { background: var(--hover-bg); transform: translateX(5px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+        .nav-link.active { background: white; color: var(--primary-blue); font-weight: 600; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3); }
+        .nav-link .arrow { margin-left: auto; transition: transform 0.3s ease; }
+        .nav-link:hover .arrow { transform: translateX(3px); }
 
         /* Bottom Section */
         .sidebar-bottom {
@@ -156,130 +71,98 @@
             border-top: 2px solid rgba(255, 255, 255, 0.2);
             background: rgba(0, 0, 0, 0.1);
         }
-
-        .bottom-nav-item {
-            margin: 0.5rem 0.75rem;
-        }
-
+        .bottom-nav-item { margin: 0.5rem 0.75rem; }
         .bottom-nav-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.85rem 1.25rem;
-            color: white;
-            text-decoration: none;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            font-weight: 500;
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.85rem 1.25rem; color: white;
+            text-decoration: none; border-radius: 0.5rem;
+            transition: all 0.3s ease; font-size: 1rem; font-weight: 500;
         }
+        .bottom-nav-link:hover { background: rgba(255, 255, 255, 0.15); color: white; }
 
-        .bottom-nav-link i {
-            font-size: 1.5rem;
-            min-width: 24px;
-        }
-
-        .bottom-nav-link:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-        }
-
-        /* User Profile */
+        /* --- User Profile (Updated) --- */
         .sidebar-user {
             padding: 1rem;
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: rgba(0, 0, 0, 0.15);
+            align-items: center; /* จัดให้อยู่กึ่งกลางแนวตั้ง */
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2); /* เพิ่มความเข้มพื้นหลังนิดหน่อย */
         }
 
         .user-avatar {
-            width: 45px;
-            height: 45px;
+            width: 50px; /* ขยายขนาดนิดหน่อย */
+            height: 50px;
             border-radius: 50%;
             background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-blue);
-            font-size: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary-blue); font-size: 1.75rem;
+            flex-shrink: 0; /* ป้องกันวงกลมเบี้ยว */
         }
 
-        .user-name {
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* ป้องกันข้อความยาวเกิน */
+        }
+
+        .user-fullname {
             color: white;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .user-username {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+
+        .user-role-badge {
+            display: inline-block;
+            background: #ffc107; /* สีเหลือง */
+            color: #333;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            width: fit-content;
         }
 
         /* Mobile Toggle */
         .sidebar-toggle {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 999;
-            display: none;
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            width: 45px;
-            height: 45px;
+            position: fixed; top: 1rem; left: 1rem; z-index: 999;
+            display: none; background: var(--primary-blue); color: white;
+            border: none; border-radius: 0.5rem; width: 45px; height: 45px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
-
-        /* Responsive */
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-
-            .sidebar.active {
-                transform: translateX(0);
-            }
-
-            .sidebar-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .sidebar.active ~ .sidebar-toggle {
-                left: calc(var(--sidebar-width) + 1rem);
-            }
-
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(0); }
+            .sidebar-toggle { display: flex; align-items: center; justify-content: center; }
+            .sidebar.active ~ .sidebar-toggle { left: calc(var(--sidebar-width) + 1rem); }
         }
 
-        /* Overlay for mobile */
         .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); z-index: 999;
         }
-
-        .sidebar-overlay.active {
-            display: block;
-        }
+        .sidebar-overlay.active { display: block; }
     </style>
 </head>
 <body>
-    <!-- Mobile Toggle Button -->
     <button class="sidebar-toggle" id="sidebarToggle">
         <i class="bi bi-list"></i>
     </button>
 
-    <!-- Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-        <!-- Header with Logo -->
         <div class="sidebar-header">
             <div class="brand-logo">
                 <i class="bi bi-heart-pulse-fill"></i>
@@ -287,8 +170,6 @@
             </div>
         </div>
 
-
-        <!-- Main Navigation -->
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="/admin/dashboard" class="nav-link active">
@@ -314,7 +195,6 @@
             </div>
         </nav>
 
-        <!-- Bottom Section -->
         <div class="sidebar-bottom">
             <div class="bottom-nav-item">
                 <a href="/admin/settings" class="bottom-nav-link">
@@ -330,20 +210,22 @@
                 </a>
             </div>
 
-            <!-- User Profile -->
             <div class="sidebar-user">
                 <div class="user-avatar">
                     <i class="bi bi-person-fill"></i>
                 </div>
-                <span class="user-name">admin</span>
+                <div class="user-details">
+                    <div class="user-fullname" id="navFullName">Loading...</div>
+                    <div class="user-username" id="navUsername">...</div>
+                    <div class="user-role-badge" id="navRole">...</div>
+                </div>
             </div>
         </div>
     </aside>
 
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Mobile Sidebar Toggle
+        // ... (Mobile Sidebar Logic เดิม) ...
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -358,41 +240,65 @@
             sidebarOverlay.classList.remove('active');
         });
 
-        // Set active navigation based on current path
         const currentPath = window.location.pathname;
         document.querySelectorAll('.nav-link').forEach(link => {
             if (link.getAttribute('href') === currentPath) {
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
             }
-        
-        
-    });
-    
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', async function(e) {
-        e.preventDefault();
-        
-        try {
-            const response = await fetch('/api/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+        });
+
+        // ----------------------------------------------------
+        // 🔥 ฟังก์ชันดึงข้อมูลผู้ใช้ปัจจุบัน (Current User) 🔥
+        // ----------------------------------------------------
+     async function fetchCurrentUser() {
+            try {
+                // เรียก API (Flask จะส่ง Session Cookie ไปให้เองอัตโนมัติ ไม่ต้องใส่ Header)
+                const response = await fetch('/api/current_user');
+
+                if (response.ok) {
+                    const user = await response.json();
+                    
+                    // ตรวจสอบว่ามีชื่อจริงไหม? ถ้าไม่มีให้ใช้ Username แทน
+                    const firstName = user.firstname || user.username;
+                    const lastName = user.lastname || "";
+                    const fullName = `${firstName} ${lastName}`.trim();
+
+                    // อัปเดตหน้าจอ
+                    document.getElementById('navFullName').textContent = fullName;
+                    document.getElementById('navUsername').textContent = '@' + user.username;
+                    document.getElementById('navRole').textContent = user.role || 'USER';
+                } else {
+                    console.warn('ยังไม่ได้ Login หรือ Session หมดอายุ');
+                    // ถ้าอยากให้เด้งไปหน้า Login เมื่อ Session หมด ให้เปิดบรรทัดล่างนี้
+                    // window.location.href = '/login'; 
                 }
-            });
-
-            if (response.ok) {
-                // Redirect to login page after successful logout
-                window.location.href = '/login';
-            } else {
-                alert('เกิดข้อผิดพลาดในการออกจากระบบ');
+            } catch (error) {
+                console.error('Error fetching user:', error);
             }
-        } catch (error) {
-            console.error('Logout error:', error);
-            alert('เกิดข้อผิดพลาดในการออกจากระบบ');
         }
-    });
 
+        // เรียกใช้งานฟังก์ชันเมื่อโหลดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', fetchCurrentUser);
+
+        // ... (Logout Logic เดิม) ...
+        document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+            e.preventDefault();
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    localStorage.removeItem('token'); // ลบ Token
+                    window.location.href = '/login';
+                } else {
+                    alert('เกิดข้อผิดพลาดในการออกจากระบบ');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
     </script>
 </body>
 </html>

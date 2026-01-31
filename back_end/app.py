@@ -106,25 +106,37 @@ def login():
 def register():
     try:
         data = request.json
+        
+        # 1. รับค่าข้อมูลที่ส่งมาจากหน้าเว็บเพิ่ม (ชื่อ, นามสกุล, อีเมล)
+        firstname = data.get("firstname")
+        lastname = data.get("lastname")
+        email = data.get("email") 
         username = data["username"]
         password = data["password"]
 
+        # เข้ารหัสรหัสผ่าน
         hashed = bcrypt.hashpw(
             password.encode("utf-8"),
             bcrypt.gensalt()
         ).decode("utf-8")
 
         cursor.execute(
-            "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
-            (username, hashed, "user")
+            """
+            INSERT INTO users (firstname, lastname, email, username, password_hash, role) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (firstname, lastname, email, username, hashed, "user")
         )
+        
         conn.commit()
 
         return jsonify({"message": "Register success"})
 
     except Exception as e:
+        conn.rollback() # แนะนำให้เพิ่ม rollback เผื่อกรณี error ข้อมูลจะได้ไม่ค้าง
         print("REGISTER ERROR:", e)
         return jsonify({"error": str(e)}), 500
+    
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

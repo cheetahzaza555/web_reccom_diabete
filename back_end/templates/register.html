@@ -32,24 +32,41 @@
             box-shadow: none;
             border-color: #ced4da;
         }
-
-        /* ⚠️ ลบโค้ดซ่อนลูกตาออกแล้ว เพื่อให้ Browser แสดงผลตามปกติ */
     </style>
 </head>
 <body class="bg-white d-flex align-items-center justify-content-center vh-100 position-relative">
 
-    <div class="card border-0 shadow-lg bg-theme-dark text-white rounded-4" style="width: 100%; max-width: 700px; min-height: 700px;">
+    <div class="card border-0 shadow-lg bg-theme-dark text-white rounded-4" style="width: 100%; max-width: 700px; min-height: 750px;">
         <div class="card-body p-5 text-center d-flex flex-column justify-content-center">
             
-            <h2 class="fw-bold mb-5">ลงทะเบียน</h2>
+            <h2 class="fw-bold mb-4">ลงทะเบียน</h2>
 
             <form id="registerForm">
                 
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
+                                <i class="fa-solid fa-id-card fa-xl"></i>
+                            </span>
+                            <input type="text" id="firstname" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="ชื่อจริง" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
+                                <i class="fa-solid fa-id-card fa-xl"></i>
+                            </span>
+                            <input type="text" id="lastname" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="นามสกุล" required>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="input-group mb-3">
                     <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
                         <i class="fa-solid fa-user fa-xl"></i>
                     </span>
-                    <input type="text" id="username" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="ชื่อบัญชีผู้ใช้" required>
+                    <input type="text" id="username" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="ชื่อบัญชีผู้ใช้ (Username)" required>
                 </div>
 
                 <div class="input-group mb-3">
@@ -88,15 +105,17 @@
     </div>
 
     <script>
-        // ไม่ต้องมี Script สำหรับเปิด/ปิดตาแล้ว เพราะใช้ของ Browser เอง
-
         document.getElementById("registerForm").addEventListener("submit", async function(e) {
             e.preventDefault();
 
+            // 1. ดึงค่าจาก Input ใหม่
+            const firstname = document.getElementById("firstname").value;
+            const lastname = document.getElementById("lastname").value;
             const username = document.getElementById("username").value;
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
             const confirmPassword = document.getElementById("confirm_password").value;
+            
             const msgDiv = document.getElementById("msg");
             const btn = document.querySelector("button[type='submit']");
             const originalBtnText = btn.innerHTML;
@@ -114,7 +133,10 @@
                 const res = await fetch("/api/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    // 2. ส่งค่า firstname และ lastname ไปใน JSON
                     body: JSON.stringify({ 
+                        firstname: firstname,
+                        lastname: lastname,
                         username: username, 
                         email: email,
                         password: password 

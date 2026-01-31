@@ -22,7 +22,7 @@ def index():
         )
     else:
         return render_template(
-            "user/indexOLD.html",   
+            "user/index.html",   
             username=session.get("username"),
             role=role
         )

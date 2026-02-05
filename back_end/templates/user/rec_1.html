@@ -406,7 +406,7 @@
             btnNext.onclick = function() { 
                 // ✅ แก้ไขจุดตาย: ตอนนี้ currentPatientID มีค่าแล้วจากการกด analyzeData
                 if(currentPatientID) {
-                    window.location.href = "/select_plan/" + currentPatientID;
+                    window.location.href = "/user/select_plan/Patient" + currentPatientID;
                 } else {
                     alert("ไม่พบ ID ผู้ป่วย กรุณากดประมวลผลใหม่อีกครั้ง");
                 }

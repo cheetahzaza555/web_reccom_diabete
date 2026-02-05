@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template, jsonify, request, session
 from modules.logic import process_patient_realtime
-from modules.database import save_raw_patient_data, get_all_recommendations
+from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record
 
 user_bp = Blueprint('user', __name__)
 
@@ -38,6 +38,24 @@ def analyze():
 def reprocess(id):
     process_patient_realtime(id)
     return jsonify({"status": "ok"})
+
+@user_bp.route('/get_latest_checkup', methods=['GET'])
+def get_latest_data_api():
+    # 1. เช็คว่าล็อกอินหรือยัง
+    if 'user_id' not in session:
+        return jsonify({"found": False, "message": "Not logged in"})
+        
+    # 2. ดึง ID ของคนที่ล็อกอินอยู่ (สำคัญมาก! จุดนี้คือตัวแก้ปัญหาข้อมูลผิดคน)
+    current_user_id = session['user_id'] 
+    
+    print(f"🔍 Fetching data for User ID: {current_user_id}") # (Optional) สั่งปริ้นเช็คใน Terminal
+
+    # 3. เรียกฟังก์ชันเทพที่คุณเพิ่งเขียน (ส่ง ID เข้าไป)
+    # *** ตรงนี้แหละครับที่เชื่อมต่อกัน ***
+    data = get_patient_latest_record(current_user_id)
+    
+    # 4. ส่งผลลัพธ์กลับไปให้หน้าเว็บ (JavaScript)
+    return jsonify(data)
 
 
 

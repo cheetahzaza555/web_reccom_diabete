@@ -55,6 +55,7 @@ def save_raw_patient_data(data):
         # 2. เตรียมข้อมูล
         fname = escape_sparql(data.get('firstname', '-'))
         lname = escape_sparql(data.get('lastname', '-'))
+        insulin_val = escape_sparql(data.get('insulin_use') or "false")
         ketone_val = escape_sparql(data.get('ketone') or "Negative")
         micro_val = escape_sparql(data.get('micro') or "Negative")
         
@@ -90,6 +91,7 @@ def save_raw_patient_data(data):
         triples = f"""
             ex:{pid} a ex:Patient ; 
                      ex:diabetType ex:{escape_sparql(data['type'])} ; 
+                     ex:insulinTreatment "{insulin_val}"^^xsd:boolean ;
                      ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
                      ex:hasPhysicalExam {pe_node} ; ex:hasLabExam {le_node} .
             
@@ -301,3 +303,123 @@ def get_all_recommendations(patient_id):
     except Exception as e:
         print(f"❌ Error fetching recommendations: {e}")
         return []
+    
+def get_patient_latest_record(patient_id):
+    """
+    ดึงข้อมูลดิบของผู้ป่วยเพื่อนำไป Auto-fill ในหน้าแบบฟอร์ม
+    """
+    if not validate_id(patient_id): return {"found": False}
+    pid = f"PatientSUPA{patient_id}"
+
+    # Query ข้อมูลที่จำเป็นสำหรับ Form Input
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?fname ?lname ?gender ?type ?insulin
+           ?weight ?height ?bmi ?sbp ?dbp 
+           ?chol ?ldl ?hdl ?tri 
+           ?fpg ?ketone ?micro ?date
+           ?special ?fav
+    WHERE {{
+        ex:{pid} a ex:Patient .
+        
+        # ข้อมูลส่วนตัว
+        OPTIONAL {{ ex:{pid} ex:firstname ?fname }}
+        OPTIONAL {{ ex:{pid} ex:lastname ?lname }}
+        OPTIONAL {{ ex:{pid} ex:gender ?gender }} 
+        OPTIONAL {{ ex:{pid} ex:diabetType ?typeUri . BIND(STRAFTER(STR(?typeUri), "#") AS ?type) }}
+        OPTIONAL {{ ex:{pid} ex:insulinTreatment ?insulin }}
+        OPTIONAL {{ ex:{pid} ex:checkupDate ?date }}
+
+        # ข้อมูลร่างกาย (Physical Exam)
+        OPTIONAL {{ 
+            ex:{pid} ex:hasPhysicalExam ?pe .
+            OPTIONAL {{ ?pe ex:hasWeight ?weight }}
+            OPTIONAL {{ ?pe ex:hasHeight ?height }}
+            OPTIONAL {{ ?pe ex:hasBMI ?bmi }}
+            OPTIONAL {{ ?pe ex:hasSBP ?sbp }}
+            OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
+            # ดึง Special Complication (Checkbox)
+            OPTIONAL {{ ?pe ex:hasSpecialComplication ?spUri . BIND(STRAFTER(STR(?spUri), "#") AS ?special) }}
+        }}
+
+        # ข้อมูลผลเลือด (Lab Exam)
+        OPTIONAL {{
+            ex:{pid} ex:hasLabExam ?le .
+            OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }}
+            OPTIONAL {{ ?le ex:hasLDL ?ldl }}
+            OPTIONAL {{ ?le ex:hasHDL ?hdl }}
+            OPTIONAL {{ ?le ex:hasTriglyceride ?tri }}
+            OPTIONAL {{ ?le ex:hasFPG ?fpg }}
+            OPTIONAL {{ ?le ex:hasKetone ?ketone }}
+            OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }}
+        }}
+
+        # ดึงกิจกรรมที่ชอบ (Checkbox)
+        OPTIONAL {{ 
+            ex:{pid} ex:favoriteExercise ?favUri . 
+            BIND(STRAFTER(STR(?favUri), "#") AS ?fav) 
+        }}
+    }}
+    """
+
+    try:
+        sparql_read.setQuery(query)
+        results = sparql_read.query().convert()
+        bindings = results["results"]["bindings"]
+
+        if not bindings:
+            return {"found": False}
+
+        # เตรียมตัวแปรเก็บข้อมูล
+        data = {
+            "found": True,
+            "special": [],
+            "favorites": []
+        }
+
+        # Helper ดึงค่า Value
+        def get_val(row, key):
+            return row[key]["value"] if key in row else ""
+
+        # วนลูปเพื่อรวบรวมข้อมูล (เพราะ Checkbox ทำให้เกิดหลายบรรทัด)
+        for row in bindings:
+            # เก็บค่าที่เป็น Single Value (เก็บทับไปเลย เพราะค่าเหมือนกันทุกบรรทัด)
+            if "fname" in row: data["firstname"] = get_val(row, "fname")
+            if "lname" in row: data["lastname"] = get_val(row, "lname")
+            if "gender" in row: data["gender"] = get_val(row, "gender") # ถ้าใน DB เก็บ Male/Female ตรงๆ
+            if "type" in row: data["diabetes_type"] = get_val(row, "type")
+            if "insulin" in row: data["insulin_use"] = get_val(row, "insulin")
+            if "date" in row: data["checkup_date"] = get_val(row, "date")
+
+            if "weight" in row: data["weight"] = get_val(row, "weight")
+            if "height" in row: data["height"] = get_val(row, "height")
+            # BMI คำนวณใหม่หน้าเว็บได้ หรือจะส่งไปก็ได้
+            if "sbp" in row: data["bp_high"] = get_val(row, "sbp")
+            if "dbp" in row: data["bp_low"] = get_val(row, "dbp")
+
+            if "chol" in row: data["cholesterol"] = get_val(row, "chol")
+            if "ldl" in row: data["ldl"] = get_val(row, "ldl")
+            if "hdl" in row: data["hdl"] = get_val(row, "hdl")
+            if "tri" in row: data["triglyceride"] = get_val(row, "tri")
+            if "fpg" in row: data["fpg"] = get_val(row, "fpg")
+            if "ketone" in row: data["ketone"] = get_val(row, "ketone")
+            if "micro" in row: data["microalbumin"] = get_val(row, "micro")
+
+            # เก็บค่าที่เป็น List (Special Complication & Favorites)
+            if "special" in row:
+                val = get_val(row, "special")
+                if val and val not in data["special"]:
+                    data["special"].append(val)
+            
+            if "fav" in row:
+                val = get_val(row, "fav")
+                if val and val not in data["favorites"]:
+                    data["favorites"].append(val)
+
+        return data
+
+    except Exception as e:
+        print(f"❌ Error fetching latest record: {e}")
+        return {"found": False}

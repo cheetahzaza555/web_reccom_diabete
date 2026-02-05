@@ -119,8 +119,8 @@
                                                 <label class="form-label">ใช้อินซูลิน</label>
                                                 <select class="form-select" name="insulin_use" required>
                                                     <option value="" disabled selected>เลือก</option>
-                                                    <option value="yes">ใช้</option>
-                                                    <option value="no">ไม่ใช้</option>
+                                                    <option value="true">ใช้</option>
+                                                    <option value="false">ไม่ใช้</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -241,203 +241,277 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentUser = {}; 
+    let currentUser = {}; 
+    let currentPatientID = ""; // ✅ ประกาศตัวแปร Global ไว้ตรงนี้ เพื่อให้ทุกฟังก์ชันเรียกใช้ได้
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const res = await fetch('/api/current_user');
-                if(res.ok) {
-                    currentUser = await res.json();
-                    const fullName = (currentUser.firstname && currentUser.lastname) 
-                                   ? `${currentUser.firstname} ${currentUser.lastname}` 
-                                   : currentUser.username;
-                    document.getElementById('displayFullname').innerText = fullName;
+    // 1. Event Listener เริ่มต้น
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/api/current_user');
+            if(res.ok) {
+                currentUser = await res.json();
+                const fullName = (currentUser.firstname && currentUser.lastname) 
+                               ? `${currentUser.firstname} ${currentUser.lastname}` 
+                               : currentUser.username;
+                document.getElementById('displayFullname').innerText = fullName;
+                
+                // ดึงข้อมูลเก่า
+                await fetchLastCheckup(); 
+            } 
+        } catch (e) {
+            console.error('Error fetching user:', e);
+        }
+    });
+
+    // 2. ฟังก์ชันดึงข้อมูลเก่า
+    async function fetchLastCheckup() {
+        try {
+            const res = await fetch('/user/get_latest_checkup'); 
+            if (res.ok) {
+                const data = await res.json();
+                if (data) {
+                    console.log("Found old data:", data);
+
+                    const setVal = (name, val) => {
+                        const el = document.querySelector(`[name="${name}"]`);
+                        if (el && val) el.value = val;
+                    };
+
+                    // ใส่ข้อมูลลงฟอร์ม
+                    setVal('gender', data.gender);
+                    setVal('checkup_date', data.checkup_date); 
+                    setVal('diabetes_type', data.diabetes_type);
+                    setVal('insulin_use', data.insulin_use);
+                    setVal('weight', data.weight);
+                    setVal('height', data.height);
+                    calculateBMI(); // คำนวณ BMI ทันที
+
+                    setVal('bp_high', data.bp_high); 
+                    setVal('bp_low', data.bp_low);
+                    setVal('blood_test_date', data.blood_test_date);
+                    setVal('hdl', data.hdl);
+                    setVal('ldl', data.ldl);
+                    setVal('cholesterol', data.cholesterol);
+                    setVal('triglyceride', data.triglyceride);
+                    setVal('microalbumin', data.microalbumin);
+                    setVal('ketone', data.ketone);
+                    setVal('fpg', data.fpg);
+
+                    if (data.special_diseases) {
+                        data.special_diseases.forEach(val => {
+                            // เช็คทั้งแบบ value ตรงๆ และแบบ lowercase เผื่อ Backend ส่งมาต่างกัน
+                            const chk = document.querySelector(`input[name="special"][value="${val}"]`) ||
+                                        document.querySelector(`input[name="special"][value="${val.toLowerCase()}"]`);
+                            if (chk) chk.checked = true;
+                        });
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching old health data:", err);
+        }
+    }
+
+    // BMI และ Step Logic
+    const weightInput = document.getElementById('weight');
+    const heightInput = document.getElementById('height');
+    const bmiOutput = document.getElementById('bmi_result');
+    
+    function calculateBMI() {
+        const w = parseFloat(weightInput.value);
+        const h = parseFloat(heightInput.value) / 100;
+        if (w > 0 && h > 0) bmiOutput.value = (w / (h * h)).toFixed(2);
+        else bmiOutput.value = "";
+    }
+    weightInput.addEventListener('input', calculateBMI);
+    heightInput.addEventListener('input', calculateBMI);
+
+    let currentStep = 1;
+    function updateUI() {
+        for(let i=1; i<=4; i++) {
+            const stepEl = document.getElementById('step'+i);
+            if(stepEl) stepEl.style.display = 'none';
+        }
+        
+        const currentStepEl = document.getElementById('step' + currentStep);
+        if(currentStepEl) currentStepEl.style.display = 'block';
+
+        const btnBack = document.getElementById('btnBack');
+        const btnNext = document.getElementById('btnNext');
+        const title = document.getElementById('pageTitle');
+
+        // Logic ปุ่มต่างๆ
+        if (currentStep === 1) {
+            btnBack.innerText = 'ยกเลิก'; btnNext.innerText = 'ถัดไป';
+            btnNext.onclick = handleNext; title.innerText = 'ผลตรวจสุขภาพ (1/3)';
+        } else if (currentStep === 2) {
+            btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'ถัดไป';
+            btnNext.onclick = handleNext; title.innerText = 'โรคแทรกซ้อน (2/3)';
+        } else if (currentStep === 3) {
+            btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'ประมวลผล (Preview)';
+            btnNext.onclick = analyzeData; title.innerText = 'กิจกรรมที่ชอบ (3/3)';
+        } else if (currentStep === 4) {
+            title.innerText = 'สรุปผลการวิเคราะห์';
+            btnBack.innerText = 'แก้ไขข้อมูล';
+            btnNext.innerText = 'ยืนยันและไปเลือกแผน'; // เปลี่ยนข้อความให้สื่อความหมาย
+            btnNext.onclick = function() { 
+                // ✅ แก้ไขจุดตาย: ตอนนี้ currentPatientID มีค่าแล้วจากการกด analyzeData
+                if(currentPatientID) {
+                    window.location.href = "/select_plan/" + currentPatientID;
                 } else {
-                    document.getElementById('displayFullname').innerText = 'ไม่ระบุตัวตน';
+                    alert("ไม่พบ ID ผู้ป่วย กรุณากดประมวลผลใหม่อีกครั้ง");
                 }
-            } catch (e) {
-                console.error('Error fetching user:', e);
-            }
-        });
-
-        // BMI, Step Navigation, Checkbox Logic ... (เหมือนเดิม)
-        const weightInput = document.getElementById('weight');
-        const heightInput = document.getElementById('height');
-        const bmiOutput = document.getElementById('bmi_result');
-        function calculateBMI() {
-            const w = parseFloat(weightInput.value);
-            const h = parseFloat(heightInput.value) / 100;
-            if (w > 0 && h > 0) bmiOutput.value = (w / (h * h)).toFixed(2);
-            else bmiOutput.value = "";
-        }
-        weightInput.addEventListener('input', calculateBMI);
-        heightInput.addEventListener('input', calculateBMI);
-
-        let currentStep = 1;
-        function updateUI() {
-            for(let i=1; i<=4; i++) document.getElementById('step'+i).style.display = 'none';
-            document.getElementById('step' + currentStep).style.display = 'block';
-            const btnBack = document.getElementById('btnBack');
-            const btnNext = document.getElementById('btnNext');
-            const title = document.getElementById('pageTitle');
-
-            if (currentStep === 1) {
-                btnBack.innerText = 'ยกเลิก'; btnNext.innerText = 'ถัดไป';
-                btnNext.onclick = handleNext; title.innerText = 'ผลตรวจสุขภาพ (1/3)';
-            } else if (currentStep === 2) {
-                btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'ถัดไป';
-                btnNext.onclick = handleNext; title.innerText = 'โรคแทรกซ้อน (2/3)';
-            } else if (currentStep === 3) {
-                btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'ประมวลผล (Preview)';
-                btnNext.onclick = analyzeData; title.innerText = 'กิจกรรมที่ชอบ (3/3)';
-            } else if (currentStep === 4) {
-                title.innerText = 'สรุปผลการวิเคราะห์';
-                btnBack.innerText = 'แก้ไขข้อมูล';
-                btnNext.innerText = 'ยืนยัน (บันทึกจริง)';
-                btnNext.onclick = function() { alert("นี่คือโหมด Preview ครับ หากต้องการบันทึกจริงต้องติดต่อ Backend"); };
-            }
-            document.querySelector('.form-scroll-area').scrollTop = 0;
-        }
-
-        function handleNext() {
-            if (currentStep === 1) {
-                const inputs = document.getElementById('step1').querySelectorAll('input[required], select[required]');
-                let valid = true;
-                inputs.forEach(input => {
-                    if (!input.value) { valid = false; input.style.borderColor = 'red'; }
-                    else { input.style.borderColor = '#dee2e6'; }
-                });
-                if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-            }
-            if (currentStep < 3) { currentStep++; updateUI(); }
-        }
-
-        function handleBack() {
-            if (currentStep > 1) { currentStep--; updateUI(); } 
-            else { window.history.back(); }
-        }
-
-        function toggleNoOther(checkbox) {
-            if (checkbox.checked) {
-                document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => el.checked = false);
-            }
-        }
-        document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
-            el.addEventListener('change', () => { if(el.checked) document.getElementById('chkNoOther').checked = false; });
-        });
-
-        // AJAX Analyze
-        async function analyzeData() {
-            const getVal = (name) => { const el = document.querySelector(`[name="${name}"]`); return el ? el.value : ''; };
-            const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
-            const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
-
-            let finalID = 'TEMP_GUEST';
-            if (currentUser.id) finalID = 'SUPA' + currentUser.id;
-
-            const data = {
-                id: finalID,
-                save_mode: false,
-                firstname: currentUser.firstname, 
-                lastname: currentUser.lastname,   
-                gender: getVal('gender'),
-                type: getVal('diabetes_type'),
-                weight: getVal('weight'),
-                height: getVal('height'),
-                bmi: getVal('bmi'),
-                sbp: getVal('bp_high'), dbp: getVal('bp_low'),   
-                chol: getVal('cholesterol'), ldl: getVal('ldl'), hdl: getVal('hdl'), tri: getVal('triglyceride'), 
-                fpg: getVal('fpg'), ketone: getVal('ketone'), micro: getVal('microalbumin'), 
-                special: selectedSpecials, favorites: selectedFavorites
             };
+        } 
+        
+        // Scroll ขึ้นบนสุดเสมอเมื่อเปลี่ยนหน้า
+        const formScroll = document.querySelector('.form-scroll-area');
+        if(formScroll) formScroll.scrollTop = 0;
+    }
 
-            const btn = document.getElementById('btnNext');
-            const originalText = btn.innerText;
-            btn.innerText = '⏳ กำลังประมวลผล...'; btn.disabled = true;
-
-            try {
-                const res = await fetch('/user/analyze', { 
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) 
-                });
-                const text = await res.text();
-                try {
-                    const json = JSON.parse(text);
-                    if(json.status === 'ok') {
-                        currentStep = 4; updateUI(); renderResults(json);
-                    } else { alert("❌ ระบบแจ้งเตือน: " + json.message); }
-                } catch (err) {
-                    console.error("Server Error HTML:", text);
-                    alert("เกิดข้อผิดพลาดที่ Server (ดู Console เพื่อเช็ครายละเอียด)");
-                }
-            } catch(e) { alert("เชื่อมต่อ Server ไม่ได้: " + e); } 
-            finally { btn.innerText = originalText; btn.disabled = false; }
-        }
-
-        // 🔥 ฟังก์ชันแสดงผลแบบจัดหมวดหมู่ 🔥
-        function renderResults(json) {
-            const updateList = (id, items) => {
-                const el = document.getElementById(id); el.innerHTML = "";
-                if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
-                else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
-            };
-
-            // อัปเดต Warnings/Complications/Comorbidities ปกติ
-            updateList('warnList', json.warnings);
-            updateList('compliList', json.complis);
-            updateList('comorbList', json.comorbs);
-
-            // 🔥 Logic ใหม่สำหรับการจัดหมวดหมู่ "ท่าออกกำลังกาย"
-            const exEl = document.getElementById('exList');
-            exEl.innerHTML = ""; // ล้างค่าเก่า
-
-            if (!json.exercises || json.exercises.length === 0) {
-                exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
-                return;
-            }
-
-            // 1. สร้างตะกร้าแยกหมวดหมู่
-            const categories = {
-                "🏃 การวิ่ง (Running)": [],
-                "🚶 การเดิน/เคลื่อนไหว (Walking/Movement)": [],
-                "🚴 การปั่นจักรยาน (Bicycling)": [],
-                "💃 การเต้น/แอโรบิก (Dancing/Aerobic)": [],
-                "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
-                "💪 แรงต้าน/ยกน้ำหนัก (Resistance)": [],
-                "✨ อื่นๆ (Others)": []
-            };
-
-            // 2. วนลูปแยกประเภทข้อความ
-            json.exercises.forEach(item => {
-                const lower = item.toLowerCase();
-                if (lower.includes('run') || lower.includes('jog')) {
-                    categories["🏃 การวิ่ง (Running)"].push(item);
-                } else if (lower.includes('walk') || lower.includes('hike') || lower.includes('climb') || lower.includes('carry')) {
-                    categories["🚶 การเดิน/เคลื่อนไหว (Walkingt)"].push(item);
-                } else if (lower.includes('bik') || lower.includes('cycl')) {
-                    categories["🚴 การปั่นจักรยาน (Bicycling)"].push(item);
-                } else if (lower.includes('danc') || lower.includes('aerobic')) {
-                    categories["💃 การเต้น/แอโรบิก (Dancing/Aerobic)"].push(item);
-                } else if (lower.includes('swim') || lower.includes('water')) {
-                    categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(item);
-                } else if (lower.includes('weight') || lower.includes('lift') || lower.includes('resistance')) {
-                    categories["💪 แรงต้าน/ยกน้ำหนัก (Resistance)"].push(item);
-                } else {
-                    categories["✨ อื่นๆ (Others)"].push(item);
-                }
+    function handleNext() {
+        if (currentStep === 1) {
+            const inputs = document.getElementById('step1').querySelectorAll('input[required], select[required]');
+            let valid = true;
+            inputs.forEach(input => {
+                if (!input.value) { valid = false; input.style.borderColor = 'red'; }
+                else { input.style.borderColor = '#dee2e6'; }
             });
+            if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+        }
+        if (currentStep < 4) { currentStep++; updateUI(); }
+    }
 
-            // 3. แสดงผลลงหน้าจอ
-            for (const [catName, items] of Object.entries(categories)) {
-                if (items.length > 0) {
-                    // สร้างหัวข้อหมวดหมู่
-                    exEl.innerHTML += `<li class="category-header">${catName}</li>`;
-                    // สร้างรายการย่อย
-                    items.forEach(ex => {
-                        exEl.innerHTML += `<li class="ms-3 py-1 border-bottom" style="border-color: rgba(0,0,0,0.05) !important;">• ${ex}</li>`;
-                    });
-                }
+    function handleBack() {
+        if (currentStep > 1) { currentStep--; updateUI(); } 
+        else { window.history.back(); }
+    }
+
+    // Toggle Checkbox 'ไม่มี'
+    function toggleNoOther(checkbox) {
+        if (checkbox.checked) {
+            document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => el.checked = false);
+        }
+    }
+    document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
+        el.addEventListener('change', () => { if(el.checked) document.getElementById('chkNoOther').checked = false; });
+    });
+
+    // AJAX Analyze
+    async function analyzeData() {
+        const getVal = (name) => { const el = document.querySelector(`[name="${name}"]`); return el ? el.value : ''; };
+        const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
+        const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
+
+        // ✅ กำหนด ID ที่นี่ และบันทึกลง Global Variable ด้วย
+        let generatedID = 'TEMP_GUEST';
+        if (currentUser.id) generatedID = 'SUPA' + currentUser.id;
+        
+        currentPatientID = generatedID; // ✅ Save ลง Global เพื่อให้ step 4 ใช้ได้
+
+        const data = {
+            id: generatedID,
+            save_mode: false,
+            firstname: currentUser.firstname, 
+            lastname: currentUser.lastname,   
+            gender: getVal('gender'),
+            type: getVal('diabetes_type'),
+            weight: getVal('weight'),
+            height: getVal('height'),
+            bmi: getVal('bmi'),
+            sbp: getVal('bp_high'), dbp: getVal('bp_low'),   
+            chol: getVal('cholesterol'), ldl: getVal('ldl'), hdl: getVal('hdl'), tri: getVal('triglyceride'), 
+            fpg: getVal('fpg'), ketone: getVal('ketone'), micro: getVal('microalbumin'), 
+            special: selectedSpecials, favorites: selectedFavorites
+        };
+
+        const btn = document.getElementById('btnNext');
+        const originalText = btn.innerText;
+        btn.innerText = '⏳ กำลังประมวลผล...'; btn.disabled = true;
+
+        try {
+            const res = await fetch('/user/analyze', { 
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) 
+            });
+            const text = await res.text();
+            try {
+                const json = JSON.parse(text);
+                if(json.status === 'ok') {
+                    currentStep = 4; 
+                    updateUI(); 
+                    renderResults(json);
+                } else { alert("❌ ระบบแจ้งเตือน: " + json.message); }
+            } catch (err) {
+                console.error("Server Error HTML:", text);
+                alert("เกิดข้อผิดพลาดที่ Server");
+            }
+        } catch(e) { alert("เชื่อมต่อ Server ไม่ได้: " + e); } 
+        finally { btn.innerText = originalText; btn.disabled = false; }
+    }
+
+    // ฟังก์ชันแสดงผล (Categorization)
+    function renderResults(json) {
+        const updateList = (id, items) => {
+            const el = document.getElementById(id); el.innerHTML = "";
+            if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+            else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
+        };
+
+        updateList('warnList', json.warnings);
+        updateList('compliList', json.complis);
+        updateList('comorbList', json.comorbs);
+
+        const exEl = document.getElementById('exList');
+        exEl.innerHTML = ""; 
+
+        if (!json.exercises || json.exercises.length === 0) {
+            exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+            return;
+        }
+
+        const categories = {
+            "🏃 การวิ่ง (Running)": [],
+            "🚶 การเดิน/เคลื่อนไหว (Walking)": [],
+            "🚴 การปั่นจักรยาน (Bicycling)": [],
+            "💃 การเต้น/แอโรบิก (Aerobic)": [],
+            "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
+            "💪 แรงต้าน/ยกน้ำหนัก (Resistance)": [],
+            "✨ อื่นๆ (Others)": []
+        };
+
+        json.exercises.forEach(item => {
+            // ✅ ป้องกัน Error ถ้า item เป็น Object (ดึง .label ออกมา) หรือถ้าเป็น String ก็ใช้ได้เลย
+            let textToCheck = (typeof item === 'object' && item.label) ? item.label : item.toString();
+            let displayHeader = textToCheck; // ข้อความที่จะโชว์
+            let lower = textToCheck.toLowerCase();
+
+            if (lower.includes('run') || lower.includes('jog')) {
+                categories["🏃 การวิ่ง (Running)"].push(displayHeader);
+            } else if (lower.includes('walk') || lower.includes('hike') || lower.includes('climb')) {
+                categories["🚶 การเดิน/เคลื่อนไหว (Walking)"].push(displayHeader);
+            } else if (lower.includes('bik') || lower.includes('cycl')) {
+                categories["🚴 การปั่นจักรยาน (Bicycling)"].push(displayHeader);
+            } else if (lower.includes('danc') || lower.includes('aerobic')) {
+                categories["💃 การเต้น/แอโรบิก (Aerobic)"].push(displayHeader);
+            } else if (lower.includes('swim') || lower.includes('water')) {
+                categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(displayHeader);
+            } else if (lower.includes('weight') || lower.includes('lift') || lower.includes('resistance')) {
+                categories["💪 แรงต้าน/ยกน้ำหนัก (Resistance)"].push(displayHeader);
+            } else {
+                categories["✨ อื่นๆ (Others)"].push(displayHeader);
+            }
+        });
+
+        for (const [catName, items] of Object.entries(categories)) {
+            if (items.length > 0) {
+                // ใช้ class category-header ที่เพิ่มไว้ใน CSS
+                exEl.innerHTML += `<li class="category-header">${catName}</li>`;
+                items.forEach(ex => {
+                    exEl.innerHTML += `<li class="ms-3 py-1 border-bottom" style="border-color: rgba(0,0,0,0.05) !important;">• ${ex}</li>`;
+                });
             }
         }
-    </script>
+    }
+</script>
 </body>
 </html>

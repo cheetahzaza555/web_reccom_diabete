@@ -186,7 +186,6 @@
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Running"><div><div class="selection-title">วิ่ง (Running)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Walking"><div><div class="selection-title">เดิน (Walking)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bicycling"><div><div class="selection-title">ปั่นจักรยาน (Bicycling)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bycycling"><div><div class="selection-title">ปั่นจักรยาน (Bycycling)</div><p class="selection-desc small text-muted">ตัวเลือกตามฐานข้อมูล</p></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Dancing"><div><div class="selection-title">เต้นรำ (Dancing)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WaterActivity"><div><div class="selection-title">กิจกรรมทางน้ำ (WaterActivity)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Aerobic"><div><div class="selection-title">แอโรบิกทั่วไป (Aerobic)</div></div></label></div>
@@ -348,7 +347,7 @@
             btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'ถัดไป';
             btnNext.onclick = handleNext; title.innerText = 'โรคแทรกซ้อน (2/3)';
         } else if (currentStep === 3) {
-            btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'ประมวลผล (Preview)';
+            btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'สร้างตารางออกกำลังกาย';
             btnNext.onclick = analyzeData; title.innerText = 'กิจกรรมที่ชอบ (3/3)';
         } else if (currentStep === 4) {
             title.innerText = 'สรุปผลการวิเคราะห์';
@@ -473,7 +472,7 @@
             "🏃 การวิ่ง (Running)": [],
             "🚶 การเดิน/เคลื่อนไหว (Walking)": [],
             "🚴 การปั่นจักรยาน (Bicycling)": [],
-            "💃 การเต้น/แอโรบิก (Aerobic)": [],
+            "💃 การเต้น/แอโรบิก (Aerobic/Dancing)": [],
             "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
             "💪 แรงต้าน/ยกน้ำหนัก (Resistance)": [],
             "✨ อื่นๆ (Others)": []

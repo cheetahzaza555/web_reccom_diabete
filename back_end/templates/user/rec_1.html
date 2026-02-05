@@ -270,22 +270,49 @@
         if (res.ok) {
             const data = await res.json();
             
-            if (data) {
+            if (data && data.found) { // เช็ค data.found ด้วยก็ดีครับ
                 console.log("📥 Loaded Data:", data);
 
+                // ✅ 1. ใช้ setVal ตัวเทพ (รองรับ Radio, Select, Case-Insensitive)
                 const setVal = (name, val) => {
+                    if (!val) return; 
+
+                    // กรณี Radio Button (เช่น เพศ)
+                    const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`);
+                    if (radios.length > 0) {
+                        radios.forEach(r => {
+                            if (r.value.toLowerCase() === val.toString().toLowerCase()) {
+                                r.checked = true;
+                            }
+                        });
+                        return;
+                    }
+
+                    // กรณี Select/Input ทั่วไป
                     const el = document.querySelector(`[name="${name}"]`);
-                    if (el && val) el.value = val;
+                    if (el) {
+                        el.value = val; 
+                        // ถ้าเป็น Dropdown แล้วค่าไม่เข้า (ตัวพิมพ์ไม่ตรง)
+                        if (el.tagName === 'SELECT' && el.value !== val) {
+                            Array.from(el.options).forEach(opt => {
+                                if (opt.value.toLowerCase() === val.toString().toLowerCase()) {
+                                    el.value = opt.value;
+                                }
+                            });
+                        }
+                    }
                 };
 
                 // --- ใส่ข้อมูล Step 1 ---
-                setVal('gender', data.gender);
+                setVal('gender', data.gender); // ✅ ตอนนี้รองรับ Radio แล้ว
                 setVal('checkup_date', data.checkup_date);
                 setVal('diabetes_type', data.diabetes_type);
                 setVal('insulin_use', data.insulin_use);
                 setVal('weight', data.weight);
                 setVal('height', data.height);
-                calculateBMI();
+                
+                // คำนวณ BMI อัตโนมัติ (ถ้ามีฟังก์ชันนี้อยู่แล้ว)
+                if (typeof calculateBMI === 'function') calculateBMI(); 
 
                 setVal('bp_high', data.bp_high); 
                 setVal('bp_low', data.bp_low);
@@ -298,15 +325,17 @@
                 setVal('ketone', data.ketone);
                 setVal('fpg', data.fpg);
 
-                // 🔥 ฟังก์ชันติ๊ก Checkbox (ใช้ร่วมกัน)
+                // ✅ เพิ่ม: ความถี่ออกกำลังกาย
+                // (ต้องมั่นใจว่า HTML name="frequency" นะครับ)
+                setVal('frequency', data.frequency); 
+
+                // --- ฟังก์ชันติ๊ก Checkbox ---
                 const setCheckboxes = (inputName, savedList) => {
-                    console.log(`🔎 กำลังเช็ครายการ: ${inputName}`, savedList); // ดู Log ตรงนี้
                     if (savedList && Array.isArray(savedList)) {
                         savedList.forEach(val => {
-                            // หา checkbox ที่ value ตรงกัน
                             let chk = document.querySelector(`input[name="${inputName}"][value="${val}"]`);
                             
-                            // ถ้าไม่เจอ ลองหาแบบ Case Insensitive (ตัวเล็ก/ใหญ่)
+                            // กันเหนียวเรื่องตัวพิมพ์เล็กใหญ่
                             if (!chk && val) {
                                 chk = Array.from(document.querySelectorAll(`input[name="${inputName}"]`))
                                            .find(el => el.value.toLowerCase() === val.toLowerCase());
@@ -314,19 +343,16 @@
 
                             if (chk) {
                                 chk.checked = true;
-                                // สั่งให้มันรู้ตัวว่าถูกติ๊กแล้ว (เผื่อมี function อื่นดักจับ)
                                 chk.dispatchEvent(new Event('change')); 
                             }
                         });
                     }
                 };
 
-                // --- แก้ไขตรงนี้ครับ (Step 2) ---
-                // เช็คว่า Database ส่งมาชื่อ 'special' หรือ 'special_diseases'
+                // --- Step 2 & 3 ---
+                // รองรับทั้งชื่อเก่าและใหม่
                 const diseaseList = data.special || data.special_diseases;
                 setCheckboxes('special', diseaseList); 
-
-                // --- แก้ไขตรงนี้ครับ (Step 3) ---
                 setCheckboxes('favorites', data.favorites); 
             }
         }

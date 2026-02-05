@@ -268,3 +268,36 @@ def get_patient_profile(patient_id):
         "favorites": extract_set("fav"),
         "specials": extract_set("specialRaw")   
     }
+    
+def get_all_recommendations(patient_id):
+    """
+    ดึงรายการท่าออกกำลังกายแนะนำ 'ทั้งหมด' ของคนไข้คนนี้จาก GraphDB
+    """
+    if not validate_id(patient_id): return []
+    pid = f"Patient{patient_id}"
+
+    # เขียนคำสั่ง SPARQL เพื่อดึงทุกท่าที่สัมพันธ์กับ ex:recommendedExercise
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    SELECT ?recName 
+    WHERE {{
+        ex:{pid} ex:recommendedExercise ?rec .
+        BIND(STRAFTER(STR(?rec), "#") AS ?recName)
+    }}
+    """
+    
+    try:
+        sparql_read.setQuery(query)
+        results = sparql_read.query().convert()
+        
+        exercises = []
+        for r in results["results"]["bindings"]:
+            if "recName" in r:
+                exercises.append(r["recName"]["value"])
+        
+        # ผลลัพธ์จะเป็น List เช่น ['Walking', 'Swimming', 'TaiChi']
+        return exercises
+
+    except Exception as e:
+        print(f"❌ Error fetching recommendations: {e}")
+        return []

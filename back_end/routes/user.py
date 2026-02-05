@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, request
 from modules.logic import process_patient_realtime
-from modules.database import save_raw_patient_data # สมมติว่ามีฟังก์ชันนี้
+from modules.database import save_raw_patient_data, get_all_recommendations
 
 user_bp = Blueprint('user', __name__)
 
@@ -23,9 +23,7 @@ def user_knowledge():
 @user_bp.route('/analyze', methods=['POST'])
 def analyze():
     data = request.json
-    # 1. บันทึกข้อมูลดิบก่อน
     save_raw_patient_data(data)
-    # 2. ประมวลผลและได้ผลลัพธ์
     recs, warns, comorbs, complis = process_patient_realtime(data['id'], input_data=data)
     
     return jsonify({
@@ -40,3 +38,26 @@ def analyze():
 def reprocess(id):
     process_patient_realtime(id)
     return jsonify({"status": "ok"})
+
+
+
+@user_bp.route('/select_plan/<patient_id>')
+def select_plan_page(patient_id):
+    # 1. ดึงมา "ครบทุกอัน"
+    all_recs = get_all_recommendations(patient_id)
+    
+    # 2. ส่งไปให้หน้าเว็บกางออกมาให้เลือก
+    return render_template('user/select_plan.html', patient_id=patient_id,exercises=all_recs)
+
+# เพิ่ม Route สำหรับบันทึกตัวที่เลือก
+@user_bp.route('/save_selection', methods=['POST'])
+def save_selection():
+    data = request.json
+    pid = data.get('patient_id')
+    choice = data.get('exercise_name')
+    
+    # คุณต้องไปเขียนฟังก์ชัน save_patient_selection ใน database.py เพื่อบันทึกตัวเลือกนี้นะ
+    # save_patient_selection(pid, choice) 
+    
+    print(f"คนไข้ {pid} เลือกที่จะทำ: {choice}")
+    return jsonify({"status": "success"})

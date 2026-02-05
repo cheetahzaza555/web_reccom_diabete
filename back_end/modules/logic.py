@@ -106,11 +106,9 @@ def process_patient_realtime(patient_id, input_data=None):
                 'frequency': safe_get_name(freq_uri)
             }
 
-        # คำนวณ BMI ถ้าไม่มีมาให้
         if data['bmi'] is None and data['weight'] and data['height']:
             try: data['bmi'] = round(data['weight'] / ((data['height']/100)**2), 2)
             except: pass
-        if data['fpg'] is None: data['fpg'] = 100.0
 
         print(f"🧐 Analyzed: {data}")
 

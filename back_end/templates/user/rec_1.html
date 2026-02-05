@@ -43,6 +43,17 @@
         .box-info { background-color: #cff4fc; border: 1px solid #b6effb; color: #055160; }
         .result-list li { padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
         
+        /* สไตล์สำหรับหัวข้อหมวดหมู่ */
+        .category-header {
+            font-weight: bold;
+            color: #0f5132; /* สีเขียวเข้ม */
+            background-color: #e8f5e9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
         @media (max-width: 768px) {
             .header-banner { font-size: 1.8rem; padding: 20px; }
             .form-scroll-area { padding: 20px; }
@@ -121,8 +132,8 @@
                                             <div class="col-6 mb-3"><label class="form-label">น้ำหนัก (kg)</label><input type="number" class="form-control" id="weight" name="weight" step="0.1" required></div>
                                             <div class="col-6 mb-3"><label class="form-label">ส่วนสูง (cm)</label><input type="number" class="form-control" id="height" name="height" step="0.1" required></div>
                                             <div class="col-12 mb-3"><label class="form-label">BMI</label><input type="text" class="form-control bg-light" id="bmi_result" readonly></div>
-                                            <div class="col-6 mb-3"><label class="form-label">ความดันตัวบน</label><input type="number" class="form-control" name="bp_high" required></div>
-                                            <div class="col-6 mb-3"><label class="form-label">ความดันตัวล่าง</label><input type="number" class="form-control" name="bp_low" required></div>
+                                            <div class="col-6 mb-3"><label class="form-label">ความดันตัวบน (SBP)</label><input type="number" class="form-control" name="bp_high" required></div>
+                                            <div class="col-6 mb-3"><label class="form-label">ความดันตัวล่าง (DBP)</label><input type="number" class="form-control" name="bp_low" required></div>
                                         </div>
                                     </div>
                                 </div>
@@ -175,21 +186,19 @@
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Running"><div><div class="selection-title">วิ่ง (Running)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Walking"><div><div class="selection-title">เดิน (Walking)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bicycling"><div><div class="selection-title">ปั่นจักรยาน (Bicycling)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bycycling"><div><div class="selection-title">ปั่นจักรยาน (Bycycling*)</div><p class="selection-desc small text-muted">ตัวเลือกตามฐานข้อมูล</p></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bycycling"><div><div class="selection-title">ปั่นจักรยาน (Bycycling)</div><p class="selection-desc small text-muted">ตัวเลือกตามฐานข้อมูล</p></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Dancing"><div><div class="selection-title">เต้นรำ (Dancing)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WaterActivity"><div><div class="selection-title">กิจกรรมทางน้ำ (WaterActivity)</div></div></label></div>
-
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Aerobic"><div><div class="selection-title">แอโรบิกทั่วไป (Aerobic)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicExercise"><div><div class="selection-title">แอโรบิกลงน้ำหนัก</div><p class="selection-desc small">WeightBearingAerobicExercise</p></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicExercise"><div><div class="selection-title">แอโรบิกไม่ลงน้ำหนัก</div><p class="selection-desc small">NonWeightBearingAerobicExercise</p></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicSport"><div><div class="selection-title">กีฬาแอโรบิกลงน้ำหนัก</div><p class="selection-desc small">WeightBearingAerobicSport</p></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicSport"><div><div class="selection-title">กีฬาแอโรบิกไม่ลงน้ำหนัก</div><p class="selection-desc small">NonWeightBearingAerobicSport</p></div></label></div>
-
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicExercise"><div><div class="selection-title">แอโรบิกลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicExercise"><div><div class="selection-title">แอโรบิกไม่ลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicSport"><div><div class="selection-title">กีฬาแอโรบิกลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicSport"><div><div class="selection-title">กีฬาแอโรบิกไม่ลงน้ำหนัก</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Resistance"><div><div class="selection-title">แรงต้านทั่วไป (Resistance)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="StretchingExercise"><div><div class="selection-title">ยืดเหยียด (StretchingExercise)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingResistanceExercise"><div><div class="selection-title">แรงต้านลงน้ำหนัก</div><p class="selection-desc small">WeightBearingResistanceExercise</p></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingResistanceExercise"><div><div class="selection-title">แรงต้านไม่ลงน้ำหนัก</div><p class="selection-desc small">NonWeightBearingResistanceExercise</p></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="ResistanceAndStretcingExercise"><div><div class="selection-title">แรงต้านและยืดเหยียด</div><p class="selection-desc small">ResistanceAndStretcingExercise</p></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingResistanceExercise"><div><div class="selection-title">แรงต้านลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingResistanceExercise"><div><div class="selection-title">แรงต้านไม่ลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="ResistanceAndStretcingExercise"><div><div class="selection-title">แรงต้านและยืดเหยียด</div></div></label></div>
                                     </div>
                                 </div>
                             </div>
@@ -205,7 +214,12 @@
                                     <div class="row">
                                         <div class="col-md-6"><div class="result-box box-warning"><div class="result-title text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill"></i> คำเตือน (Warnings)</div><ul class="result-list" id="warnList"></ul></div></div>
                                         <div class="col-md-6"><div class="result-box box-danger"><div class="result-title text-danger"><i class="bi bi-virus"></i> ภาวะแทรกซ้อน</div><ul class="result-list" id="compliList"></ul></div></div>
-                                        <div class="col-12"><div class="result-box box-success"><div class="result-title text-success"><i class="bi bi-person-walking"></i> ท่าออกกำลังกายที่แนะนำ</div><ul class="result-list" id="exList"></ul></div></div>
+                                        <div class="col-12">
+                                            <div class="result-box box-success">
+                                                <div class="result-title text-success"><i class="bi bi-person-walking"></i> ท่าออกกำลังกายที่แนะนำ</div>
+                                                <ul class="result-list" id="exList" style="list-style: none;"></ul>
+                                            </div>
+                                        </div>
                                         <div class="col-12"><div class="result-box box-info"><div class="result-title text-primary"><i class="bi bi-heart-pulse"></i> โรคร่วม (Comorbidities)</div><ul class="result-list" id="comorbList"></ul></div></div>
                                     </div>
                                 </div>
@@ -227,25 +241,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // --- ตัวแปรสำหรับเก็บข้อมูลผู้ใช้ ---
         let currentUser = {}; 
 
-        // --- ฟังก์ชันดึงข้อมูลผู้ใช้ทันทีที่โหลดหน้าเว็บ ---
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await fetch('/api/current_user');
                 if(res.ok) {
                     currentUser = await res.json();
-                    
-                    // แสดงชื่อบนหน้าจอ (UI)
                     const fullName = (currentUser.firstname && currentUser.lastname) 
                                    ? `${currentUser.firstname} ${currentUser.lastname}` 
                                    : currentUser.username;
-                    
-                    // 🔥 แก้ไข: แสดงแค่ชื่อเท่านั้น (ไม่โชว์ ID)
                     document.getElementById('displayFullname').innerText = fullName;
                 } else {
-                    console.warn('ไม่สามารถดึงข้อมูลผู้ใช้ได้');
                     document.getElementById('displayFullname').innerText = 'ไม่ระบุตัวตน';
                 }
             } catch (e) {
@@ -253,26 +260,23 @@
             }
         });
 
-        // --- 1. คำนวณ BMI ---
+        // BMI, Step Navigation, Checkbox Logic ... (เหมือนเดิม)
         const weightInput = document.getElementById('weight');
         const heightInput = document.getElementById('height');
         const bmiOutput = document.getElementById('bmi_result');
         function calculateBMI() {
             const w = parseFloat(weightInput.value);
             const h = parseFloat(heightInput.value) / 100;
-            if (w > 0 && h > 0) {
-                bmiOutput.value = (w / (h * h)).toFixed(2);
-            } else { bmiOutput.value = ""; }
+            if (w > 0 && h > 0) bmiOutput.value = (w / (h * h)).toFixed(2);
+            else bmiOutput.value = "";
         }
         weightInput.addEventListener('input', calculateBMI);
         heightInput.addEventListener('input', calculateBMI);
 
-        // --- 2. Step Navigation ---
         let currentStep = 1;
         function updateUI() {
             for(let i=1; i<=4; i++) document.getElementById('step'+i).style.display = 'none';
             document.getElementById('step' + currentStep).style.display = 'block';
-
             const btnBack = document.getElementById('btnBack');
             const btnNext = document.getElementById('btnNext');
             const title = document.getElementById('pageTitle');
@@ -313,7 +317,6 @@
             else { window.history.back(); }
         }
 
-        // --- 3. Logic Checkbox ---
         function toggleNoOther(checkbox) {
             if (checkbox.checked) {
                 document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => el.checked = false);
@@ -323,40 +326,29 @@
             el.addEventListener('change', () => { if(el.checked) document.getElementById('chkNoOther').checked = false; });
         });
 
-        // --- 4. AJAX Analyze ---
+        // AJAX Analyze
         async function analyzeData() {
             const getVal = (name) => { const el = document.querySelector(`[name="${name}"]`); return el ? el.value : ''; };
             const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
             const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
 
-            // 🔥 เติมคำว่า SUPA นำหน้า ID ก่อนส่งไปหลังบ้าน
             let finalID = 'TEMP_GUEST';
-            if (currentUser.id) {
-                finalID = 'SUPA' + currentUser.id;
-            }
+            if (currentUser.id) finalID = 'SUPA' + currentUser.id;
 
             const data = {
-                id: finalID, // ส่งค่าเป็น SUPA9 (แต่ user ไม่เห็น)
+                id: finalID,
                 save_mode: false,
                 firstname: currentUser.firstname, 
                 lastname: currentUser.lastname,   
-                
                 gender: getVal('gender'),
                 type: getVal('diabetes_type'),
                 weight: getVal('weight'),
                 height: getVal('height'),
                 bmi: getVal('bmi'),
-                sbp: getVal('bp_high'),  
-                dbp: getVal('bp_low'),   
-                chol: getVal('cholesterol'), 
-                ldl: getVal('ldl'),
-                hdl: getVal('hdl'),
-                tri: getVal('triglyceride'), 
-                fpg: getVal('fpg'),
-                ketone: getVal('ketone'),
-                micro: getVal('microalbumin'), 
-                special: selectedSpecials,
-                favorites: selectedFavorites
+                sbp: getVal('bp_high'), dbp: getVal('bp_low'),   
+                chol: getVal('cholesterol'), ldl: getVal('ldl'), hdl: getVal('hdl'), tri: getVal('triglyceride'), 
+                fpg: getVal('fpg'), ketone: getVal('ketone'), micro: getVal('microalbumin'), 
+                special: selectedSpecials, favorites: selectedFavorites
             };
 
             const btn = document.getElementById('btnNext');
@@ -367,24 +359,84 @@
                 const res = await fetch('/user/analyze', { 
                     method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) 
                 });
-                const json = await res.json();
-                if(json.status === 'ok') {
-                    currentStep = 4; updateUI(); renderResults(json);
-                } else { alert("❌ Error: " + json.message); }
+                const text = await res.text();
+                try {
+                    const json = JSON.parse(text);
+                    if(json.status === 'ok') {
+                        currentStep = 4; updateUI(); renderResults(json);
+                    } else { alert("❌ ระบบแจ้งเตือน: " + json.message); }
+                } catch (err) {
+                    console.error("Server Error HTML:", text);
+                    alert("เกิดข้อผิดพลาดที่ Server (ดู Console เพื่อเช็ครายละเอียด)");
+                }
             } catch(e) { alert("เชื่อมต่อ Server ไม่ได้: " + e); } 
             finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
+        // 🔥 ฟังก์ชันแสดงผลแบบจัดหมวดหมู่ 🔥
         function renderResults(json) {
             const updateList = (id, items) => {
                 const el = document.getElementById(id); el.innerHTML = "";
                 if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
                 else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
             };
+
+            // อัปเดต Warnings/Complications/Comorbidities ปกติ
             updateList('warnList', json.warnings);
-            updateList('exList', json.exercises);
             updateList('compliList', json.complis);
             updateList('comorbList', json.comorbs);
+
+            // 🔥 Logic ใหม่สำหรับการจัดหมวดหมู่ "ท่าออกกำลังกาย"
+            const exEl = document.getElementById('exList');
+            exEl.innerHTML = ""; // ล้างค่าเก่า
+
+            if (!json.exercises || json.exercises.length === 0) {
+                exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+                return;
+            }
+
+            // 1. สร้างตะกร้าแยกหมวดหมู่
+            const categories = {
+                "🏃 การวิ่ง (Running)": [],
+                "🚶 การเดิน/เคลื่อนไหว (Walking/Movement)": [],
+                "🚴 การปั่นจักรยาน (Bicycling)": [],
+                "💃 การเต้น/แอโรบิก (Dancing/Aerobic)": [],
+                "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
+                "💪 แรงต้าน/ยกน้ำหนัก (Resistance)": [],
+                "✨ อื่นๆ (Others)": []
+            };
+
+            // 2. วนลูปแยกประเภทข้อความ
+            json.exercises.forEach(item => {
+                const lower = item.toLowerCase();
+                if (lower.includes('run') || lower.includes('jog')) {
+                    categories["🏃 การวิ่ง (Running)"].push(item);
+                } else if (lower.includes('walk') || lower.includes('hike') || lower.includes('climb') || lower.includes('carry')) {
+                    categories["🚶 การเดิน/เคลื่อนไหว (Walkingt)"].push(item);
+                } else if (lower.includes('bik') || lower.includes('cycl')) {
+                    categories["🚴 การปั่นจักรยาน (Bicycling)"].push(item);
+                } else if (lower.includes('danc') || lower.includes('aerobic')) {
+                    categories["💃 การเต้น/แอโรบิก (Dancing/Aerobic)"].push(item);
+                } else if (lower.includes('swim') || lower.includes('water')) {
+                    categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(item);
+                } else if (lower.includes('weight') || lower.includes('lift') || lower.includes('resistance')) {
+                    categories["💪 แรงต้าน/ยกน้ำหนัก (Resistance)"].push(item);
+                } else {
+                    categories["✨ อื่นๆ (Others)"].push(item);
+                }
+            });
+
+            // 3. แสดงผลลงหน้าจอ
+            for (const [catName, items] of Object.entries(categories)) {
+                if (items.length > 0) {
+                    // สร้างหัวข้อหมวดหมู่
+                    exEl.innerHTML += `<li class="category-header">${catName}</li>`;
+                    // สร้างรายการย่อย
+                    items.forEach(ex => {
+                        exEl.innerHTML += `<li class="ms-3 py-1 border-bottom" style="border-color: rgba(0,0,0,0.05) !important;">• ${ex}</li>`;
+                    });
+                }
+            }
         }
     </script>
 </body>

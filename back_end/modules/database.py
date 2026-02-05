@@ -39,13 +39,11 @@ def safe_get_name(uri):
 def save_raw_patient_data(data):
     if not validate_id(data.get('id')): return
 
-    # ✅ 1. สร้างตัวแปร raw_id (เฉพาะตัวเลข) และ pid (PatientX)
     raw_id = str(data.get('id')).replace("Patient", "")  
     pid = f"Patient{raw_id}"                             
     
-    # ✅ 2. ใช้ raw_id ในการตั้งชื่อ Node 
     pe_node = f"ex:PE1P00{raw_id}"   
-    le_node = f"ex:Lab1P00{raw_id}"  
+    le_node = f"ex:Lab1P00{raw_id}"   
 
     try:
         # 1. ลบข้อมูลเก่า
@@ -55,6 +53,10 @@ def save_raw_patient_data(data):
         # 2. เตรียมข้อมูล
         fname = escape_sparql(data.get('firstname', '-'))
         lname = escape_sparql(data.get('lastname', '-'))
+        
+        # 🔥 [เพิ่ม] ดึงค่าเพศ
+        gender_val = escape_sparql(data.get('gender', '-')) 
+
         insulin_val = escape_sparql(data.get('insulin_use') or "false")
         ketone_val = escape_sparql(data.get('ketone') or "Negative")
         micro_val = escape_sparql(data.get('micro') or "Negative")
@@ -80,17 +82,19 @@ def save_raw_patient_data(data):
         if freq_val:
             freq_triple = f"ex:{pid} ex:exerciseFrequency ex:{escape_sparql(freq_val)} ."
 
-        # 🔥 [ใหม่] จัดการ Favorites (ท่าที่ชอบ)
+        # จัดการ Favorites
         raw_favs = data.get('favorites')
         fav_triples = ""
         if isinstance(raw_favs, list):
             for fav in raw_favs:
                 fav_triples += f"ex:{pid} ex:favoriteExercise ex:{escape_sparql(fav)} .\n"
 
-        # 3. สร้าง Triples (เพิ่ม {fav_triples} ลงไปแล้ว)
+        # 3. สร้าง Triples
+        # 🔥 [เพิ่ม] ex:gender "{gender_val}" ; ลงไปในก้อนแรก
         triples = f"""
             ex:{pid} a ex:Patient ; 
                      ex:diabetType ex:{escape_sparql(data['type'])} ; 
+                     ex:gender "{gender_val}" ;  
                      ex:insulinTreatment "{insulin_val}"^^xsd:boolean ;
                      ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
                      ex:hasPhysicalExam {pe_node} ; ex:hasLabExam {le_node} .
@@ -116,7 +120,7 @@ def save_raw_patient_data(data):
         
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
         sparql_write.query()
-        print(f"💾 Saved Raw Data for {pid} (Inc. Favorites & Frequency)")
+        print(f"💾 Saved Raw Data for {pid} (Inc. Gender, Favorites & Frequency)")
         
     except Exception as e:
         print(f"❌ Error saving raw data: {e}")
@@ -311,7 +315,7 @@ def get_patient_latest_record(patient_id):
     if not validate_id(patient_id): return {"found": False}
     pid = f"PatientSUPA{patient_id}"
 
-    # Query ข้อมูลที่จำเป็นสำหรับ Form Input
+    # ✅ เพิ่ม ?freq เข้าไปใน SELECT
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -320,7 +324,7 @@ def get_patient_latest_record(patient_id):
            ?weight ?height ?bmi ?sbp ?dbp 
            ?chol ?ldl ?hdl ?tri 
            ?fpg ?ketone ?micro ?date
-           ?special ?fav
+           ?special ?fav ?freq
     WHERE {{
         ex:{pid} a ex:Patient .
         
@@ -332,6 +336,12 @@ def get_patient_latest_record(patient_id):
         OPTIONAL {{ ex:{pid} ex:insulinTreatment ?insulin }}
         OPTIONAL {{ ex:{pid} ex:checkupDate ?date }}
 
+        # ✅ เพิ่ม: ความถี่ออกกำลังกาย (Frequency)
+        OPTIONAL {{ 
+            ex:{pid} ex:exerciseFrequency ?freqUri . 
+            BIND(STRAFTER(STR(?freqUri), "#") AS ?freq) 
+        }}
+
         # ข้อมูลร่างกาย (Physical Exam)
         OPTIONAL {{ 
             ex:{pid} ex:hasPhysicalExam ?pe .
@@ -340,7 +350,7 @@ def get_patient_latest_record(patient_id):
             OPTIONAL {{ ?pe ex:hasBMI ?bmi }}
             OPTIONAL {{ ?pe ex:hasSBP ?sbp }}
             OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
-            # ดึง Special Complication (Checkbox)
+            # ดึง Special Complication
             OPTIONAL {{ ?pe ex:hasSpecialComplication ?spUri . BIND(STRAFTER(STR(?spUri), "#") AS ?special) }}
         }}
 
@@ -356,7 +366,7 @@ def get_patient_latest_record(patient_id):
             OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }}
         }}
 
-        # ดึงกิจกรรมที่ชอบ (Checkbox)
+        # ดึงกิจกรรมที่ชอบ
         OPTIONAL {{ 
             ex:{pid} ex:favoriteExercise ?favUri . 
             BIND(STRAFTER(STR(?favUri), "#") AS ?fav) 
@@ -375,27 +385,29 @@ def get_patient_latest_record(patient_id):
         # เตรียมตัวแปรเก็บข้อมูล
         data = {
             "found": True,
-            "special": [],
-            "favorites": []
+            "special": [],  # เตรียม List ไว้
+            "favorites": [] # เตรียม List ไว้
         }
 
-        # Helper ดึงค่า Value
         def get_val(row, key):
             return row[key]["value"] if key in row else ""
 
-        # วนลูปเพื่อรวบรวมข้อมูล (เพราะ Checkbox ทำให้เกิดหลายบรรทัด)
+        # วนลูปเพื่อรวบรวมข้อมูล
         for row in bindings:
-            # เก็บค่าที่เป็น Single Value (เก็บทับไปเลย เพราะค่าเหมือนกันทุกบรรทัด)
+            # ข้อมูลทั่วไป (เก็บทับได้เลย เพราะค่าเหมือนกันทุกบรรทัด)
             if "fname" in row: data["firstname"] = get_val(row, "fname")
             if "lname" in row: data["lastname"] = get_val(row, "lname")
-            if "gender" in row: data["gender"] = get_val(row, "gender") # ถ้าใน DB เก็บ Male/Female ตรงๆ
+            if "gender" in row: data["gender"] = get_val(row, "gender") # ✅ ดึงเพศ
             if "type" in row: data["diabetes_type"] = get_val(row, "type")
             if "insulin" in row: data["insulin_use"] = get_val(row, "insulin")
             if "date" in row: data["checkup_date"] = get_val(row, "date")
+            
+            # ✅ ดึงความถี่ออกกำลังกาย
+            if "freq" in row: data["frequency"] = get_val(row, "freq")
 
             if "weight" in row: data["weight"] = get_val(row, "weight")
             if "height" in row: data["height"] = get_val(row, "height")
-            # BMI คำนวณใหม่หน้าเว็บได้ หรือจะส่งไปก็ได้
+            # BMI
             if "sbp" in row: data["bp_high"] = get_val(row, "sbp")
             if "dbp" in row: data["bp_low"] = get_val(row, "dbp")
 
@@ -407,7 +419,7 @@ def get_patient_latest_record(patient_id):
             if "ketone" in row: data["ketone"] = get_val(row, "ketone")
             if "micro" in row: data["microalbumin"] = get_val(row, "micro")
 
-            # เก็บค่าที่เป็น List (Special Complication & Favorites)
+            # เก็บค่าที่เป็น List (ป้องกันค่าซ้ำ)
             if "special" in row:
                 val = get_val(row, "special")
                 if val and val not in data["special"]:

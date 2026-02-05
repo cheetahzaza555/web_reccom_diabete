@@ -186,7 +186,6 @@
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Running"><div><div class="selection-title">วิ่ง (Running)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Walking"><div><div class="selection-title">เดิน (Walking)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bicycling"><div><div class="selection-title">ปั่นจักรยาน (Bicycling)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bycycling"><div><div class="selection-title">ปั่นจักรยาน (Bycycling)</div><p class="selection-desc small text-muted">ตัวเลือกตามฐานข้อมูล</p></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Dancing"><div><div class="selection-title">เต้นรำ (Dancing)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WaterActivity"><div><div class="selection-title">กิจกรรมทางน้ำ (WaterActivity)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Aerobic"><div><div class="selection-title">แอโรบิกทั่วไป (Aerobic)</div></div></label></div>
@@ -265,52 +264,76 @@
 
     // 2. ฟังก์ชันดึงข้อมูลเก่า
     async function fetchLastCheckup() {
-        try {
-            const res = await fetch('/user/get_latest_checkup'); 
-            if (res.ok) {
-                const data = await res.json();
-                if (data) {
-                    console.log("Found old data:", data);
+    try {
+        const res = await fetch('/user/get_latest_checkup'); 
+        
+        if (res.ok) {
+            const data = await res.json();
+            
+            if (data) {
+                console.log("📥 Loaded Data:", data);
 
-                    const setVal = (name, val) => {
-                        const el = document.querySelector(`[name="${name}"]`);
-                        if (el && val) el.value = val;
-                    };
+                const setVal = (name, val) => {
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if (el && val) el.value = val;
+                };
 
-                    // ใส่ข้อมูลลงฟอร์ม
-                    setVal('gender', data.gender);
-                    setVal('checkup_date', data.checkup_date); 
-                    setVal('diabetes_type', data.diabetes_type);
-                    setVal('insulin_use', data.insulin_use);
-                    setVal('weight', data.weight);
-                    setVal('height', data.height);
-                    calculateBMI(); // คำนวณ BMI ทันที
+                // --- ใส่ข้อมูล Step 1 ---
+                setVal('gender', data.gender);
+                setVal('checkup_date', data.checkup_date);
+                setVal('diabetes_type', data.diabetes_type);
+                setVal('insulin_use', data.insulin_use);
+                setVal('weight', data.weight);
+                setVal('height', data.height);
+                calculateBMI();
 
-                    setVal('bp_high', data.bp_high); 
-                    setVal('bp_low', data.bp_low);
-                    setVal('blood_test_date', data.blood_test_date);
-                    setVal('hdl', data.hdl);
-                    setVal('ldl', data.ldl);
-                    setVal('cholesterol', data.cholesterol);
-                    setVal('triglyceride', data.triglyceride);
-                    setVal('microalbumin', data.microalbumin);
-                    setVal('ketone', data.ketone);
-                    setVal('fpg', data.fpg);
+                setVal('bp_high', data.bp_high); 
+                setVal('bp_low', data.bp_low);
+                setVal('blood_test_date', data.blood_test_date);
+                setVal('hdl', data.hdl);
+                setVal('ldl', data.ldl);
+                setVal('cholesterol', data.cholesterol);
+                setVal('triglyceride', data.triglyceride);
+                setVal('microalbumin', data.microalbumin);
+                setVal('ketone', data.ketone);
+                setVal('fpg', data.fpg);
 
-                    if (data.special_diseases) {
-                        data.special_diseases.forEach(val => {
-                            // เช็คทั้งแบบ value ตรงๆ และแบบ lowercase เผื่อ Backend ส่งมาต่างกัน
-                            const chk = document.querySelector(`input[name="special"][value="${val}"]`) ||
-                                        document.querySelector(`input[name="special"][value="${val.toLowerCase()}"]`);
-                            if (chk) chk.checked = true;
+                // 🔥 ฟังก์ชันติ๊ก Checkbox (ใช้ร่วมกัน)
+                const setCheckboxes = (inputName, savedList) => {
+                    console.log(`🔎 กำลังเช็ครายการ: ${inputName}`, savedList); // ดู Log ตรงนี้
+                    if (savedList && Array.isArray(savedList)) {
+                        savedList.forEach(val => {
+                            // หา checkbox ที่ value ตรงกัน
+                            let chk = document.querySelector(`input[name="${inputName}"][value="${val}"]`);
+                            
+                            // ถ้าไม่เจอ ลองหาแบบ Case Insensitive (ตัวเล็ก/ใหญ่)
+                            if (!chk && val) {
+                                chk = Array.from(document.querySelectorAll(`input[name="${inputName}"]`))
+                                           .find(el => el.value.toLowerCase() === val.toLowerCase());
+                            }
+
+                            if (chk) {
+                                chk.checked = true;
+                                // สั่งให้มันรู้ตัวว่าถูกติ๊กแล้ว (เผื่อมี function อื่นดักจับ)
+                                chk.dispatchEvent(new Event('change')); 
+                            }
                         });
                     }
-                }
+                };
+
+                // --- แก้ไขตรงนี้ครับ (Step 2) ---
+                // เช็คว่า Database ส่งมาชื่อ 'special' หรือ 'special_diseases'
+                const diseaseList = data.special || data.special_diseases;
+                setCheckboxes('special', diseaseList); 
+
+                // --- แก้ไขตรงนี้ครับ (Step 3) ---
+                setCheckboxes('favorites', data.favorites); 
             }
-        } catch (err) {
-            console.error("Error fetching old health data:", err);
         }
+    } catch (err) {
+        console.error("Error fetching old health data:", err);
     }
+}
 
     // BMI และ Step Logic
     const weightInput = document.getElementById('weight');

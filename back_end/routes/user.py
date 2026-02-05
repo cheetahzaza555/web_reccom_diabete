@@ -59,7 +59,7 @@ def get_latest_data_api():
 
 
 
-@user_bp.route('/select_plan/<patient_id>')
+@user_bp.route('/select_plan/Patient<patient_id>')
 def select_plan_page(patient_id):
     # 1. ดึงมา "ครบทุกอัน"
     all_recs = get_all_recommendations(patient_id)

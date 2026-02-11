@@ -238,6 +238,30 @@
         </div>
     </div>
 
+    <div class="modal fade" id="existingDataModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-clock-history"></i> พบข้อมูลสุขภาพล่าสุด</h5>
+            </div>
+            <div class="modal-body">
+                <p>ระบบพบข้อมูลการตรวจล่าสุดของคุณเมื่อวันที่ <strong id="modalDate" class="text-primary">--/--/----</strong></p>
+                <p class="mb-0">ข้อมูลสุขภาพของคุณ (เช่น น้ำหนัก, ค่าน้ำตาล) มีการเปลี่ยนแปลงหรือไม่?</p>
+                <small class="text-muted">*หากข้อมูลไม่เปลี่ยน ผลการวิเคราะห์และแผนการออกกำลังกายจะเหมือนเดิม</small>
+            </div>
+            <div class="modal-footer justify-content-center gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-pencil"></i> ต้องการแก้ไขข้อมูล
+                </button>
+                
+                <button type="button" class="btn btn-primary" onclick="skipToPlan()">
+                    <i class="bi bi-arrow-right-circle"></i> ข้อมูลคงเดิม (ไปเลือกแผนเลย)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     let currentUser = {}; 
@@ -354,10 +378,44 @@
                 const diseaseList = data.special || data.special_diseases;
                 setCheckboxes('special', diseaseList); 
                 setCheckboxes('favorites', data.favorites); 
-            }
+
+                // 1. ตั้งค่า ID ผู้ป่วยรอไว้เลย (ไม่งั้นกดปุ่มข้ามใน Modal จะไม่ไปไหน)
+                if (currentUser && currentUser.id) {
+                    currentPatientID = 'SUPA' + currentUser.id;
+                }
+
+                // 2. อัปเดตวันที่ใน Modal ให้สวยงาม
+                const modalDateEl = document.getElementById('modalDate');
+                if (modalDateEl && data.checkup_date) {
+                    const d = new Date(data.checkup_date);
+                    modalDateEl.innerText = d.toLocaleDateString('th-TH', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    });
+                }
+
+        // 3. สั่งเปิด Modal
+        const modalEl = document.getElementById('existingDataModal');
+        if (modalEl) {
+            const myModal = new bootstrap.Modal(modalEl);
+            myModal.show();
         }
-    } catch (err) {
-        console.error("Error fetching old health data:", err);
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching old health data:", err);
+        }
+    }
+
+function skipToPlan() {
+    if (currentPatientID) {
+        // Redirect ไปหน้าเลือกแผนทันที
+        window.location.href = "/user/select_plan/Patient" + currentPatientID;
+    } else {
+        alert("ไม่พบรหัสผู้ป่วย กรุณาตรวจสอบข้อมูลอีกครั้ง");
+        // ปิด Modal ให้เขาแก้ข้อมูลแทน
+        const modalEl = document.getElementById('existingDataModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal.hide();
     }
 }
 

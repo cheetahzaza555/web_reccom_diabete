@@ -248,9 +248,23 @@
 
         // Set active navigation based on current path
         const currentPath = window.location.pathname;
+        
         document.querySelectorAll('.nav-link').forEach(link => {
-            if (link.getAttribute('href') === currentPath) {
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const href = link.getAttribute('href');
+            
+            // ล้าง active เก่าออกก่อน
+            link.classList.remove('active');
+
+            // 1. เช็คแบบตรงตัว (Exact Match)
+            if (href === currentPath) {
+                link.classList.add('active');
+            } 
+            // 2. 🔥 เพิ่ม Logic พิเศษ: ถ้าอยู่หน้า select_exercise หรือ select_plan ให้ Active ที่เมนู "แนะนำการออกกำลังกาย"
+            else if (href === '/user/recommendations' && (currentPath.includes('/user/select_exercise') || currentPath.includes('/select_plan'))) {
+                link.classList.add('active');
+            }
+            // 3. (แถม) ถ้าอยู่หน้าออกกำลังกาย (exercises) แล้วมี id ต่อท้าย ก็ให้ Active ด้วย
+            else if (href === '/user/exercises' && currentPath.includes('/user/exercises/')) {
                 link.classList.add('active');
             }
         });

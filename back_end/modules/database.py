@@ -280,34 +280,84 @@ def get_patient_profile(patient_id):
         "specials": extract_set("specialRaw")   
     }
     
+# ในไฟล์ database.py
+
 def get_all_recommendations(patient_id):
     """
-    ดึงรายการท่าออกกำลังกายแนะนำ 'ทั้งหมด' ของคนไข้คนนี้จาก GraphDB
+    ดึงรายการท่าออกกำลังกายแนะนำ พร้อมรายละเอียด (ชื่อ, ความหนัก, ประเภท)
     """
-    if not validate_id(patient_id): return []
-    pid = f"Patient{patient_id}"
+    # 1. จัดการเรื่อง ID ให้ถูกต้อง (แก้จุดตายตรงนี้)
+    # ถ้าส่งมาเป็น "PatientSUPA11" ให้ใช้เลย แต่ถ้าส่งมาแค่ "SUPA11" ให้เติม "Patient"
+    clean_id = patient_id.replace("Patient", "") # ลบออกก่อนกันเหนียว
+    pid_resource = f"Patient{clean_id}" # แล้วเติมเข้าไปใหม่ให้มีแค่ 1 อันเสมอ
+    
+    # หรือถ้าใน DB คุณชื่อ "Patient_Mem_SUPA..." ให้แก้บรรทัดบนเป็น:
+    # pid_resource = f"Patient_Mem_{clean_id}" 
+    # (ให้ดูใน GraphDB ว่าชื่อ Resource จริงๆ คืออะไร)
 
-    # เขียนคำสั่ง SPARQL เพื่อดึงทุกท่าที่สัมพันธ์กับ ex:recommendedExercise
+    print(f"🔍 Searching GraphDB for: ex:{pid_resource}") # ดู Log ว่าหาชื่อถูกไหม
+
+    # 2. คำสั่ง SPARQL (ตรวจสอบชื่อ Property ให้ตรงเป๊ะๆ)
+    # เช็คใน GraphDB ว่าใช้ 'recommendedExercise' หรือ 'recommendExercise'
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
-    SELECT ?recName 
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    SELECT ?recId ?label ?met ?categoryName
     WHERE {{
-        ex:{pid} ex:recommendedExercise ?rec .
-        BIND(STRAFTER(STR(?rec), "#") AS ?recName)
+        # ใช้ UNION เพื่อกันเหนียวเรื่องชื่อ Property (บางทีพิมพ์ผิด)
+        {{ ex:{pid_resource} ex:recommendedExercise ?rec . }}
+        UNION
+        {{ ex:{pid_resource} ex:recommendExercise ?rec . }}
+        
+        BIND(STRAFTER(STR(?rec), "#") AS ?recId)
+
+        OPTIONAL {{ ?rec rdfs:label ?label . }}
+        OPTIONAL {{ ?rec ex:metValue ?met . }}
+        OPTIONAL {{ 
+            ?rec ex:hasKindOfExercise ?kind .
+            BIND(STRAFTER(STR(?kind), "#") AS ?categoryName)
+        }}
     }}
     """
     
     try:
         sparql_read.setQuery(query)
+        sparql_read.setReturnFormat(JSON)
         results = sparql_read.query().convert()
         
-        exercises = []
-        for r in results["results"]["bindings"]:
-            if "recName" in r:
-                exercises.append(r["recName"]["value"])
+        exercises_data = []
         
-        # ผลลัพธ์จะเป็น List เช่น ['Walking', 'Swimming', 'TaiChi']
-        return exercises
+        # Mapping ภาษาไทย
+        cat_map = {
+            "Running": "การวิ่ง (Running)",
+            "Walking": "การเดิน (Walking)",
+            "Bicycling": "จักรยาน (Bicycling)",
+            "WaterActivity": "กิจกรรมทางน้ำ",
+            "Aerobic": "แอโรบิก",
+            "Resistance": "แรงต้าน",
+            "StretchingExercise": "ยืดเหยียด",
+            "WeightBearingAerobicExercise": "แอโรบิกลงน้ำหนัก",
+            "NonWeightBearingAerobicExercise": "แอโรบิกไม่ลงน้ำหนัก"
+        }
+
+        for r in results["results"]["bindings"]:
+            ex_id = r["recId"]["value"]
+            ex_name = r["label"]["value"] if "label" in r else ex_id
+            ex_met = r["met"]["value"] if "met" in r else "-"
+            
+            raw_cat = r["categoryName"]["value"] if "categoryName" in r else "ทั่วไป"
+            ex_cat = cat_map.get(raw_cat, raw_cat)
+
+            exercises_data.append({
+                "id": ex_id,
+                "name": ex_name,
+                "met": ex_met,
+                "category": ex_cat
+            })
+        
+        print(f"✅ Found {len(exercises_data)} exercises")
+        return exercises_data
 
     except Exception as e:
         print(f"❌ Error fetching recommendations: {e}")
@@ -434,3 +484,56 @@ def get_patient_latest_record(patient_id):
     except Exception as e:
         print(f"❌ Error fetching latest record: {e}")
         return {"found": False}
+    
+# ในไฟล์ database.py
+
+def get_exercise_details_by_id(exercise_id):
+    """
+    ดึงรายละเอียดของท่าออกกำลังกาย 1 ท่า (จาก ID) เพื่อเอาไปแสดงผล (Preview)
+    """
+    # เช็คว่า ID มี prefix ไหม
+    if "http" in exercise_id:
+        ex_resource = f"<{exercise_id}>"
+    else:
+        ex_resource = f"ex:{exercise_id}"
+
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    SELECT ?label ?met ?categoryName
+    WHERE {{
+        # ดึงข้อมูลตรงๆ จาก Resource ของท่านั้นเลย
+        {ex_resource} rdfs:label ?label .
+        OPTIONAL {{ {ex_resource} ex:metValue ?met . }}
+        OPTIONAL {{ 
+            {ex_resource} ex:hasKindOfExercise ?kind .
+            BIND(STRAFTER(STR(?kind), "#") AS ?categoryName)
+        }}
+    }}
+    LIMIT 1
+    """
+    
+    try:
+        sparql_read.setQuery(query)
+        sparql_read.setReturnFormat(JSON)
+        results = sparql_read.query().convert()
+        
+        if results["results"]["bindings"]:
+            r = results["results"]["bindings"][0]
+            
+            # แปลหมวดหมู่ (ถ้าต้องการ)
+            cat_map = { "Running": "การวิ่ง", "Walking": "การเดิน", "Bicycling": "จักรยาน" } # เพิ่มได้
+            raw_cat = r["categoryName"]["value"] if "categoryName" in r else "ทั่วไป"
+            
+            return {
+                "id": exercise_id,
+                "name": r["label"]["value"],
+                "met": r["met"]["value"] if "met" in r else "-",
+                "category": cat_map.get(raw_cat, raw_cat)
+            }
+        else:
+            return None
+    except Exception as e:
+        print(f"❌ Error getting exercise details: {e}")
+        return None

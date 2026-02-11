@@ -449,6 +449,13 @@
     // AJAX Analyze
     async function analyzeData() {
         const getVal = (name) => { const el = document.querySelector(`[name="${name}"]`); return el ? el.value : ''; };
+        const getDateVal = (name) => {
+        const el = document.querySelector(`[name="${name}"]`);
+        if (el && el.value.trim() !== "") {
+            return el.value; // จะได้รูปแบบ "YYYY-MM-DD" อัตโนมัติจาก input type="date"
+        }
+        return null; // ส่ง null ดีกว่าส่ง ""
+    };
         const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
         const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
 
@@ -464,6 +471,8 @@
             firstname: currentUser.firstname, 
             lastname: currentUser.lastname,   
             gender: getVal('gender'),
+            checkup_date: getVal('checkup_date'),       
+            blood_test_date: getVal('blood_test_date'),
             type: getVal('diabetes_type'),
             weight: getVal('weight'),
             height: getVal('height'),

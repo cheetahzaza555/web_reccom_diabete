@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, jsonify, request, session
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record
+from modules.database import get_exercise_details_by_id
+
 
 user_bp = Blueprint('user', __name__)
 
@@ -59,23 +61,43 @@ def get_latest_data_api():
 
 
 
-@user_bp.route('/select_plan/Patient<patient_id>')
+@user_bp.route('/select_plan/<patient_id>')  
 def select_plan_page(patient_id):
-    # 1. ดึงมา "ครบทุกอัน"
+    
+    # 1. เรียกใช้ฟังก์ชันจาก database.py ที่คุณเพิ่งแก้
+    # มันจะคืนค่าเป็น list ของ dict เช่น [{'id': '12025', 'name': 'วิ่ง...', 'met': '7.0', ...}]
     all_recs = get_all_recommendations(patient_id)
     
-    # 2. ส่งไปให้หน้าเว็บกางออกมาให้เลือก
-    return render_template('user/select_plan.html', patient_id=patient_id,exercises=all_recs)
+    # 2. ส่งตัวแปร exercises (ที่เป็น list of dicts) ไปให้หน้าเว็บ
+    return render_template('user/select_plan.html', patient_id=patient_id, exercises=all_recs)
 
-# เพิ่ม Route สำหรับบันทึกตัวที่เลือก
 @user_bp.route('/save_selection', methods=['POST'])
-def save_selection():
-    data = request.json
-    pid = data.get('patient_id')
-    choice = data.get('exercise_name')
+def save_selection_route():
+    try:
+        # รับข้อมูล JSON จากหน้าเว็บ
+        data = request.json
+        patient_id = data.get('patient_id')
+        exercise_id = data.get('exercise_id')
+        
+        print(f"📥 Received save request: {patient_id} chose {exercise_id}")
+
+        # เรียกฟังก์ชันบันทึกลง DB
+        if save_patient_selection(patient_id, exercise_id):
+            return jsonify({'status': 'success'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Database Save Failed'}), 500
+
+    except Exception as e:
+        print(f"Server Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@user_bp.route('/select_plan2/<patient_id>/<exercise_id>')
+def select_plan2_page(patient_id, exercise_id):
     
-    # คุณต้องไปเขียนฟังก์ชัน save_patient_selection ใน database.py เพื่อบันทึกตัวเลือกนี้นะ
-    # save_patient_selection(pid, choice) 
+    # 1. ดึงรายละเอียดของท่าที่เลือกมาโชว์
+    exercise_info = get_exercise_details_by_id(exercise_id)
     
-    print(f"คนไข้ {pid} เลือกที่จะทำ: {choice}")
-    return jsonify({"status": "success"})
+    # 2. ส่งข้อมูลไปที่หน้าเว็บ
+    return render_template('user/select_plan2.html', 
+                           patient_id=patient_id, 
+                           plan=exercise_info)

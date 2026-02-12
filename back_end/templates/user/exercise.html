@@ -98,69 +98,77 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const placeholderImg = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22286%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20286%20180%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eee%22%3E%3C%2Frect%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23999%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E";
+    const placeholderImg = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22286%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20286%20180%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eee%22%3E%3C%2Frect%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23999%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E";
+
+    let exercisesData = [];
+    try {
+        const dataSource = document.getElementById('exercises-data-source');
+        exercisesData = JSON.parse(dataSource.textContent || "[]");
+    } catch (e) { console.error("Data Error:", e); }
+
+    const grid = document.getElementById('exerciseGrid');
+    let currentFilter = 'all';
+
+    function renderCards(data) {
+        grid.innerHTML = data.length ? "" : '<div class="col-12 text-center py-5"><h4>ไม่พบข้อมูล</h4></div>';
         
-        let exercisesData = [];
-        try {
-            const dataSource = document.getElementById('exercises-data-source');
-            exercisesData = JSON.parse(dataSource.textContent || "[]");
-        } catch (e) { console.error("Data Error:", e); }
+        data.forEach(item => {
+            const mets = parseFloat(item.mets) || 0;
+            const badgeColor = mets > 6 ? 'bg-high' : (mets > 3 ? 'bg-med' : 'bg-low');
+            
+            // ✅ ดึงรูปจาก item.img ที่ Backend (Python) เลือกมาให้แล้วได้เลย
+            const imgUrl = item.img || placeholderImg;
 
-        const grid = document.getElementById('exerciseGrid');
-        let currentFilter = 'all';
-
-        function renderCards(data) {
-            grid.innerHTML = data.length ? "" : '<div class="col-12 text-center py-5"><h4>ไม่พบข้อมูล</h4></div>';
-            data.forEach(item => {
-                const mets = parseFloat(item.mets) || 0;
-                const badgeColor = mets > 6 ? 'bg-high' : (mets > 3 ? 'bg-med' : 'bg-low');
-                const imgUrl = item.img?.trim() ? item.img : placeholderImg;
-
-                grid.innerHTML += `
-                <div class="col-md-6 col-lg-4">
-                    <div class="exercise-card" onclick="openModal('${item.id}')">
-                        <div class="card-img-wrapper">
-                            <span class="mets-badge ${badgeColor}">METs ${mets}</span>
-                            <img src="${imgUrl}" class="card-img-top" onerror="this.src='${placeholderImg}'">
-                        </div>
-                        <div class="card-body p-4">
-                            <small class="text-primary text-uppercase">${item.type}</small>
-                            <h5 class="fw-bold text-truncate">${item.name}</h5>
-                            <p class="text-muted small text-truncate">${item.desc}</p>
-                        </div>
+            grid.innerHTML += `
+            <div class="col-md-6 col-lg-4">
+                <div class="exercise-card" onclick="openModal('${item.id}')">
+                    <div class="card-img-wrapper">
+                        <span class="mets-badge ${badgeColor}">METs ${mets}</span>
+                        <img src="${imgUrl}" class="card-img-top" onerror="this.src='${placeholderImg}'">
                     </div>
-                </div>`;
-            });
-        }
+                    <div class="card-body p-4">
+                        <small class="text-primary text-uppercase">${item.type}</small>
+                        <h5 class="fw-bold text-truncate">${item.name}</h5>
+                        <p class="text-muted small text-truncate">${item.desc}</p>
+                    </div>
+                </div>
+            </div>`;
+        });
+    }
 
-        function filterCategory(cat) {
-            currentFilter = cat;
-            document.querySelectorAll('#categoryTabs .nav-link').forEach(btn => btn.classList.toggle('active', btn.innerText.includes(cat) || (cat === 'all' && btn.innerText === 'ทั้งหมด')));
-            filterContent();
-        }
+    function filterCategory(cat) {
+        currentFilter = cat;
+        document.querySelectorAll('#categoryTabs .nav-link').forEach(btn => {
+            const isAll = cat === 'all' && btn.innerText === 'ทั้งหมด';
+            const isMatch = btn.innerText.includes(cat);
+            btn.classList.toggle('active', isAll || isMatch);
+        });
+        filterContent();
+    }
 
-        function filterContent() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = exercisesData.filter(item => 
-                (item.name.toLowerCase().includes(search)) && 
-                (currentFilter === 'all' || item.type === currentFilter)
-            );
-            renderCards(filtered);
-        }
+    function filterContent() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = exercisesData.filter(item => 
+            (item.name.toLowerCase().includes(search)) && 
+            (currentFilter === 'all' || item.type === currentFilter)
+        );
+        renderCards(filtered);
+    }
 
-        const myModal = new bootstrap.Modal(document.getElementById('detailModal'));
-        function openModal(id) {
-            const item = exercisesData.find(x => String(x.id) === String(id));
-            if (item) {
-                document.getElementById('mImg').src = item.img || placeholderImg;
-                document.getElementById('mTitle').innerText = item.name;
-                document.getElementById('mDesc').innerText = item.desc;
-                document.getElementById('mMets').innerText = item.mets;
-                myModal.show();
-            }
+    const myModal = new bootstrap.Modal(document.getElementById('detailModal'));
+    function openModal(id) {
+        const item = exercisesData.find(x => String(x.id) === String(id));
+        if (item) {
+            // ✅ ใช้ค่า item.img จาก Backend เช่นกัน
+            document.getElementById('mImg').src = item.img || placeholderImg;
+            document.getElementById('mTitle').innerText = item.name;
+            document.getElementById('mDesc').innerText = item.desc;
+            document.getElementById('mMets').innerText = item.mets;
+            myModal.show();
         }
+    }
 
-        document.addEventListener('DOMContentLoaded', () => renderCards(exercisesData));
-    </script>
+    document.addEventListener('DOMContentLoaded', () => renderCards(exercisesData));
+</script>
 </body>
 </html>

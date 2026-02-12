@@ -579,29 +579,64 @@ def get_all_exercises_for_library():
     """
     
     try:
+        
         sparql_read.setQuery(query)
         sparql_read.setReturnFormat(JSON)
         results = sparql_read.query().convert()
         
         exercises = []
+        
+        category_images = {
+            "Walking": "/static/images/exercises/walking.png",
+            "Running": "/static/images/exercises/running_logo.png",
+            "Bicycling": "/static/images/exercises/cycling_logo.png",
+            "Dancing": "/static/images/exercises/dancing_logo.png",
+            "WaterActivity": "/static/images/exercises/water_logo.png",
+            "Aerobic": "/static/images/exercises/aerobic_logo.png",
+            "Resistance": "/static/images/exercises/resistance_logo.png",
+            "Flexibility": "/static/images/exercises/flexibility_logo.png",
+            "Stretching": "/static/images/exercises/flexibility_logo.png"
+        }
+
         for r in results["results"]["bindings"]:
-            # Helper function เพื่อดึงค่า value อย่างปลอดภัย
             def val(key): return r[key]["value"] if key in r else ""
             
-            # จัด Group ประเภทให้ตรงกับที่ Frontend filter (Aerobic, Resistance, Flexibility)
-            raw_type = val("type")
+            # raw_type จะได้ค่าเป็นชื่อ Class เช่น "Walking", "Bicycling"
+            raw_type = val("type") 
+            id_val = val("id")
+            name_val = val("name")
+            
+            # 2. แก้ลอจิกการเลือกรูปภาพ: ให้เช็คจาก raw_type (ชื่อ Class ใน Graph) เป็นหลัก
+            # วิธีนี้จะแม่นยำกว่าการเช็คด้วยคำว่า "เดิน" หรือ "วิ่ง" ในชื่อ
+            img_path = category_images.get(raw_type)
+
+            # ถ้าใน Dict ไม่มีรูปหมวดหมู่ย่อย ให้ลองเช็คหมวดหมู่หลัก (Mapped Type)
+            if not img_path:
+                if "Aerobic" in raw_type:
+                    img_path = category_images.get("Aerobic")
+                elif "Resistance" in raw_type:
+                    img_path = category_images.get("Resistance")
+                elif "Flexibility" in raw_type or "Stretching" in raw_type:
+                    img_path = category_images.get("Flexibility")
+                else:
+                    img_path = "/static/images/exercises/default.png"
+
+            # จัด Group ประเภทสำหรับ Frontend Filter (คงเดิมไว้)
             mapped_type = raw_type
-            if "Aerobic" in raw_type: mapped_type = "Aerobic"
-            elif "Resistance" in raw_type or "Weight" in raw_type: mapped_type = "Resistance"
-            elif "Flexibility" in raw_type or "Yoga" in raw_type or "Stretching" in raw_type: mapped_type = "Flexibility"
+            if "Aerobic" in raw_type or raw_type in ["Walking", "Running", "Dancing", "Bicycling"]: 
+                mapped_type = "Aerobic"
+            elif "Resistance" in raw_type: 
+                mapped_type = "Resistance"
+            elif "Flexibility" in raw_type or "Stretching" in raw_type: 
+                mapped_type = "Flexibility"
 
             exercises.append({
-                "id": val("id"),
-                "name": val("name") or val("id"), # ถ้าไม่มีชื่อไทย ให้ใช้ ID แทน
-                "type": mapped_type,              # ส่งค่าที่จัดกลุ่มแล้วไป
-                "original_type": raw_type,        # ส่งค่าเดิมไปเผื่อใช้
+                "id": id_val,
+                "name": name_val or id_val,
+                "type": mapped_type,
+                "original_type": raw_type,
                 "mets": float(val("mets")) if val("mets") else 0,
-                "img": val("image") or "https://via.placeholder.com/600x400?text=No+Image", # รูปภาพ Default
+                "img": img_path, # ส่ง Path รูปที่เลือกจากหมวดหมู่ไป
                 "desc": val("desc") or "ไม่มีรายละเอียดเพิ่มเติม"
             })
             

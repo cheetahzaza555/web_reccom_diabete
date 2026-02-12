@@ -565,69 +565,80 @@ function skipToPlan() {
         finally { btn.innerText = originalText; btn.disabled = false; }
     }
 
-    // ฟังก์ชันแสดงผล (Categorization)
     function renderResults(json) {
-        const updateList = (id, items) => {
-            const el = document.getElementById(id); el.innerHTML = "";
-            if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
-            else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
-        };
+    const updateList = (id, items) => {
+        const el = document.getElementById(id); 
+        el.innerHTML = "";
+        if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+        else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
+    };
 
-        updateList('warnList', json.warnings);
-        updateList('compliList', json.complis);
-        updateList('comorbList', json.comorbs);
+    updateList('warnList', json.warnings);
+    updateList('compliList', json.complis);
+    updateList('comorbList', json.comorbs);
 
-        const exEl = document.getElementById('exList');
-        exEl.innerHTML = ""; 
+    const exEl = document.getElementById('exList');
+    exEl.innerHTML = ""; 
 
-        if (!json.exercises || json.exercises.length === 0) {
-            exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
-            return;
+    if (!json.exercises || json.exercises.length === 0) {
+        exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+        return;
+    }
+
+    const categories = {
+        "🏃 การวิ่ง (Running)": [],
+        "🚶 การเดิน/เคลื่อนไหว (Walking)": [],
+        "🚴 การปั่นจักรยาน (Bicycling)": [],
+        "💃 การเต้น/แอโรบิก (Aerobic)": [], // แก้ชื่อ Key ให้ตรงกับเงื่อนไขข้างล่าง
+        "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
+        "💪 แรงต้าน/ยกน้ำหนัก (Resistance)": [],
+        "✨ กิจกรรมอื่นๆ (Others)": []
+    };
+
+    json.exercises.forEach(item => {
+        let textToCheck = (typeof item === 'object' && item.label) ? item.label : item.toString();
+        let lower = textToCheck.toLowerCase();
+        
+        // --- ตรรกะการจัดกลุ่มแบบใหม่ (รองรับทั้งชื่อและรหัสตัวเลข) ---
+        
+        // 1. ตรวจสอบจากชื่อ (English Name)
+        if (lower.includes('run') || lower.includes('jog')) {
+            categories["🏃 การวิ่ง (Running)"].push(textToCheck);
+        } 
+        // 2. ตรวจสอบกลุ่มการเดิน (รหัส 17xxx คือ Walking)
+        else if (lower.includes('walk') || lower.includes('hike') || lower.startsWith('17')) {
+            categories["🚶 การเดิน/เคลื่อนไหว (Walking)"].push(textToCheck);
+        } 
+        // 3. ตรวจสอบกลุ่มจักรยาน (รหัส 01xxx คือ Bicycling)
+        else if (lower.includes('bik') || lower.includes('cycl') || lower.startsWith('01')) {
+            categories["🚴 การปั่นจักรยาน (Bicycling)"].push(textToCheck);
+        } 
+        // 4. ตรวจสอบกลุ่มทางน้ำ (รหัส 18xxx หรือ 02xxx บางตัว คือ Water)
+        else if (lower.includes('swim') || lower.includes('water') || lower.startsWith('18')) {
+            categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(textToCheck);
         }
+        // 5. ตรวจสอบกลุ่มแอโรบิก/เต้น (รหัส 12xxx คือ Dancing/Aerobic)
+        else if (lower.includes('danc') || lower.includes('aerobic') || lower.startsWith('12')) {
+            categories["💃 การเต้น/แอโรบิก (Aerobic)"].push(textToCheck);
+        }
+        else if (lower.includes('weight') || lower.includes('lift') || lower.includes('resistance')) {
+            categories["💪 แรงต้าน/ยกน้ำหนัก (Resistance)"].push(textToCheck);
+        } 
+        else {
+            categories["✨ กิจกรรมอื่นๆ (Others)"].push(textToCheck);
+        }
+    });
 
-        const categories = {
-            "🏃 การวิ่ง (Running)": [],
-            "🚶 การเดิน/เคลื่อนไหว (Walking)": [],
-            "🚴 การปั่นจักรยาน (Bicycling)": [],
-            "💃 การเต้น/แอโรบิก (Aerobic/Dancing)": [],
-            "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
-            "💪 แรงต้าน/ยกน้ำหนัก (Resistance)": [],
-            "✨ อื่นๆ (Others)": []
-        };
-
-        json.exercises.forEach(item => {
-            // ✅ ป้องกัน Error ถ้า item เป็น Object (ดึง .label ออกมา) หรือถ้าเป็น String ก็ใช้ได้เลย
-            let textToCheck = (typeof item === 'object' && item.label) ? item.label : item.toString();
-            let displayHeader = textToCheck; // ข้อความที่จะโชว์
-            let lower = textToCheck.toLowerCase();
-
-            if (lower.includes('run') || lower.includes('jog')) {
-                categories["🏃 การวิ่ง (Running)"].push(displayHeader);
-            } else if (lower.includes('walk') || lower.includes('hike') || lower.includes('climb')) {
-                categories["🚶 การเดิน/เคลื่อนไหว (Walking)"].push(displayHeader);
-            } else if (lower.includes('bik') || lower.includes('cycl')) {
-                categories["🚴 การปั่นจักรยาน (Bicycling)"].push(displayHeader);
-            } else if (lower.includes('danc') || lower.includes('aerobic')) {
-                categories["💃 การเต้น/แอโรบิก (Aerobic)"].push(displayHeader);
-            } else if (lower.includes('swim') || lower.includes('water')) {
-                categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(displayHeader);
-            } else if (lower.includes('weight') || lower.includes('lift') || lower.includes('resistance')) {
-                categories["💪 แรงต้าน/ยกน้ำหนัก (Resistance)"].push(displayHeader);
-            } else {
-                categories["✨ อื่นๆ (Others)"].push(displayHeader);
-            }
-        });
-
-        for (const [catName, items] of Object.entries(categories)) {
-            if (items.length > 0) {
-                // ใช้ class category-header ที่เพิ่มไว้ใน CSS
-                exEl.innerHTML += `<li class="category-header">${catName}</li>`;
-                items.forEach(ex => {
-                    exEl.innerHTML += `<li class="ms-3 py-1 border-bottom" style="border-color: rgba(0,0,0,0.05) !important;">• ${ex}</li>`;
-                });
-            }
+    // แสดงผลออกทางหน้าจอ
+    for (const [catName, items] of Object.entries(categories)) {
+        if (items.length > 0) {
+            exEl.innerHTML += `<li class="category-header" style="font-weight:bold; color:#2c3e50; margin-top:10px; list-style:none;">${catName}</li>`;
+            items.forEach(ex => {
+                exEl.innerHTML += `<li class="ms-3 py-1 border-bottom" style="list-style:none; border-color: rgba(0,0,0,0.05) !important;">• ${ex}</li>`;
+            });
         }
     }
+}
 </script>
 </body>
 </html>

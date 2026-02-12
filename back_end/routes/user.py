@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, request, session
 from modules.logic import process_patient_realtime
-from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record
+from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
 from modules.database import get_exercise_details_by_id
 
 
@@ -16,7 +16,11 @@ def user_recommendations():
 
 @user_bp.route('/exercises')
 def user_exercise():
-    return render_template('user/exercise.html')
+    # 1. ดึงข้อมูลทั้งหมดจาก GraphDB
+    exercises_data = get_all_exercises_for_library()
+    
+    # 2. ส่งข้อมูลไปที่หน้า HTML (ตัวแปรชื่อ exercises)
+    return render_template('user/exercise.html', exercises=exercises_data)
 
 @user_bp.route('/knowledge')
 def user_knowledge():

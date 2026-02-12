@@ -46,18 +46,29 @@ def save_raw_patient_data(data):
     le_node = f"ex:Lab1P00{raw_id}"   
 
     try:
-        # 1. ลบข้อมูลเก่า
-        sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> DELETE {{ ?s ?p ?o . ?pe ?pp ?oo . ?le ?lp ?lo }} WHERE {{ ?s ?p ?o . FILTER(?s = ex:{pid}) OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} }}")
+        # 1. ลบข้อมูลเก่า (แก้ให้ลบทุกอย่างที่ต่อจากคนไข้ เพื่อไม่ให้ค่า NoGeneralComplication เดิมค้าง)
+        delete_query = f"""
+            PREFIX ex: <http://example.org/diabetes#>
+            DELETE {{ 
+                ex:{pid} ?p ?o . 
+                ?pe ?pp ?oo . 
+                ?le ?lp ?lo 
+            }} 
+            WHERE {{ 
+                ex:{pid} ?p ?o . 
+                OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} 
+                OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} 
+            }}
+        """
+        sparql_write.setQuery(delete_query)
         sparql_write.query()
         
         # 2. เตรียมข้อมูล
         fname = escape_sparql(data.get('firstname', '-'))
         lname = escape_sparql(data.get('lastname', '-'))
         gender_val = escape_sparql(data.get('gender', '-')) 
-        
-        # 🔥 รับค่าวันที่จากหน้าบ้าน
-        pe_date = escape_sparql(data.get('checkup_date', ''))    # วันที่ตรวจร่างกาย
-        le_date = escape_sparql(data.get('blood_test_date', '')) # วันที่เจาะเลือด
+        pe_date = escape_sparql(data.get('checkup_date', ''))
+        le_date = escape_sparql(data.get('blood_test_date', ''))
 
         insulin_val = escape_sparql(data.get('insulin_use') or "false")
         ketone_val = escape_sparql(data.get('ketone') or "Negative")
@@ -65,18 +76,18 @@ def save_raw_patient_data(data):
         
         def val(k): return safe_float(data.get(k)) or 0
 
-        # จัดการ Special Complication (Checkbox)
+        # --- แก้ไขส่วนจัดการ Special Complication (เอา NoOtherComplication ออก) ---
         raw_special = data.get('special')
         special_triples = ""
-        if isinstance(raw_special, list):
-            if not raw_special: special_triples = f"{pe_node} ex:hasSpecialComplication ex:NoOtherComplication ."
-            else:
-                for sp in raw_special:
+
+        if isinstance(raw_special, list) and len(raw_special) > 0:
+            for sp in raw_special:
+                # บันทึกเฉพาะที่มีการเลือกจริง และไม่ใช่ค่า 'None' หรือค่าว่าง
+                if sp and sp not in ["None", "", "NoOtherComplication"]:
                     special_triples += f"{pe_node} ex:hasSpecialComplication ex:{escape_sparql(sp)} .\n"
-        elif isinstance(raw_special, str) and raw_special != "None":
+        elif isinstance(raw_special, str) and raw_special not in ["None", "", "NoOtherComplication"]:
             special_triples = f"{pe_node} ex:hasSpecialComplication ex:{escape_sparql(raw_special)} ."
-        else:
-            special_triples = f"{pe_node} ex:hasSpecialComplication ex:NoOtherComplication ."
+        # --- ถ้าไม่มีการเลือก ปล่อยให้ special_triples ว่างไปเลย ไม่ต้องใส่ Default ---
 
         # จัดการ Frequency
         freq_val = data.get('frequency') 
@@ -92,7 +103,6 @@ def save_raw_patient_data(data):
                 fav_triples += f"ex:{pid} ex:favoriteExercise ex:{escape_sparql(fav)} .\n"
 
         # 3. สร้าง Triples 
-        # 🔥 สังเกตตรง ex:visitDate_Physical และ ex:visitDate_Lab
         triples = f"""
             ex:{pid} a ex:Patient ; 
                      ex:diabetType ex:{escape_sparql(data['type'])} ; 
@@ -105,7 +115,7 @@ def save_raw_patient_data(data):
             {fav_triples}
             
             {pe_node} a ex:PhysicalExam ; 
-                        ex:visitDate_Physical "{pe_date}"^^xsd:date ;  # ✅ เก็บวันที่ตรวจร่างกายตรงนี้
+                        ex:visitDate_Physical "{pe_date}"^^xsd:date ;
                         ex:hasWeight "{val('weight')}"^^xsd:decimal ; 
                         ex:hasHeight "{val('height')}"^^xsd:decimal ; 
                         ex:hasBMI "{val('bmi')}"^^xsd:decimal ; 
@@ -115,7 +125,7 @@ def save_raw_patient_data(data):
             {special_triples} 
             
             {le_node} a ex:LabExam ; 
-                        ex:visitDate_Lab "{le_date}"^^xsd:date ;       # ✅ เก็บวันที่เจาะเลือดตรงนี้
+                        ex:visitDate_Lab "{le_date}"^^xsd:date ;
                         ex:hasTotalCholesterol "{val('chol')}"^^xsd:decimal ; 
                         ex:hasLDL "{val('ldl')}"^^xsd:decimal ; ex:hasHDL "{val('hdl')}"^^xsd:decimal ; 
                         ex:hasTriglyceride "{val('tri')}"^^xsd:decimal ;
@@ -125,7 +135,7 @@ def save_raw_patient_data(data):
         
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
         sparql_write.query()
-        print(f"💾 Saved Raw Data for {pid} (Inc. distinct dates)")
+        print(f"💾 Saved Raw Data for {pid} (Cleaned & Updated)")
         
     except Exception as e:
         print(f"❌ Error saving raw data: {e}")

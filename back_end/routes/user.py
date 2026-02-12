@@ -1,14 +1,99 @@
-from flask import Blueprint, render_template, jsonify, request, session
+from flask import Blueprint, render_template, jsonify, request, session, redirect, url_for
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
 from modules.database import get_exercise_details_by_id
-
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+from modules.auth_db import get_db_connection
+import psycopg2
 
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/dashboard')
-def user_dashboard():
-    return render_template('user/index.html')
+def dashboard_page():
+    if 'username' not in session:
+         return redirect(url_for('login_page'))
+    
+    username = session['username']
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    schedule_data = []
+    current_date_info = {} # เก็บข้อมูลเพื่อส่งไปบอกหน้าเว็บว่าเดือนอะไร
+
+    try:
+        cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        
+        if user:
+            user_db_id = user[0]
+            today = datetime.now().date()
+            
+            # เก็บข้อมูลเดือนปัจจุบันส่งไปแสดงหัวข้อ
+            # (แปลงเดือนเป็นชื่อไทยแบบง่ายๆ)
+            thai_months = [
+                "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+            ]
+            current_date_info = {
+                "day": today.day,
+                "month_name": thai_months[today.month - 1],
+                "year": today.year + 543, # พ.ศ.
+                "today_date": today # เอาไว้เช็ค highlight
+            }
+
+            # ✅ Query ใหม่: ดึงข้อมูล "ทั้งเดือน"
+            # เราต้อง Join เพื่อเอา start_date ของวีคมาคำนวณวันที่จริง
+            sql_query = """
+                SELECT 
+                    d.id, 
+                    d.day_of_week, 
+                    d.is_exercise_day, 
+                    d.exercise_name, 
+                    d.completed,
+                    w.start_date
+                FROM days_plan d
+                JOIN weekly_plan w ON d.weekly_plan = w.id
+                JOIN monthly_plan m ON w.monthly_plan_id = m.id
+                WHERE m.user_id = %s 
+                  AND m.month = %s 
+                  AND m.year = %s
+                ORDER BY w.start_date ASC, d.day_of_week ASC
+            """
+            
+            cur.execute(sql_query, (user_db_id, today.month, today.year))
+            rows = cur.fetchall()
+            
+            if rows:
+                for r in rows:
+                    week_start = r[5] # วันจันทร์ของสัปดาห์นั้น
+                    day_offset = r[1] # 0=Mon, 1=Tue...
+                    
+                    # 📅 คำนวณวันที่จริงของกิจกรรมนี้
+                    actual_date = week_start + timedelta(days=day_offset)
+                    
+                    # กรองเอาเฉพาะวันที่อยู่ในเดือนนี้จริงๆ (เผื่อวีคที่คาบเกี่ยวเดือนอื่น)
+                    if actual_date.month == today.month:
+                        schedule_data.append({
+                            'id': r[0],
+                            'day_of_week': r[1],
+                            'is_exercise_day': r[2],
+                            'exercise_name': r[3],
+                            'completed': r[4],
+                            'date_obj': actual_date, # วันที่แบบ object
+                            'date_num': actual_date.day, # เลขวันที่ (1, 2, 3...)
+                            'is_today': (actual_date == today) # ✅ เช็คว่าเป็นวันนี้ไหม
+                        })
+
+    except Exception as e:
+        print(f"Error fetching dashboard: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+    return render_template('user/index.html', 
+                           schedule=schedule_data, 
+                           info=current_date_info)
 
 @user_bp.route('/recommendations')
 def user_recommendations():
@@ -105,3 +190,173 @@ def select_plan2_page(patient_id, exercise_id):
     return render_template('user/select_plan2.html', 
                            patient_id=patient_id, 
                            plan=exercise_info)
+
+@user_bp.route('/save_schedule', methods=['POST'])
+def save_schedule():
+    # 1. เช็คก่อนว่าล็อกอินหรือยัง (สำคัญมาก)
+    if 'username' not in session:
+        return redirect(url_for('login_page')) # หรือชื่อ route login ของคุณ
+
+    # รับข้อมูลอื่นๆ จาก Form
+    data = request.form
+    # patient_id = data.get('patient_id')  <-- ❌ ไม่ใช้ตัวนี้แล้ว เพราะชื่อไม่ตรงกับ DB
+    exercise_name = data.get('exercise_name')
+    start_date_str = data.get('start_date')
+    duration_months = int(data.get('duration'))
+
+    # แปลงวันที่
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+    end_date = start_date + relativedelta(months=duration_months)
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # ✅ แก้ไข: ใช้ username จาก Session แทน (เจอตัวจริงแน่นอน)
+        current_username = session['username']
+        print(f"🔍 Saving schedule for logged in user: {current_username}")
+
+        cur.execute("SELECT id FROM users WHERE username = %s", (current_username,))
+        user = cur.fetchone()
+        
+        if not user:
+            return "User not found (Session invalid)", 404
+        
+        user_db_id = user[0] # ได้ ID จริงๆ มาแล้ว (เช่น 9 หรือ 11)
+
+        # -------------------------------------------------------------
+        # ส่วน Loop สร้างตาราง (Code เดิมของคุณ)
+        # -------------------------------------------------------------
+        current_date = start_date
+        while current_date < end_date:
+            year = current_date.year
+            month = current_date.month
+
+            # ... (ก๊อปปี้โค้ดส่วน A, B, C เดิมมาวางตรงนี้ได้เลยครับ ไม่ต้องแก้) ...
+            
+            # --- A. จัดการ Monthly Plan ---
+            cur.execute("SELECT id FROM monthly_plan WHERE user_id = %s AND year = %s AND month = %s", (user_db_id, year, month))
+            month_row = cur.fetchone()
+            if month_row:
+                monthly_id = month_row[0]
+            else:
+                cur.execute("INSERT INTO monthly_plan (user_id, year, month) VALUES (%s, %s, %s) RETURNING id", (user_db_id, year, month))
+                monthly_id = cur.fetchone()[0]
+
+            # --- B. จัดการ Weekly Plan ---
+            week_num = current_date.isocalendar()[1]
+            week_start = current_date - timedelta(days=current_date.weekday())
+            cur.execute("SELECT id FROM weekly_plan WHERE monthly_plan_id = %s AND week_number = %s", (monthly_id, week_num))
+            week_row = cur.fetchone()
+            if week_row:
+                weekly_id = week_row[0]
+            else:
+                cur.execute("INSERT INTO weekly_plan (monthly_plan_id, week_number, start_date) VALUES (%s, %s, %s) RETURNING id", (monthly_id, week_num, week_start))
+                weekly_id = cur.fetchone()[0]
+
+            # --- C. จัดการ Days Plan ---
+            for i in range(7):
+                day_date = week_start + timedelta(days=i)
+                if start_date <= day_date < end_date:
+                    is_exercise = True if day_date.weekday() in [0, 2, 4, 6] else False
+                    
+                    cur.execute("SELECT id FROM days_plan WHERE weekly_plan = %s AND day_of_week = %s", (weekly_id, day_date.weekday()))
+                    if not cur.fetchone():
+                        cur.execute("""
+                            INSERT INTO days_plan (day_of_week, weekly_plan, is_exercise_day, exercise_name, completed)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (day_date.weekday(), weekly_id, is_exercise, exercise_name if is_exercise else "พักผ่อน", False))
+
+            current_date += timedelta(weeks=1)
+            current_date = current_date - timedelta(days=current_date.weekday())
+        
+        conn.commit()
+        print("✅ Schedule created successfully!")
+        return redirect(url_for('user.dashboard_page'))
+
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Error saving schedule: {e}")
+        return f"Database Error: {e}", 500
+    finally:
+        cur.close()
+        conn.close()
+
+@user_bp.route('/update_day_status', methods=['POST'])
+def update_day_status():
+    data = request.json
+    day_id = data.get('day_id')
+    completed = data.get('completed')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("""
+            UPDATE days_plan 
+            SET completed = %s 
+            WHERE id = %s
+        """, (completed, day_id))
+        conn.commit()
+        return {"status": "success"}
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Database Error", 500
+    finally:
+        cur.close()
+        conn.close()
+
+@user_bp.route('/reset_plan', methods=['POST'])
+def reset_plan():
+    # 1. เช็ค Login
+    if 'username' not in session:
+        return jsonify({"status": "error", "message": "Not logged in"}), 401
+
+    username = session['username']
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # 2. หา User ID
+        cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        if not user:
+             return jsonify({"status": "error", "message": "User not found"}), 404
+        user_id = user[0]
+
+        # 3. ลบข้อมูล (ต้องลบจากลูกไปหาแม่: วัน -> สัปดาห์ -> เดือน)
+        
+        # ลบ Days Plan (รายวัน)
+        cur.execute("""
+            DELETE FROM days_plan
+            WHERE weekly_plan IN (
+                SELECT id FROM weekly_plan
+                WHERE monthly_plan_id IN (
+                    SELECT id FROM monthly_plan WHERE user_id = %s
+                )
+            )
+        """, (user_id,))
+
+        # ลบ Weekly Plan (รายสัปดาห์)
+        cur.execute("""
+            DELETE FROM weekly_plan
+            WHERE monthly_plan_id IN (
+                SELECT id FROM monthly_plan WHERE user_id = %s
+            )
+        """, (user_id,))
+
+        # ลบ Monthly Plan (รายเดือน)
+        cur.execute("DELETE FROM monthly_plan WHERE user_id = %s", (user_id,))
+
+        conn.commit()
+        print(f"🗑️ Plan reset successfully for user: {username}")
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Error resetting plan: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()

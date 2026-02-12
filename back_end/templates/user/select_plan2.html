@@ -134,26 +134,29 @@
                 <h5 class="fw-bold mb-3 text-dark">ตั้งค่าการแจ้งเตือน</h5>
                 
                 <form action="/user/save_schedule" method="POST"> 
-                    <input type="hidden" name="patient_id" value="{{ patient_id }}">
-                    <input type="hidden" name="exercise_id" value="{{ plan.id }}">
-                    
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">วันที่เริ่มฝึก</label>
-                            <input type="date" class="form-control form-control-lg" name="start_date" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">เวลาที่สะดวก</label>
-                            <input type="time" class="form-control form-control-lg" name="reminder_time" value="17:00">
-                        </div>
-                    </div>
+    <input type="hidden" name="patient_id" value="{{ patient_id }}">
+    <input type="hidden" name="exercise_id" value="{{ plan.id }}">
+    <input type="hidden" name="exercise_name" value="{{ plan.name }}"> <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">วันที่เริ่มฝึก</label>
+            <input type="date" class="form-control form-control-lg" name="start_date" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">ระยะเวลาโปรแกรม</label>
+            <select class="form-select form-select-lg" name="duration" required>
+                <option value="1">1 เดือน</option>
+                <option value="2">2 เดือน</option>
+                <option value="3">3 เดือน</option>
+            </select>
+        </div>
+    </div>
 
-                    <div class="mt-4 pt-2">
-                        <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow-sm">
-                            ยืนยันแผนการรักษา <i class="bi bi-arrow-right-circle-fill ms-2"></i>
-                        </button>
-                    </div>
-                </form>
+    <div class="mt-4 pt-2">
+        <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow-sm">
+            ยืนยันแผนการรักษา <i class="bi bi-arrow-right-circle-fill ms-2"></i>
+        </button>
+    </div>
+</form>
             </div>
         </div>
 

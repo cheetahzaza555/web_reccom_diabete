@@ -12,96 +12,197 @@
     <style>
         body {
             font-family: 'Prompt', sans-serif;
-            background-color: #ffffff;
-        }
-
-        .main-content {
-            background-color: #ffffff;
+            background-color: #f8f9fa;
             min-height: 100vh;
+            display: flex; flex-direction: column;
         }
 
-        .header-banner {
-            background-color: #85a2ff;
-            color: white;
-            padding: 1.25rem 1rem;
-            font-size: 2.5rem;
-            font-weight: 600;
+        /* --- Calendar Grid System --- */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* 7 ช่องสำหรับ 7 วัน */
+            gap: 10px;
         }
 
-        .welcome-card {
-            max-width: 900px;
-            margin: 0 auto;
-            border-radius: 20px;
-            padding: 50px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        /* หัวตาราง (จันทร์-อาทิตย์) */
+        .weekday-header {
+            text-align: center; font-weight: bold; color: #6c757d;
+            padding: 10px 0;
+            background: #e9ecef; border-radius: 8px;
         }
 
-        .welcome-icon {
-            font-size: 5rem;
-            color: #4f7cff;
+        /* การ์ดวันที่ */
+        .day-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            min-height: 100px; /* ลดความสูงลงหน่อยจะได้เห็นภาพรวม */
+            padding: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            border: 1px solid #eee;
+            position: relative;
         }
 
-        .welcome-title {
-            font-size: 2.2rem;
-            font-weight: 600;
-            margin-top: 20px;
+        /* ✅ ไฮไลท์วันนี้ */
+        .today-card {
+            border: 2px solid #4f7cff !important;
+            background-color: #f0f7ff !important;
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(79, 124, 255, 0.2);
+        }
+        .today-badge {
+            background-color: #4f7cff; color: white;
+            padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
         }
 
-        .welcome-desc {
-            font-size: 1.1rem;
-            color: #555;
-            margin: 20px 0 35px;
+        /* เลขวันที่ */
+        .date-number {
+            font-size: 1.2rem; font-weight: bold; color: #333;
+            align-self: flex-start; /* ชิดซ้ายบน */
+            margin-bottom: 5px;
         }
+        .today-card .date-number { color: #4f7cff; }
 
-        .btn-start {
-            background-color: #4f7cff;
-            color: white;
-            font-size: 1.2rem;
-            padding: 15px 40px;
-            border-radius: 12px;
-            border: none;
-        }
+        /* ไอคอนกิจกรรม */
+        .exercise-icon { font-size: 1.5rem; color: #198754; }
+        .rest-icon { font-size: 1.5rem; color: #adb5bd; }
+        
+        .ex-name { font-size: 0.85rem; font-weight: 600; text-align: center; line-height: 1.2; }
 
-        .btn-start:hover {
-            background-color: #3e66d6;
+        /* Checkbox */
+        .check-btn { cursor: pointer; font-size: 1.5rem; color: #e9ecef; transition: all 0.2s; }
+        .check-btn.completed { color: #198754; }
+        
+        /* Responsive: จอเล็กให้เหลือ 1 คอลัมน์ */
+        @media (max-width: 768px) {
+            .calendar-grid { grid-template-columns: 1fr; }
+            .weekday-header { display: none; } /* ซ่อนหัวตารางในมือถือ */
+            .day-card { flex-direction: row; min-height: auto; padding: 15px; }
+            .date-number { margin-bottom: 0; margin-right: 15px; width: 30px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- คุณ include navbar เอง -->
     {% include 'includes/navbar_user.html' %}
 
-    <div class="main-content d-flex flex-column">
-        <!-- Header -->
-        <div class="header-banner">
-            หน้าหลัก
-        </div>
+    <div class="container py-4 flex-grow-1">
 
-        <!-- Content -->
-        <div class="container d-flex flex-grow-1 align-items-center justify-content-center py-5">
-            <div class="welcome-card text-center bg-white">
-                <div class="welcome-icon">
-                    <i class="bi bi-clipboard2-pulse"></i>
+        {% if schedule %}
+            
+            <div class="d-flex justify-content-between align-items-end mb-4 px-2">
+                <div>
+                    <h2 class="fw-bold mb-0 text-dark">
+                        {{ info.month_name }} {{ info.year }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-calendar-event me-1"></i> 
+                        วันนี้: {{ info.day }} {{ info.month_name }}
+                    </p>
                 </div>
-
-                <div class="welcome-title">
-                    ยินดีต้อนรับเข้าสู่ DiaBalance
-                </div>
-
-                <div class="welcome-desc">
-                    กรุณากรอกผลตรวจสุขภาพของคุณเพื่อให้ระบบสามารถวิเคราะห์
-                    <br>
-                    และแนะนำแผนการออกกำลังกายที่เหมาะสมสำหรับคุณ
-                </div>
-
-                <a href="/user/recommendations" class="btn btn-start">
-                    <i class="bi bi-pencil-square me-2"></i>
-                    เริ่มต้นใช้งาน
-                </a>
+                <button onclick="confirmReset()" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                    <i class="bi bi-trash3"></i> ล้างแผน
+                </button>
             </div>
-        </div>
+
+            <div class="calendar-grid mb-2 d-none d-md-grid">
+                <div class="weekday-header">จันทร์</div>
+                <div class="weekday-header">อังคาร</div>
+                <div class="weekday-header">พุธ</div>
+                <div class="weekday-header">พฤหัสฯ</div>
+                <div class="weekday-header">ศุกร์</div>
+                <div class="weekday-header">เสาร์</div>
+                <div class="weekday-header">อาทิตย์</div>
+            </div>
+
+            <div class="calendar-grid">
+                {% for day in schedule %}
+                    <div class="day-card {{ 'today-card' if day.is_today else '' }}">
+                        
+                        {% if day.is_today %}
+                            <div class="today-badge">วันนี้</div>
+                        {% endif %}
+
+                        <div class="date-number">{{ day.date_num }}</div>
+
+                        {% if day.is_exercise_day %}
+                            <div class="text-center">
+                                <i class="bi bi-activity exercise-icon"></i>
+                                <div class="ex-name mt-1">{{ day.exercise_name }}</div>
+                            </div>
+                            
+                            <div class="mt-2">
+                                <i class="bi bi-check-circle-fill check-btn {{ 'completed' if day.completed else '' }}" 
+                                   id="btn-{{ day.id }}"
+                                   onclick="toggleStatus('{{ day.id }}')"></i>
+                            </div>
+                        {% else %}
+                            <div class="text-center opacity-50">
+                                <i class="bi bi-cup-hot rest-icon"></i>
+                                <div class="ex-name mt-1">พัก</div>
+                            </div>
+                            <div style="height: 24px;"></div> {% endif %}
+
+                    </div>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <div class="d-flex justify-content-center align-items-center h-100 mt-5">
+                <div class="text-center bg-white p-5 rounded-4 shadow-sm" style="max-width: 600px;">
+                    <i class="bi bi-clipboard2-pulse text-primary display-1 mb-3"></i>
+                    <h2 class="fw-bold">ยังไม่มีตารางกิจกรรม</h2>
+                    <p class="text-muted">กรุณาทำแบบประเมินเพื่อสร้างแผนการออกกำลังกาย</p>
+                    <a href="/user/recommendations" class="btn btn-primary rounded-pill px-4 mt-3">
+                        เริ่มต้นใช้งาน
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function toggleStatus(dayId) {
+            const btn = document.getElementById(`btn-${dayId}`);
+            const isCompleted = btn.classList.contains('completed');
+            
+            // Toggle UI
+            if (!isCompleted) {
+                btn.classList.add('completed');
+            } else {
+                btn.classList.remove('completed');
+            }
+
+            // Call API
+            fetch('/user/update_day_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ day_id: dayId, completed: !isCompleted })
+            });
+        }
+
+        function confirmReset() {
+            Swal.fire({
+                title: 'ล้างแผนการรักษา?',
+                text: "ข้อมูลทั้งหมดจะหายไป",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'ลบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/user/reset_plan', { method: 'POST' })
+                    .then(() => window.location.reload());
+                }
+            });
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

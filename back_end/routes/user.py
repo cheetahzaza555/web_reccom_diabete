@@ -19,71 +19,62 @@ def dashboard_page():
     cur = conn.cursor()
     
     schedule_data = []
-    current_date_info = {} # เก็บข้อมูลเพื่อส่งไปบอกหน้าเว็บว่าเดือนอะไร
+    
+    # ข้อมูลประกอบ (Header)
+    thai_months = [
+        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    ]
+    today = datetime.now().date()
+    current_date_info = {
+        "day": today.day,
+        "month_name": thai_months[today.month - 1],
+        "year": today.year + 543,
+        "today_date": today
+    }
 
     try:
-        cur.execute("SELECT id FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
+        # ✅ 1. ใช้ Subquery หา user_id ทีเดียว (ลดการ query แยก)
+        # ✅ 2. ดึงเฉพาะข้อมูลของเดือนนี้และปีนี้เท่านั้น (WHERE m.month = %s AND m.year = %s)
+        sql_query = """
+            SELECT 
+                d.id, 
+                d.day_of_week, 
+                d.is_exercise_day, 
+                d.exercise_name, 
+                d.completed,
+                w.start_date
+            FROM days_plan d
+            JOIN weekly_plan w ON d.weekly_plan = w.id
+            JOIN monthly_plan m ON w.monthly_plan_id = m.id
+            JOIN users u ON m.user_id = u.id
+            WHERE u.username = %s 
+              AND m.month = %s 
+              AND m.year = %s
+            ORDER BY w.start_date ASC, d.day_of_week ASC
+        """
         
-        if user:
-            user_db_id = user[0]
-            today = datetime.now().date()
-            
-            # เก็บข้อมูลเดือนปัจจุบันส่งไปแสดงหัวข้อ
-            # (แปลงเดือนเป็นชื่อไทยแบบง่ายๆ)
-            thai_months = [
-                "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-            ]
-            current_date_info = {
-                "day": today.day,
-                "month_name": thai_months[today.month - 1],
-                "year": today.year + 543, # พ.ศ.
-                "today_date": today # เอาไว้เช็ค highlight
-            }
-
-            # ✅ Query ใหม่: ดึงข้อมูล "ทั้งเดือน"
-            # เราต้อง Join เพื่อเอา start_date ของวีคมาคำนวณวันที่จริง
-            sql_query = """
-                SELECT 
-                    d.id, 
-                    d.day_of_week, 
-                    d.is_exercise_day, 
-                    d.exercise_name, 
-                    d.completed,
-                    w.start_date
-                FROM days_plan d
-                JOIN weekly_plan w ON d.weekly_plan = w.id
-                JOIN monthly_plan m ON w.monthly_plan_id = m.id
-                WHERE m.user_id = %s 
-                  AND m.month = %s 
-                  AND m.year = %s
-                ORDER BY w.start_date ASC, d.day_of_week ASC
-            """
-            
-            cur.execute(sql_query, (user_db_id, today.month, today.year))
-            rows = cur.fetchall()
-            
-            if rows:
-                for r in rows:
-                    week_start = r[5] # วันจันทร์ของสัปดาห์นั้น
-                    day_offset = r[1] # 0=Mon, 1=Tue...
-                    
-                    # 📅 คำนวณวันที่จริงของกิจกรรมนี้
-                    actual_date = week_start + timedelta(days=day_offset)
-                    
-                    # กรองเอาเฉพาะวันที่อยู่ในเดือนนี้จริงๆ (เผื่อวีคที่คาบเกี่ยวเดือนอื่น)
-                    if actual_date.month == today.month:
-                        schedule_data.append({
-                            'id': r[0],
-                            'day_of_week': r[1],
-                            'is_exercise_day': r[2],
-                            'exercise_name': r[3],
-                            'completed': r[4],
-                            'date_obj': actual_date, # วันที่แบบ object
-                            'date_num': actual_date.day, # เลขวันที่ (1, 2, 3...)
-                            'is_today': (actual_date == today) # ✅ เช็คว่าเป็นวันนี้ไหม
-                        })
+        # ส่ง username ไป query โดยตรงเลย เร็วกว่าหา ID ก่อน
+        cur.execute(sql_query, (username, today.month, today.year))
+        rows = cur.fetchall()
+        
+        if rows:
+            for r in rows:
+                week_start = r[5]
+                day_offset = r[1]
+                actual_date = week_start + timedelta(days=day_offset)
+                
+                # กรองใน Python อีกรอบเพื่อให้ชัวร์ว่าเป็นเดือนนี้จริงๆ
+                if actual_date.month == today.month:
+                    schedule_data.append({
+                        'id': r[0],
+                        'day_of_week': r[1],
+                        'is_exercise_day': r[2],
+                        'exercise_name': r[3],
+                        'completed': r[4],
+                        'date_num': actual_date.day,
+                        'is_today': (actual_date == today)
+                    })
 
     except Exception as e:
         print(f"Error fetching dashboard: {e}")

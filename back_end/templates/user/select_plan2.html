@@ -15,7 +15,6 @@
             background-color: #f0f2f5; 
         }
         
-        /* ✅ 1. แก้ส่วนหัวเป็นสีเขียว (เหมือนหน้าแรก) */
         .header-section {
             background: linear-gradient(135deg, #198754 0%, #20c997 100%);
             color: white; 
@@ -45,10 +44,9 @@
             font-size: 1.2rem; 
         }
         
-        /* ✅ 2. แก้กล่องไฮไลท์เป็นสีเขียวอ่อน */
         .highlight-box {
-            background-color: #e8f5e9; /* เขียวอ่อน */
-            border-left: 5px solid #198754; /* เขียวเข้ม */
+            background-color: #e8f5e9;
+            border-left: 5px solid #198754;
             padding: 20px; 
             border-radius: 8px; 
             margin-bottom: 20px;
@@ -133,30 +131,39 @@
             <div class="card-body p-4">
                 <h5 class="fw-bold mb-3 text-dark">ตั้งค่าการแจ้งเตือน</h5>
                 
-                <form action="/user/save_schedule" method="POST"> 
-    <input type="hidden" name="patient_id" value="{{ patient_id }}">
-    <input type="hidden" name="exercise_id" value="{{ plan.id }}">
-    <input type="hidden" name="exercise_name" value="{{ plan.name }}"> <div class="row g-3">
-        <div class="col-md-6">
-            <label class="form-label fw-bold">วันที่เริ่มฝึก</label>
-            <input type="date" class="form-control form-control-lg" name="start_date" required>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label fw-bold">ระยะเวลาโปรแกรม</label>
-            <select class="form-select form-select-lg" name="duration" required>
-                <option value="1">1 เดือน</option>
-                <option value="2">2 เดือน</option>
-                <option value="3">3 เดือน</option>
-            </select>
-        </div>
-    </div>
+                <form id="scheduleForm" action="/user/save_schedule" method="POST"> 
+                    <input type="hidden" name="patient_id" value="{{ patient_id }}">
+                    <input type="hidden" name="exercise_id" value="{{ plan.id }}">
+                    <input type="hidden" name="exercise_name" value="{{ plan.name }}"> 
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">วันที่เริ่มฝึก</label>
+                            <input type="date" class="form-control form-control-lg" name="start_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">ระยะเวลาโปรแกรม</label>
+                            <select class="form-select form-select-lg" name="duration" required>
+                                <option value="1">1 เดือน</option>
+                                <option value="2">2 เดือน</option>
+                                <option value="3">3 เดือน</option>
+                            </select>
+                        </div>
+                    </div>
 
-    <div class="mt-4 pt-2">
-        <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow-sm">
-            ยืนยันแผนการรักษา <i class="bi bi-arrow-right-circle-fill ms-2"></i>
-        </button>
-    </div>
-</form>
+                    <div class="mt-4 pt-2 row gx-2">
+                        <div class="col-6">
+                            <a href="/user/select_plan/{{ patient_id }}" class="btn btn-secondary w-100 py-3 fw-bold fs-5 shadow-sm">
+                                <i class="bi bi-arrow-left-circle-fill me-2"></i> เลือกใหม่
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow-sm">
+                                ยืนยัน <i class="bi bi-arrow-right-circle-fill ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -171,5 +178,32 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // ✅ Script ดักจับการ Submit Form
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // หยุดการส่งข้อมูลชั่วคราว
+            
+            const form = this; // เก็บตัวแปร form ไว้ใช้
+
+            // แสดง Popup Loading
+            Swal.fire({
+                title: 'กำลังสร้างตารางกิจกรรม...',
+                text: 'กรุณารอสักครู่ ระบบกำลังคำนวณวันและเวลา',
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // รอสักนิด (500ms) ให้ Loading ขึ้นโชว์ก่อน แล้วค่อยส่งข้อมูลจริง
+            setTimeout(() => {
+                form.submit(); // ส่งข้อมูลไปหา Python
+            }, 500);
+        });
+    </script>
 </body>
 </html>

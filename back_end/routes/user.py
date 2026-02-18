@@ -182,50 +182,64 @@ def select_plan2_page(patient_id, exercise_id):
                            patient_id=patient_id, 
                            plan=exercise_info)
 
+import json
+
 @user_bp.route('/save_schedule', methods=['POST'])
 def save_schedule():
-    # 1. เช็คก่อนว่าล็อกอินหรือยัง (สำคัญมาก)
     if 'username' not in session:
-        return redirect(url_for('login_page')) # หรือชื่อ route login ของคุณ
+        return redirect(url_for('login_page'))
 
-    # รับข้อมูลอื่นๆ จาก Form
     data = request.form
-    # patient_id = data.get('patient_id')  <-- ❌ ไม่ใช้ตัวนี้แล้ว เพราะชื่อไม่ตรงกับ DB
     exercise_name = data.get('exercise_name')
-    start_date_str = data.get('start_date')
-    duration_months = int(data.get('duration'))
-
-    # แปลงวันที่
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-    end_date = start_date + relativedelta(months=duration_months)
+    
+    # 1. รับ JSON List ของวันที่ที่ User จิ้มมา
+    selected_dates_json = data.get('selected_dates_json')
+    
+    try:
+        # แปลง JSON String กลับเป็น Python List
+        # ตัวอย่าง: ['2026-02-18', '2026-02-20', '2026-02-22']
+        selected_dates_list = json.loads(selected_dates_json)
+    except:
+        return "Error parsing dates", 400
 
     conn = get_db_connection()
     cur = conn.cursor()
 
     try:
-        # ✅ แก้ไข: ใช้ username จาก Session แทน (เจอตัวจริงแน่นอน)
         current_username = session['username']
-        print(f"🔍 Saving schedule for logged in user: {current_username}")
-
         cur.execute("SELECT id FROM users WHERE username = %s", (current_username,))
         user = cur.fetchone()
         
-        if not user:
-            return "User not found (Session invalid)", 404
-        
-        user_db_id = user[0] # ได้ ID จริงๆ มาแล้ว (เช่น 9 หรือ 11)
+        if not user: return "User not found", 404
+        user_db_id = user[0] 
 
-        # -------------------------------------------------------------
-        # ส่วน Loop สร้างตาราง (Code เดิมของคุณ)
-        # -------------------------------------------------------------
+        # เราต้องวนลูปตาม "วันที่ที่ User เลือกมา" แทนการวนลูป 30 วัน
+        # แต่เพื่อความสมบูรณ์ของโครงสร้าง DB (Monthly -> Weekly -> Days)
+        # เราควรสร้าง Monthly/Weekly ให้ครบก่อน แล้วค่อย Insert Day
+        
+        # เรียงวันที่จากน้อยไปมาก
+        selected_dates_list.sort()
+        
+        # แปลง string เป็น date object
+        date_objects = [datetime.strptime(d, '%Y-%m-%d').date() for d in selected_dates_list]
+        
+        if not date_objects:
+            return "No dates selected", 400
+
+        # ใช้ Loop เดิม เพื่อสร้างโครงสร้างพื้นฐาน (Monthly/Weekly) ให้ครบ
+        # แต่ตอน Insert Day ให้เช็คว่า "วันนี้มีใน list ที่ user เลือกไหม"
+        
+        start_date = date_objects[0]
+        # สร้างเผื่อไปเลย 1 เดือน (30 วัน) นับจากวันแรกที่เลือก
+        end_date = start_date + timedelta(days=30) 
+        
         current_date = start_date
+
         while current_date < end_date:
             year = current_date.year
             month = current_date.month
 
-            # ... (ก๊อปปี้โค้ดส่วน A, B, C เดิมมาวางตรงนี้ได้เลยครับ ไม่ต้องแก้) ...
-            
-            # --- A. จัดการ Monthly Plan ---
+            # --- A. Monthly Plan ---
             cur.execute("SELECT id FROM monthly_plan WHERE user_id = %s AND year = %s AND month = %s", (user_db_id, year, month))
             month_row = cur.fetchone()
             if month_row:
@@ -234,9 +248,10 @@ def save_schedule():
                 cur.execute("INSERT INTO monthly_plan (user_id, year, month) VALUES (%s, %s, %s) RETURNING id", (user_db_id, year, month))
                 monthly_id = cur.fetchone()[0]
 
-            # --- B. จัดการ Weekly Plan ---
+            # --- B. Weekly Plan ---
             week_num = current_date.isocalendar()[1]
             week_start = current_date - timedelta(days=current_date.weekday())
+
             cur.execute("SELECT id FROM weekly_plan WHERE monthly_plan_id = %s AND week_number = %s", (monthly_id, week_num))
             week_row = cur.fetchone()
             if week_row:
@@ -245,29 +260,40 @@ def save_schedule():
                 cur.execute("INSERT INTO weekly_plan (monthly_plan_id, week_number, start_date) VALUES (%s, %s, %s) RETURNING id", (monthly_id, week_num, week_start))
                 weekly_id = cur.fetchone()[0]
 
-            # --- C. จัดการ Days Plan ---
+            # --- C. Days Plan ---
             for i in range(7):
                 day_date = week_start + timedelta(days=i)
+                
+                # เช็คว่าวันนี้อยู่ในช่วงเวลาที่เราสนใจไหม
                 if start_date <= day_date < end_date:
-                    is_exercise = True if day_date.weekday() in [0, 2, 4, 6] else False
+                    
+                    # ✅ CHECKPOINT: วันนี้ user เลือกมาหรือเปล่า?
+                    # แปลง day_date เป็น string เพื่อเทียบกับ list ที่ส่งมา
+                    date_str = day_date.strftime('%Y-%m-%d')
+                    is_exercise = True if date_str in selected_dates_list else False
                     
                     cur.execute("SELECT id FROM days_plan WHERE weekly_plan = %s AND day_of_week = %s", (weekly_id, day_date.weekday()))
                     if not cur.fetchone():
                         cur.execute("""
                             INSERT INTO days_plan (day_of_week, weekly_plan, is_exercise_day, exercise_name, completed)
                             VALUES (%s, %s, %s, %s, %s)
-                        """, (day_date.weekday(), weekly_id, is_exercise, exercise_name if is_exercise else "พักผ่อน", False))
+                        """, (
+                            day_date.weekday(),
+                            weekly_id,
+                            is_exercise, # True ถ้า user จิ้ม, False ถ้าไม่จิ้ม
+                            exercise_name if is_exercise else "พักผ่อน",
+                            False
+                        ))
 
             current_date += timedelta(weeks=1)
             current_date = current_date - timedelta(days=current_date.weekday())
-        
+
         conn.commit()
-        print("✅ Schedule created successfully!")
         return redirect(url_for('user.dashboard_page'))
 
     except Exception as e:
         conn.rollback()
-        print(f"❌ Error saving schedule: {e}")
+        print(f"Error: {e}")
         return f"Database Error: {e}", 500
     finally:
         cur.close()

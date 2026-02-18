@@ -549,99 +549,73 @@ def get_exercise_details_by_id(exercise_id):
         return None
     
 def get_all_exercises_for_library():
-    """
-    ดึงข้อมูลท่าออกกำลังกายทั้งหมดเพื่อแสดงในหน้า Library
-    คืนค่าเป็น List of Dictionaries ที่ Frontend นำไปวนลูปแสดงได้เลย
-    """
     query = """
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT ?id ?name ?desc ?mets ?type ?image
+    SELECT ?id ?name ?desc ?mets (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
     WHERE {
-        # 1. หา Instance ที่เป็นลูกหลานของ ex:Exercise
         ?s a ?typeUri .
         ?typeUri rdfs:subClassOf* ex:Exercise . 
-        
-        # กรองไม่เอาตัว Class แม่ (ex:Exercise) มาแสดง เอาเฉพาะ Class ลูก
         FILTER(?typeUri != ex:Exercise)
 
-        # 2. ดึง ID และ ชื่อ Class (เพื่อใช้เป็น Category)
         BIND(STRAFTER(STR(?s), "#") AS ?id)
-        BIND(STRAFTER(STR(?typeUri), "#") AS ?type)
 
-        # 3. ดึงรายละเอียด (Optional คือถ้าไม่มีข้อมูลก็ไม่ error)
         OPTIONAL { ?s rdfs:label ?name }
         OPTIONAL { ?s ex:description ?desc }
-        OPTIONAL { ?s ex:metValue ?mets }      # ตรวจสอบชื่อ Property ใน DB ว่าใช้ metValue หรือ hasMETs
-        OPTIONAL { ?s ex:hasImage ?image }      # ตรวจสอบชื่อ Property รูปภาพ
+        OPTIONAL { ?s ex:metValue ?mets }
     }
+    GROUP BY ?id ?name ?desc ?mets
     """
-    
     try:
-        
         sparql_read.setQuery(query)
         sparql_read.setReturnFormat(JSON)
         results = sparql_read.query().convert()
         
         exercises = []
-        
-        category_images = {
-            "Walking": "/static/images/exercises/walking.png",
-            "Running": "/static/images/exercises/running_logo.png",
-            "Bicycling": "/static/images/exercises/cycling_logo.png",
-            "Dancing": "/static/images/exercises/dancing_logo.png",
-            "WaterActivity": "/static/images/exercises/water_logo.png",
-            "Aerobic": "/static/images/exercises/aerobic_logo.png",
-            "Resistance": "/static/images/exercises/resistance_logo.png",
-            "Flexibility": "/static/images/exercises/flexibility_logo.png",
-            "Stretching": "/static/images/exercises/flexibility_logo.png"
+        class_image_mapping = {
+            "walking": "walking.png", "running": "running.png", 
+            "dancing": "dancing.png", "bicycling": "cycling.png",
+            "resistance": "resistance.png", "stretching": "flexibility.png",
+            "aerobic": "aerobic.png", "wateractivity": "water.png"
         }
 
         for r in results["results"]["bindings"]:
             def val(key): return r[key]["value"] if key in r else ""
             
-            # raw_type จะได้ค่าเป็นชื่อ Class เช่น "Walking", "Bicycling"
-            raw_type = val("type") 
-            id_val = val("id")
-            name_val = val("name")
+            # เก็บ Types ทั้งหมดไว้ใน Array
+            types_list = val("allTypes").split(',')
             
-            # 2. แก้ลอจิกการเลือกรูปภาพ: ให้เช็คจาก raw_type (ชื่อ Class ใน Graph) เป็นหลัก
-            # วิธีนี้จะแม่นยำกว่าการเช็คด้วยคำว่า "เดิน" หรือ "วิ่ง" ในชื่อ
-            img_path = category_images.get(raw_type)
+            # --- Logic: เลือกคลาสที่เจาะจงที่สุด (ไม่ใช่ Aerobic ถ้ามี Walking) ---
+            # เราจะตัด "Aerobic" ออกถ้าในรายการมีคลาสอื่นที่เจาะจงกว่าอยู่ด้วย
+            specific_type = ""
+            if len(types_list) > 1:
+                # กรองเอาพวกคลาสทั่วไปอย่าง Aerobic ออก เพื่อเหลือตัวที่เจาะจง
+                filtered_types = [t for t in types_list if "Aerobic" not in t]
+                specific_type = filtered_types[0] if filtered_types else types_list[0]
+            else:
+                specific_type = types_list[0]
 
-            # ถ้าใน Dict ไม่มีรูปหมวดหมู่ย่อย ให้ลองเช็คหมวดหมู่หลัก (Mapped Type)
-            if not img_path:
-                if "Aerobic" in raw_type:
-                    img_path = category_images.get("Aerobic")
-                elif "Resistance" in raw_type:
-                    img_path = category_images.get("Resistance")
-                elif "Flexibility" in raw_type or "Stretching" in raw_type:
-                    img_path = category_images.get("Flexibility")
-                else:
-                    img_path = "/static/images/exercises/default.png"
-
-            # จัด Group ประเภทสำหรับ Frontend Filter (คงเดิมไว้)
-            mapped_type = raw_type
-            if "Aerobic" in raw_type or raw_type in ["Walking", "Running", "Dancing", "Bicycling"]: 
-                mapped_type = "Aerobic"
-            elif "Resistance" in raw_type: 
-                mapped_type = "Resistance"
-            elif "Flexibility" in raw_type or "Stretching" in raw_type: 
-                mapped_type = "Flexibility"
+            raw_type_name = specific_type.split('#')[-1]
+            
+            # เลือกรูปภาพตามชื่อคลาสที่เจาะจง
+            img_name = "exercise_default.png"
+            for key, filename in class_image_mapping.items():
+                if key in raw_type_name.lower():
+                    img_name = filename
+                    break
 
             exercises.append({
-                "id": id_val,
-                "name": name_val or id_val,
-                "type": mapped_type,
-                "original_type": raw_type,
+                "id": val("id"),
+                "name": val("name") or val("id"),
+                "original_type": specific_type, # ส่งตัวที่ Specific ที่สุดไป
+                "all_categories": types_list,   # ส่งทั้งหมดไปเพื่อใช้ในการ Filter
+                "img": f"/static/images/exercises/{img_name}",
                 "mets": float(val("mets")) if val("mets") else 0,
-                "img": img_path, # ส่ง Path รูปที่เลือกจากหมวดหมู่ไป
                 "desc": val("desc") or "ไม่มีรายละเอียดเพิ่มเติม"
             })
             
         return exercises
-
     except Exception as e:
-        print(f"❌ Error fetching library: {e}")
+        print(f"❌ Error: {e}")
         return []

@@ -110,7 +110,7 @@
             "WeightBearingAerobicSport": "กีฬาแอโรบิกแบบลงน้ำหนัก", "Bicycling": "ปั่นจักรยาน",
             "WaterActivity": "กิจกรรมทางน้ำ", "NonWeightBearingAerobicSport": "กีฬาแอโรบิกแบบไม่ลงน้ำหนัก",
             "WeightBearingResistanceExercise": "แรงต้านแบบลงน้ำหนัก", "NonWeightBearingResistanceExercise": "แรงต้านแบบไม่ลงน้ำหนัก",
-            "Stretching": "การยืดเหยียด", "Aerobic": "แอโรบิก", "Resistance": "แรงต้าน"
+            "StretchingExercise": "การยืดเหยียด", "Aerobic": "แอโรบิก", "Resistance": "แรงต้าน"
         };
         return dict[type] || type;
     }
@@ -120,7 +120,7 @@
         const structure = {
             "Aerobic (แอโรบิก)": ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"],
             "Resistance (แรงต้าน)": ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"],
-            "Stretching (ยืดเหยียด)": ["Stretching"]
+            "Stretching (ยืดเหยียด)": ["StretchingExercise"]
         };
 
         let html = `<option value="all">ทุกประเภท (แสดงทั้งหมด)</option>`;

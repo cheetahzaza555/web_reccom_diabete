@@ -549,64 +549,92 @@ def get_exercise_details_by_id(exercise_id):
         return None
     
 def get_all_exercises_for_library():
-    """
-    ดึงข้อมูลท่าออกกำลังกายทั้งหมดเพื่อแสดงในหน้า Library
-    คืนค่าเป็น List of Dictionaries ที่ Frontend นำไปวนลูปแสดงได้เลย
-    """
     query = """
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT ?id ?name ?desc ?mets ?type ?image
+    SELECT ?id ?name ?desc ?mets (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
     WHERE {
-        # 1. หา Instance ที่เป็นลูกหลานของ ex:Exercise
         ?s a ?typeUri .
         ?typeUri rdfs:subClassOf* ex:Exercise . 
-        
-        # กรองไม่เอาตัว Class แม่ (ex:Exercise) มาแสดง เอาเฉพาะ Class ลูก
         FILTER(?typeUri != ex:Exercise)
 
-        # 2. ดึง ID และ ชื่อ Class (เพื่อใช้เป็น Category)
         BIND(STRAFTER(STR(?s), "#") AS ?id)
-        BIND(STRAFTER(STR(?typeUri), "#") AS ?type)
-
-        # 3. ดึงรายละเอียด (Optional คือถ้าไม่มีข้อมูลก็ไม่ error)
         OPTIONAL { ?s rdfs:label ?name }
         OPTIONAL { ?s ex:description ?desc }
-        OPTIONAL { ?s ex:metValue ?mets }      # ตรวจสอบชื่อ Property ใน DB ว่าใช้ metValue หรือ hasMETs
-        OPTIONAL { ?s ex:hasImage ?image }      # ตรวจสอบชื่อ Property รูปภาพ
+        OPTIONAL { ?s ex:metValue ?mets }
     }
+    GROUP BY ?id ?name ?desc ?mets
     """
-    
     try:
         sparql_read.setQuery(query)
         sparql_read.setReturnFormat(JSON)
         results = sparql_read.query().convert()
         
         exercises = []
+        
+        # 1. ปรับลำดับความสำคัญใหม่: เอาตัวที่ "ยาวและเจาะจง" ไว้บนสุด 
+        # เพื่อให้มันเลือก NonWeight ก่อน Weight หากท่านั้นเป็นทั้งคู่
+        priority_order = [
+            "NonWeightBearingAerobicSport", "WeightBearingAerobicSport",
+            "NonWeightBearingResistanceExercise", "WeightBearingResistanceExercise",
+            "Walking", "Running", "Dancing", "Bicycling", "WaterActivity",
+            "Aerobic", "Resistance", "StretchingExercise"
+        ]
+
+        # 2. Mapping ชื่อคลาสกับไฟล์รูปภาพ (ต้องตรงกับชื่อไฟล์ในเครื่อง)
+        img_map = {
+            "nonweightbearingaerobicsport": "non_weight_sport.png",
+            "weightbearingaerobicsport": "weight_sport.png",
+            "nonweightbearingresistanceexercise": "non_weight_resistance.png",
+            "weightbearingresistanceexercise": "weight_resistance.png",      
+            "walking": "walking.png",
+            "running": "running.png",
+            "dancing": "dancing.png",
+            "bicycling": "cycling.png",
+            "wateractivity": "water.png",
+            "stretching": "flexibility.png",
+            "aerobic": "aerobic.png",
+            "resistance": "resistance.png"
+        }
+
         for r in results["results"]["bindings"]:
-            # Helper function เพื่อดึงค่า value อย่างปลอดภัย
             def val(key): return r[key]["value"] if key in r else ""
             
-            # จัด Group ประเภทให้ตรงกับที่ Frontend filter (Aerobic, Resistance, Flexibility)
-            raw_type = val("type")
-            mapped_type = raw_type
-            if "Aerobic" in raw_type: mapped_type = "Aerobic"
-            elif "Resistance" in raw_type or "Weight" in raw_type: mapped_type = "Resistance"
-            elif "Flexibility" in raw_type or "Yoga" in raw_type or "Stretching" in raw_type: mapped_type = "Flexibility"
+            types_list = val("allTypes").split(',')
+            raw_names = [t.split('#')[-1] for t in types_list]
+            
+            chosen_name = ""
+            for p_name in priority_order:
+                if p_name in raw_names:
+                    chosen_name = p_name
+                    break
+            if not chosen_name: chosen_name = raw_names[0]
+            
+            search_key = chosen_name.lower()
+            img_file = "exercise_default.png"
+
+            if search_key in img_map:
+                img_file = img_map[search_key]
+            else:
+                # Fallback: ค้นหาตัวที่ยาวที่สุดที่แมตช์ได้
+                sorted_keys = sorted(img_map.keys(), key=len, reverse=True)
+                for k in sorted_keys:
+                    if k in search_key:
+                        img_file = img_map[k]
+                        break
 
             exercises.append({
                 "id": val("id"),
-                "name": val("name") or val("id"), # ถ้าไม่มีชื่อไทย ให้ใช้ ID แทน
-                "type": mapped_type,              # ส่งค่าที่จัดกลุ่มแล้วไป
-                "original_type": raw_type,        # ส่งค่าเดิมไปเผื่อใช้
+                "name": val("name") or val("id"),
+                "original_type": chosen_name,
+                "all_categories": raw_names,
+                "img": f"/static/images/exercises/{img_file}",
                 "mets": float(val("mets")) if val("mets") else 0,
-                "img": val("image") or "https://via.placeholder.com/600x400?text=No+Image", # รูปภาพ Default
                 "desc": val("desc") or "ไม่มีรายละเอียดเพิ่มเติม"
             })
             
         return exercises
-
     except Exception as e:
-        print(f"❌ Error fetching library: {e}")
+        print(f"❌ Error in Backend: {e}")
         return []

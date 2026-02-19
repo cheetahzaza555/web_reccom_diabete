@@ -579,7 +579,7 @@ def get_all_exercises_for_library():
             "NonWeightBearingAerobicSport", "WeightBearingAerobicSport",
             "NonWeightBearingResistanceExercise", "WeightBearingResistanceExercise",
             "Walking", "Running", "Dancing", "Bicycling", "WaterActivity",
-            "Aerobic", "Resistance", "Stretching"
+            "Aerobic", "Resistance", "StretchingExercise"
         ]
 
         # 2. Mapping ชื่อคลาสกับไฟล์รูปภาพ (ต้องตรงกับชื่อไฟล์ในเครื่อง)

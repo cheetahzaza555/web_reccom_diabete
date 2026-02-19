@@ -15,18 +15,11 @@
             border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 40px;
         }
-        
-        /* สไตล์สำหรับส่วนตัวเลือกหมวดหมู่ */
         .filter-container {
-            background: white;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            margin-top: -30px;
-            position: relative;
-            z-index: 10;
+            background: white; padding: 20px; border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-top: -30px;
+            position: relative; z-index: 10;
         }
-
         .exercise-card {
             border: none; border-radius: 20px; background: white;
             overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
@@ -52,7 +45,7 @@
     <header class="page-header text-center">
         <div class="container">
             <h1 class="fw-bold mb-3">คลังท่าออกกำลังกาย</h1>
-            <p class="lead opacity-75">เลือกหมวดหมู่ที่เหมาะสมจากโครงสร้าง Ontology ของคุณ</p>
+            <p class="lead opacity-75">ค้นหาท่าออกกำลังกายที่เจาะจงตามหมวดหมู่ที่คุณสนใจ</p>
         </div>
     </header>
 
@@ -71,7 +64,6 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0"><i class="fas fa-filter text-primary"></i></span>
                                 <select id="ontologyDropdown" class="form-select border-start-0" onchange="filterCategory(this.value)">
-                                    <option value="all">ทุกหมวดหมู่</option>
                                     </select>
                             </div>
                         </div>
@@ -89,9 +81,9 @@
                 <div class="modal-header border-0 pb-0"><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body text-center pt-0 pb-4 px-4">
                     <img id="mImg" src="" class="rounded-3 mb-3 shadow-sm bg-light" style="width: 100%; height: 250px; object-fit: cover;">
-                    <h3 id="mTitle" class="fw-bold mb-2">Title</h3>
+                    <h3 id="mTitle" class="fw-bold mb-2"></h3>
                     <div class="d-inline-block px-3 py-1 rounded-pill bg-light text-muted fw-bold mb-3">
-                        <i class="fas fa-fire me-1 text-danger"></i> METs: <span id="mMets">0</span>
+                        <i class="fas fa-fire me-1 text-danger"></i> METs: <span id="mMets"></span>
                     </div>
                     <p id="mDesc" class="text-muted text-start"></p>
                 </div>
@@ -99,71 +91,73 @@
         </div>
     </div>
 
-    <script id="exercises-data-source" type="application/json">
-        {{ exercises | tojson | safe }}
-    </script>
-
+    <script id="exercises-data-source" type="application/json">{{ exercises | tojson | safe }}</script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
     const placeholderImg = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22286%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20286%20180%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eee%22%3E%3C%2Frect%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23999%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E";
-
     let exercisesData = [];
-    try {
-        const dataSource = document.getElementById('exercises-data-source');
-        exercisesData = JSON.parse(dataSource.textContent || "[]");
-    } catch (e) { console.error("Data Error:", e); }
-
     const grid = document.getElementById('exerciseGrid');
     let currentFilter = 'all';
 
-    // 1. ฟังก์ชันสร้างรายการใน Dropdown ตามคลาสจริงใน Ontology
-    function renderFilterDropdown() {
-        const dropdown = document.getElementById('ontologyDropdown');
-        const types = new Set();
-        
-        exercisesData.forEach(item => {
-            const className = item.original_type.split('#').pop();
-            if (className) types.add(className);
-        });
-
-        let optionsHtml = `<option value="all">ทุกประเภท (แสดงทั้งหมด)</option>`;
-
-        Array.from(types).sort().forEach(type => {
-            optionsHtml += `<option value="${type}">${translateType(type)}</option>`;
-        });
-
-        dropdown.innerHTML = optionsHtml;
-    }
+    try {
+        exercisesData = JSON.parse(document.getElementById('exercises-data-source').textContent || "[]");
+    } catch (e) { console.error("Data Error:", e); }
 
     function translateType(type) {
         const dict = {
-            'Walking': 'เดิน', 'Running': 'วิ่ง', 'Dancing': 'เต้น',
-            'Bicycling': 'ปั่นจักรยาน', 'Resistance': 'แรงต้าน (Weight Training)',
-            'Stretching': 'ยืดเหยียด', 'WaterActivity': 'กิจกรรมทางน้ำ',
-            'Aerobic': 'แอโรบิก (Aerobic)', 'Flexibility': 'ความยืดหยุ่น'
+            "Walking": "การเดิน", "Running": "การวิ่ง", "Dancing": "การเต้น",
+            "WeightBearingAerobicSport": "กีฬาแอโรบิกแบบลงน้ำหนัก", "Bicycling": "ปั่นจักรยาน",
+            "WaterActivity": "กิจกรรมทางน้ำ", "NonWeightBearingAerobicSport": "กีฬาแอโรบิกแบบไม่ลงน้ำหนัก",
+            "WeightBearingResistanceExercise": "แรงต้านแบบลงน้ำหนัก", "NonWeightBearingResistanceExercise": "แรงต้านแบบไม่ลงน้ำหนัก",
+            "Stretching": "การยืดเหยียด", "Aerobic": "แอโรบิก", "Resistance": "แรงต้าน"
         };
         return dict[type] || type;
     }
 
-    // 2. ฟังก์ชันแสดง Card
+    function renderFilterDropdown() {
+        const dropdown = document.getElementById('ontologyDropdown');
+        const structure = {
+            "Aerobic (แอโรบิก)": ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"],
+            "Resistance (แรงต้าน)": ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"],
+            "Stretching (ยืดเหยียด)": ["Stretching"]
+        };
+
+        let html = `<option value="all">ทุกประเภท (แสดงทั้งหมด)</option>`;
+        for (const [parent, children] of Object.entries(structure)) {
+            html += `<optgroup label="─── ${parent} ───">`;
+            children.forEach(child => {
+                html += `<option value="${child}">&nbsp;&nbsp;• ${translateType(child)}</option>`;
+            });
+            html += `</optgroup>`;
+        }
+        dropdown.innerHTML = html;
+    }
+
+    function filterContent() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = exercisesData.filter(item => {
+            const matchesSearch = item.name.toLowerCase().includes(search);
+            const matchesCategory = (currentFilter === 'all' || item.all_categories.includes(currentFilter));
+            return matchesSearch && matchesCategory;
+        });
+        renderCards(filtered);
+    }
+
     function renderCards(data) {
         grid.innerHTML = data.length ? "" : '<div class="col-12 text-center py-5"><h4>ไม่พบข้อมูล</h4></div>';
-        
         data.forEach(item => {
             const mets = parseFloat(item.mets) || 0;
             const badgeColor = mets > 6 ? 'bg-high' : (mets > 3 ? 'bg-med' : 'bg-low');
-            let imgUrl = item.img ? (item.img.startsWith('/') ? item.img : '/' + item.img) : placeholderImg;
-            const className = item.original_type.split('#').pop();
-
             grid.innerHTML += `
             <div class="col-md-6 col-lg-4">
                 <div class="exercise-card" onclick="openModal('${item.id}')">
                     <div class="card-img-wrapper">
                         <span class="mets-badge ${badgeColor}">METs ${mets}</span>
-                        <img src="${imgUrl}" class="card-img-top" onerror="this.onerror=null;this.src='${placeholderImg}';">
+                        <img src="${item.img}" class="card-img-top" onerror="this.onerror=null;this.src='${placeholderImg}';">
                     </div>
                     <div class="card-body p-4">
-                        <small class="text-primary text-uppercase fw-bold">${translateType(className)}</small>
+                        <small class="text-primary text-uppercase fw-bold">${translateType(item.original_type)}</small>
                         <h5 class="fw-bold text-truncate">${item.name}</h5>
                         <p class="text-muted small text-truncate">${item.desc}</p>
                     </div>
@@ -172,30 +166,12 @@
         });
     }
 
-    // 3. ฟังก์ชันกรองข้อมูลเมื่อเปลี่ยนค่าใน Dropdown
-    function filterCategory(type) {
-        currentFilter = type;
-        filterContent();
-    }
-
-    function filterContent() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const filtered = exercisesData.filter(item => {
-            const matchesSearch = item.name.toLowerCase().includes(search);
-            const className = item.original_type.split('#').pop();
-            const matchesCategory = (currentFilter === 'all' || className === currentFilter);
-            return matchesSearch && matchesCategory;
-        });
-        renderCards(filtered);
-    }
-
-    // 4. Modal
+    function filterCategory(type) { currentFilter = type; filterContent(); }
     const myModal = new bootstrap.Modal(document.getElementById('detailModal'));
     function openModal(id) {
         const item = exercisesData.find(x => String(x.id) === String(id));
         if (item) {
-            let imgUrl = item.img ? (item.img.startsWith('/') ? item.img : '/' + item.img) : placeholderImg;
-            document.getElementById('mImg').src = imgUrl;
+            document.getElementById('mImg').src = item.img;
             document.getElementById('mTitle').innerText = item.name;
             document.getElementById('mDesc').innerText = item.desc;
             document.getElementById('mMets').innerText = item.mets;
@@ -203,10 +179,9 @@
         }
     }
 
-    // เริ่มต้นทำงาน
     document.addEventListener('DOMContentLoaded', () => {
-        renderFilterDropdown(); // สร้างรายการ Dropdown ก่อน
-        renderCards(exercisesData); // แสดงท่าทั้งหมดครั้งแรก
+        renderFilterDropdown();
+        renderCards(exercisesData);
     });
 </script>
 </body>

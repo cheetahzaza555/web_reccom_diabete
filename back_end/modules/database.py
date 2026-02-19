@@ -560,7 +560,6 @@ def get_all_exercises_for_library():
         FILTER(?typeUri != ex:Exercise)
 
         BIND(STRAFTER(STR(?s), "#") AS ?id)
-
         OPTIONAL { ?s rdfs:label ?name }
         OPTIONAL { ?s ex:description ?desc }
         OPTIONAL { ?s ex:metValue ?mets }
@@ -573,49 +572,69 @@ def get_all_exercises_for_library():
         results = sparql_read.query().convert()
         
         exercises = []
-        class_image_mapping = {
-            "walking": "walking.png", "running": "running.png", 
-            "dancing": "dancing.png", "bicycling": "cycling.png",
-            "resistance": "resistance.png", "stretching": "flexibility.png",
-            "aerobic": "aerobic.png", "wateractivity": "water.png"
+        
+        # 1. ปรับลำดับความสำคัญใหม่: เอาตัวที่ "ยาวและเจาะจง" ไว้บนสุด 
+        # เพื่อให้มันเลือก NonWeight ก่อน Weight หากท่านั้นเป็นทั้งคู่
+        priority_order = [
+            "NonWeightBearingAerobicSport", "WeightBearingAerobicSport",
+            "NonWeightBearingResistanceExercise", "WeightBearingResistanceExercise",
+            "Walking", "Running", "Dancing", "Bicycling", "WaterActivity",
+            "Aerobic", "Resistance", "Stretching"
+        ]
+
+        # 2. Mapping ชื่อคลาสกับไฟล์รูปภาพ (ต้องตรงกับชื่อไฟล์ในเครื่อง)
+        img_map = {
+            "nonweightbearingaerobicsport": "non_weight_sport.png",
+            "weightbearingaerobicsport": "weight_sport.png",
+            "nonweightbearingresistanceexercise": "non_weight_resistance.png",
+            "weightbearingresistanceexercise": "weight_resistance.png",      
+            "walking": "walking.png",
+            "running": "running.png",
+            "dancing": "dancing.png",
+            "bicycling": "cycling.png",
+            "wateractivity": "water.png",
+            "stretching": "flexibility.png",
+            "aerobic": "aerobic.png",
+            "resistance": "resistance.png"
         }
 
         for r in results["results"]["bindings"]:
             def val(key): return r[key]["value"] if key in r else ""
             
-            # เก็บ Types ทั้งหมดไว้ใน Array
             types_list = val("allTypes").split(',')
+            raw_names = [t.split('#')[-1] for t in types_list]
             
-            # --- Logic: เลือกคลาสที่เจาะจงที่สุด (ไม่ใช่ Aerobic ถ้ามี Walking) ---
-            # เราจะตัด "Aerobic" ออกถ้าในรายการมีคลาสอื่นที่เจาะจงกว่าอยู่ด้วย
-            specific_type = ""
-            if len(types_list) > 1:
-                # กรองเอาพวกคลาสทั่วไปอย่าง Aerobic ออก เพื่อเหลือตัวที่เจาะจง
-                filtered_types = [t for t in types_list if "Aerobic" not in t]
-                specific_type = filtered_types[0] if filtered_types else types_list[0]
-            else:
-                specific_type = types_list[0]
-
-            raw_type_name = specific_type.split('#')[-1]
-            
-            # เลือกรูปภาพตามชื่อคลาสที่เจาะจง
-            img_name = "exercise_default.png"
-            for key, filename in class_image_mapping.items():
-                if key in raw_type_name.lower():
-                    img_name = filename
+            chosen_name = ""
+            for p_name in priority_order:
+                if p_name in raw_names:
+                    chosen_name = p_name
                     break
+            if not chosen_name: chosen_name = raw_names[0]
+            
+            search_key = chosen_name.lower()
+            img_file = "exercise_default.png"
+
+            if search_key in img_map:
+                img_file = img_map[search_key]
+            else:
+                # Fallback: ค้นหาตัวที่ยาวที่สุดที่แมตช์ได้
+                sorted_keys = sorted(img_map.keys(), key=len, reverse=True)
+                for k in sorted_keys:
+                    if k in search_key:
+                        img_file = img_map[k]
+                        break
 
             exercises.append({
                 "id": val("id"),
                 "name": val("name") or val("id"),
-                "original_type": specific_type, # ส่งตัวที่ Specific ที่สุดไป
-                "all_categories": types_list,   # ส่งทั้งหมดไปเพื่อใช้ในการ Filter
-                "img": f"/static/images/exercises/{img_name}",
+                "original_type": chosen_name,
+                "all_categories": raw_names,
+                "img": f"/static/images/exercises/{img_file}",
                 "mets": float(val("mets")) if val("mets") else 0,
                 "desc": val("desc") or "ไม่มีรายละเอียดเพิ่มเติม"
             })
             
         return exercises
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error in Backend: {e}")
         return []

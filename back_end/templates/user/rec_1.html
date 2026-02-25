@@ -565,80 +565,87 @@ function skipToPlan() {
         finally { btn.innerText = originalText; btn.disabled = false; }
     }
 
-    function renderResults(json) {
-    const updateList = (id, items) => {
-        const el = document.getElementById(id); 
-        el.innerHTML = "";
-        if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
-        else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
-    };
+function renderResults(json) {
+        const updateList = (id, items) => {
+            const el = document.getElementById(id); 
+            el.innerHTML = "";
+            if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+            else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
+        };
 
-    updateList('warnList', json.warnings);
-    updateList('compliList', json.complis);
-    updateList('comorbList', json.comorbs);
+        updateList('warnList', json.warnings);
+        updateList('compliList', json.complis);
+        updateList('comorbList', json.comorbs);
 
-    const exEl = document.getElementById('exList');
-    exEl.innerHTML = ""; 
+        const exEl = document.getElementById('exList');
+        exEl.innerHTML = ""; 
 
-    if (!json.exercises || json.exercises.length === 0) {
-        exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
-        return;
+        if (!json.exercises || json.exercises.length === 0) {
+            exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+            return;
+        }
+
+        // 💡 เช็คข้อมูลที่ส่งมาจาก Python (กด F12 ดูใน Console ได้เลย)
+        console.log("ข้อมูลท่าออกกำลังกายที่ได้รับ:", json.exercises);
+
+        // หมวดหมู่ทั้งหมดอิงตาม GraphDB ของคุณ
+        const categories = {
+            "🏃 การวิ่ง (Running)": [],
+            "🚶 การเดิน (Walking)": [],
+            "🚴 การปั่นจักรยาน (Bicycling)": [],
+            "💃 การเต้น (Dancing)": [],
+            "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
+            "🏅 กีฬาและนันทนาการ (Aerobic Sports)": [],
+            "💪 การฝึกแรงต้าน (Resistance)": [],
+            "🧘 การยืดเหยียด (Stretching)": [],
+            "✨ กิจกรรมอื่นๆ (Others)": []
+        };
+
+        json.exercises.forEach(item => {
+            // ✅ ดึงชื่อภาษาไทย และ Type ออกมาจาก Dictionary ที่ Python ส่งมา
+            let exerciseName = (typeof item === 'object' && item.label) ? item.label : item.toString();
+            let exerciseType = (typeof item === 'object' && item.type) ? item.type.toString() : "";
+            
+            // จัดหมวดหมู่ด้วย Type อย่างแม่นยำ
+            if (exerciseType.includes('Running')) {
+                categories["🏃 การวิ่ง (Running)"].push(exerciseName);
+            } 
+            else if (exerciseType.includes('Walking')) {
+                categories["🚶 การเดิน (Walking)"].push(exerciseName);
+            } 
+            else if (exerciseType.includes('Bicycling')) {
+                categories["🚴 การปั่นจักรยาน (Bicycling)"].push(exerciseName);
+            } 
+            else if (exerciseType.includes('Dancing')) {
+                categories["💃 การเต้น (Dancing)"].push(exerciseName);
+            }
+            else if (exerciseType.includes('WaterActivity')) {
+                categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(exerciseName);
+            }
+            else if (exerciseType.includes('AerobicSport')) {
+                categories["🏅 กีฬาและนันทนาการ (Aerobic Sports)"].push(exerciseName);
+            }
+            else if (exerciseType.includes('Resistance')) {
+                categories["💪 การฝึกแรงต้าน (Resistance)"].push(exerciseName);
+            } 
+            else if (exerciseType.includes('Stretching')) {
+                categories["🧘 การยืดเหยียด (Stretching)"].push(exerciseName);
+            }
+            else {
+                categories["✨ กิจกรรมอื่นๆ (Others)"].push(exerciseName);
+            }
+        });
+
+        // นำข้อมูลที่จัดกลุ่มแล้วไปสร้างเป็น HTML แสดงบนหน้าจอ
+        for (const [catName, items] of Object.entries(categories)) {
+            if (items.length > 0) {
+                exEl.innerHTML += `<li class="category-header" style="font-weight:bold; color:#2c3e50; margin-top:10px; list-style:none;">${catName}</li>`;
+                items.forEach(ex => {
+                    exEl.innerHTML += `<li class="ms-3 py-1 border-bottom" style="list-style:none; border-color: rgba(0,0,0,0.05) !important;">• ${ex}</li>`;
+                });
+            }
+        }
     }
-
-    const categories = {
-        "🏃 การวิ่ง (Running)": [],
-        "🚶 การเดิน/เคลื่อนไหว (Walking)": [],
-        "🚴 การปั่นจักรยาน (Bicycling)": [],
-        "💃 การเต้น/แอโรบิก (Aerobic)": [],
-        "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
-        "💪 แรงต้าน/ยกน้ำหนัก (Resistance)": [],
-        "✨ กิจกรรมอื่นๆ (Others)": []
-    };
-
-    json.exercises.forEach(item => {
-        let textToCheck = (typeof item === 'object' && item.label) ? item.label : item.toString();
-        let lower = textToCheck.toLowerCase();
-        
-        // --- ตรรกะการจัดกลุ่มแบบใหม่ (รองรับทั้งชื่อและรหัสตัวเลข) ---
-        
-        // 1. ตรวจสอบจากชื่อ (English Name)
-        if (lower.includes('run') || lower.includes('jog')) {
-            categories["🏃 การวิ่ง (Running)"].push(textToCheck);
-        } 
-        // 2. ตรวจสอบกลุ่มการเดิน (รหัส 17xxx คือ Walking)
-        else if (lower.includes('walk') || lower.includes('hike') || lower.startsWith('17')) {
-            categories["🚶 การเดิน/เคลื่อนไหว (Walking)"].push(textToCheck);
-        } 
-        // 3. ตรวจสอบกลุ่มจักรยาน (รหัส 01xxx คือ Bicycling)
-        else if (lower.includes('bik') || lower.includes('cycl') || lower.startsWith('01')) {
-            categories["🚴 การปั่นจักรยาน (Bicycling)"].push(textToCheck);
-        } 
-        // 4. ตรวจสอบกลุ่มทางน้ำ (รหัส 18xxx หรือ 02xxx บางตัว คือ Water)
-        else if (lower.includes('swim') || lower.includes('water') || lower.startsWith('18')) {
-            categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(textToCheck);
-        }
-        // 5. ตรวจสอบกลุ่มแอโรบิก/เต้น (รหัส 12xxx คือ Dancing/Aerobic)
-        else if (lower.includes('danc') || lower.includes('aerobic') || lower.startsWith('12')) {
-            categories["💃 การเต้น/แอโรบิก (Aerobic)"].push(textToCheck);
-        }
-        else if (lower.includes('weight') || lower.includes('lift') || lower.includes('resistance')) {
-            categories["💪 แรงต้าน/ยกน้ำหนัก (Resistance)"].push(textToCheck);
-        } 
-        else {
-            categories["✨ กิจกรรมอื่นๆ (Others)"].push(textToCheck);
-        }
-    });
-
-    // แสดงผลออกทางหน้าจอ
-    for (const [catName, items] of Object.entries(categories)) {
-        if (items.length > 0) {
-            exEl.innerHTML += `<li class="category-header" style="font-weight:bold; color:#2c3e50; margin-top:10px; list-style:none;">${catName}</li>`;
-            items.forEach(ex => {
-                exEl.innerHTML += `<li class="ms-3 py-1 border-bottom" style="list-style:none; border-color: rgba(0,0,0,0.05) !important;">• ${ex}</li>`;
-            });
-        }
-    }
-}
 </script>
 </body>
 </html>

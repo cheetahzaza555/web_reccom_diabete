@@ -20,7 +20,6 @@ def dashboard_page():
     
     schedule_data = []
     
-    # ข้อมูลประกอบ (Header)
     thai_months = [
         "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
         "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
@@ -34,8 +33,7 @@ def dashboard_page():
     }
 
     try:
-        # ✅ 1. ใช้ Subquery หา user_id ทีเดียว (ลดการ query แยก)
-        # ✅ 2. ดึงเฉพาะข้อมูลของเดือนนี้และปีนี้เท่านั้น (WHERE m.month = %s AND m.year = %s)
+        # ✅ แก้ไข SQL Query: ลบเงื่อนไข m.month และ m.year ออก เพื่อดึงข้อมูลแผนทั้งหมด
         sql_query = """
             SELECT 
                 d.id, 
@@ -49,13 +47,10 @@ def dashboard_page():
             JOIN monthly_plan m ON w.monthly_plan_id = m.id
             JOIN users u ON m.user_id = u.id
             WHERE u.username = %s 
-              AND m.month = %s 
-              AND m.year = %s
             ORDER BY w.start_date ASC, d.day_of_week ASC
         """
         
-        # ส่ง username ไป query โดยตรงเลย เร็วกว่าหา ID ก่อน
-        cur.execute(sql_query, (username, today.month, today.year))
+        cur.execute(sql_query, (username,))
         rows = cur.fetchall()
         
         if rows:
@@ -64,17 +59,25 @@ def dashboard_page():
                 day_offset = r[1]
                 actual_date = week_start + timedelta(days=day_offset)
                 
-                # กรองใน Python อีกรอบเพื่อให้ชัวร์ว่าเป็นเดือนนี้จริงๆ
-                if actual_date.month == today.month:
-                    schedule_data.append({
-                        'id': r[0],
-                        'day_of_week': r[1],
-                        'is_exercise_day': r[2],
-                        'exercise_name': r[3],
-                        'completed': r[4],
-                        'date_num': actual_date.day,
-                        'is_today': (actual_date == today)
-                    })
+                # ✅ ลบเงื่อนไข `if actual_date.month == today.month:` ออก
+                # เพื่อให้เพิ่มข้อมูลทุกวันลงในตาราง ไม่ว่าจะอยู่เดือนไหน
+                
+                # รูปแบบวันที่แบบสั้นๆ (เช่น "25 ก.พ.") เพื่อให้ดูง่ายถ้าข้ามเดือน
+                short_month_name = thai_months[actual_date.month - 1][:3] + "."
+                display_date = f"{actual_date.day} {short_month_name}"
+
+                schedule_data.append({
+                    'id': r[0],
+                    'day_of_week': r[1],
+                    'is_exercise_day': r[2],
+                    'exercise_name': r[3],
+                    'completed': r[4],
+                    'date_num': actual_date.day,
+                    'month_index': actual_date.month - 1, 
+                    'year': actual_date.year,
+                    'display_date': display_date, 
+                    'is_today': (actual_date == today)
+                })
 
     except Exception as e:
         print(f"Error fetching dashboard: {e}")

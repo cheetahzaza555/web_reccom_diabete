@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ex.name }} - DiabBalance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f8f9fa; }
+        .detail-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            height: 200px; border-bottom-left-radius: 50px; border-bottom-right-radius: 50px;
+        }
+        .main-card {
+            margin-top: -100px; border: none; border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        .ex-img-container { height: 300px; background-color: #fff; text-align: center; }
+        .ex-img { height: 100%; object-fit: contain; padding: 20px; }
+        .step-number {
+            width: 30px; height: 30px; background: #4facfe; color: white;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;
+        }
+        .warning-box {
+            background-color: #fff3cd; border-left: 5px solid #ffc107;
+            border-radius: 15px; padding: 20px; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar_user.html' %}
+
+    <div class="detail-header"></div>
+
+    <div class="container pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card main-card">
+                    <div class="ex-img-container">
+                        <img src="{{ ex.img }}" class="ex-img" alt="{{ ex.name }}" onerror="this.src='/static/images/default_ex.png'">
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h2 class="fw-bold mb-1">{{ ex.name }}</h2>
+                                <span class="badge bg-primary rounded-pill">{{ ex.type_th }}</span>
+                            </div>
+                            <div class="text-end">
+                                <div class="h4 fw-bold text-danger mb-0">{{ ex.mets }}</div>
+                                <small class="text-muted">METs</small>
+                            </div>
+                        </div>
+
+                        <p class="lead text-muted mb-5">{{ ex.desc }}</p>
+
+                        <h4 class="fw-bold mb-4"><i class="fas fa-list-ol me-2 text-primary"></i>วิธีปฏิบัติและขั้นตอน</h4>
+                        <div class="mb-5">
+                            {% if ex.steps %}
+                                {% for step in ex.steps %}
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="step-number">{{ loop.index }}</div>
+                                    <div class="fs-5">{{ step }}</div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">กำลังเตรียมข้อมูลขั้นตอน...</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="warning-box">
+                            <h5 class="fw-bold text-dark mb-3">
+                                <i class="fas fa-exclamation-triangle me-2 text-warning"></i>ข้อควรระวังสำหรับผู้ป่วยเบาหวาน
+                            </h5>
+                            <p class="mb-0 text-dark fs-5">{{ ex.precaution }}</p>
+                        </div>
+
+                        <div class="mt-5 d-flex gap-2">
+                            <a href="/user/exercises" class="btn btn-outline-secondary rounded-pill px-4">
+                                <i class="fas fa-arrow-left me-2"></i>กลับหน้าคลังท่า
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, jsonify, request, session
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
-from modules.database import get_exercise_details_by_id
+from modules.database import get_exercise_details_by_id, get_exercise_by_id, EXERCISE_KNOWLEDGE
 
 
 user_bp = Blueprint('user', __name__)
@@ -105,3 +105,19 @@ def select_plan2_page(patient_id, exercise_id):
     return render_template('user/select_plan2.html', 
                            patient_id=patient_id, 
                            plan=exercise_info)
+    
+@user_bp.route('/exercise-detail/<ex_id>')
+def exercise_detail(ex_id):
+    # 1. Query ดึงข้อมูลพื้นฐานจาก GraphDB เหมือนเดิม
+    exercise_data = get_exercise_by_id(ex_id) # ฟังก์ชันสมมติที่ดึงชื่อและหมวดหมู่มา
+    
+    # 2. Logic เลือกข้อมูลฟิกค่า
+    cat = exercise_data['original_type'] # เช่น StretchingExercise
+    
+    # ดึงค่าความรู้ตามหมวดหมู่ (ถ้าไม่เจอให้ใช้ค่า Aerobic เป็นพื้นฐาน)
+    knowledge = EXERCISE_KNOWLEDGE.get(cat)
+    if not knowledge:
+        # ถ้าเป็นพวก Walking, Running ให้ใช้กลุ่ม Aerobic
+        knowledge = EXERCISE_KNOWLEDGE.get("Aerobic")
+        
+    return render_template('user/detail.html', ex=exercise_data, info=knowledge)

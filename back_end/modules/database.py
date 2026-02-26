@@ -573,7 +573,8 @@ def get_all_exercises_for_library():
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT ?id ?name ?desc ?mets (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
+    # เพิ่ม ?youtube_id เข้าไปใน SELECT และ GROUP BY
+    SELECT ?id ?name  ?mets ?youtube_id (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
     WHERE {
         ?s a ?typeUri .
         ?typeUri rdfs:subClassOf* ex:Exercise . 
@@ -581,10 +582,13 @@ def get_all_exercises_for_library():
 
         BIND(STRAFTER(STR(?s), "#") AS ?id)
         OPTIONAL { ?s rdfs:label ?name }
-        OPTIONAL { ?s ex:description ?desc }
         OPTIONAL { ?s ex:metValue ?mets }
+        
+        # แก้ไขจุดนี้: ใช้ ?s (ซึ่งคือตัวแปรของ Instance) และใช้ Prefix ex: ให้ถูกต้อง
+        OPTIONAL { ?s ex:hasYoutubeID ?youtube_id }
     }
-    GROUP BY ?id ?name ?desc ?mets
+    # ต้องเพิ่ม ?youtube_id ใน GROUP BY ด้วยเพื่อให้ Query สมบูรณ์
+    GROUP BY ?id ?name ?mets ?youtube_id
     """
     try:
         sparql_read.setQuery(query)
@@ -651,7 +655,7 @@ def get_all_exercises_for_library():
                 "all_categories": raw_names,
                 "img": f"/static/images/exercises/{img_file}",
                 "mets": float(val("mets")) if val("mets") else 0,
-                "desc": val("desc") or "ไม่มีรายละเอียดเพิ่มเติม"
+                "youtube_id": val("youtube_id") if val("youtube_id") else ""
             })
             
         return exercises
@@ -672,10 +676,6 @@ EXERCISE_KNOWLEDGE = {
         "steps": ["เช็คระดับน้ำตาลก่อนเริ่ม (ควรอยู่ระหว่าง 100-250 mg/dL)", "เริ่มจากความหนักระดับเบาไปหาปานกลาง", "จิบน้ำเป็นระยะเพื่อป้องกันภาวะขาดน้ำ", "คูลดาวน์หลังเสร็จกิจกรรม 5-10 นาที"],
         "precaution": "พกลูกอมหรือน้ำหวานติดตัวไว้เสมอ กรณีเกิดอาการน้ำตาลตก (ตัวสั่น เหงื่อออกมาก หน้ามืด)"
     }
-}
-
-EXERCISE_VIDEOS = {
-    "02175": "lKFc1vV59Dk"     
 }
     
 def get_exercise_by_id(ex_id):

@@ -155,26 +155,6 @@ def select_plan_page(patient_id):
     # 2. ส่งตัวแปร exercises (ที่เป็น list of dicts) ไปให้หน้าเว็บ
     return render_template('user/select_plan.html', patient_id=patient_id, exercises=all_recs)
 
-@user_bp.route('/save_selection', methods=['POST'])
-def save_selection_route():
-    try:
-        # รับข้อมูล JSON จากหน้าเว็บ
-        data = request.json
-        patient_id = data.get('patient_id')
-        exercise_id = data.get('exercise_id')
-        
-        print(f"📥 Received save request: {patient_id} chose {exercise_id}")
-
-        # เรียกฟังก์ชันบันทึกลง DB
-        if save_patient_selection(patient_id, exercise_id):
-            return jsonify({'status': 'success'})
-        else:
-            return jsonify({'status': 'error', 'message': 'Database Save Failed'}), 500
-
-    except Exception as e:
-        print(f"Server Error: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
 @user_bp.route('/select_plan2/<patient_id>/<exercise_id>')
 def select_plan2_page(patient_id, exercise_id):
     

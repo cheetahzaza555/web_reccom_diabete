@@ -10,58 +10,53 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
     <style>
-        body { 
-            font-family: 'Sarabun', sans-serif; 
-            background-color: #f0f2f5; 
-        }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
         
-        /* ✅ 1. แก้ส่วนหัวเป็นสีเขียว (เหมือนหน้าแรก) */
         .header-section {
             background: linear-gradient(135deg, #198754 0%, #20c997 100%);
-            color: white; 
-            padding: 40px 0; 
-            margin-bottom: 30px;
-            border-radius: 0 0 30px 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            color: white; padding: 40px 0; margin-bottom: 30px;
+            border-radius: 0 0 30px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .info-card {
-            background: white; 
-            border-radius: 15px; 
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-            overflow: hidden;
-        }
+        .info-card { background: white; border-radius: 15px; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
         
-        .info-label { 
-            color: #6c757d; 
-            font-size: 0.9rem; 
-            margin-bottom: 5px; 
-        }
-        
-        .info-value { 
-            font-weight: 600; 
-            color: #212529; 
-            font-size: 1.2rem; 
-        }
-        
-        /* ✅ 2. แก้กล่องไฮไลท์เป็นสีเขียวอ่อน */
+        /* Style ส่วนแสดงข้อมูล */
+        .info-label { color: #6c757d; font-size: 0.9rem; margin-bottom: 5px; }
+        .info-value { font-weight: 600; color: #212529; font-size: 1.2rem; }
         .highlight-box {
-            background-color: #e8f5e9; /* เขียวอ่อน */
-            border-left: 5px solid #198754; /* เขียวเข้ม */
-            padding: 20px; 
-            border-radius: 8px; 
-            margin-bottom: 20px;
+            background-color: #e8f5e9; border-left: 5px solid #198754;
+            padding: 20px; border-radius: 8px; margin-bottom: 20px;
         }
-
         .icon-box {
-            width: 50px; height: 50px;
-            background-color: #e8f5e9;
-            color: #198754;
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
+            width: 50px; height: 50px; background-color: #e8f5e9; color: #198754;
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem; margin-bottom: 10px;
         }
+
+        /* Style ปฏิทิน */
+        .calendar-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 10px;
+        }
+        .calendar-day-header {
+            text-align: center; font-weight: bold; color: #6c757d; font-size: 0.9rem;
+        }
+        .calendar-day {
+            aspect-ratio: 1/1; border: 1px solid #dee2e6; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; position: relative; background-color: #fff;
+        }
+        .calendar-day:hover { background-color: #f8f9fa; border-color: #198754; }
+        .calendar-day.selected {
+            background-color: #198754; color: white; border-color: #198754;
+            box-shadow: 0 4px 8px rgba(25, 135, 84, 0.3);
+        }
+        .calendar-day.disabled { background-color: #f0f0f0; color: #ccc; cursor: not-allowed; }
+        .day-number { font-weight: bold; font-size: 1.1rem; }
+        .day-label { font-size: 0.7rem; }
+        
+        .step-section { display: none; }
+        .step-section.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -71,7 +66,7 @@
     <div class="header-section text-center">
         <div class="container">
             <h1 class="fw-bold">📅 กำหนดตารางเวลา</h1>
-            <p class="lead mb-0">ตรวจสอบกิจกรรมและเลือกเวลาที่คุณสะดวก</p>
+            <p class="lead mb-0">ตรวจสอบรายละเอียดและเลือกวันออกกำลังกาย</p>
         </div>
     </div>
 
@@ -131,28 +126,68 @@
 
         <div class="card info-card">
             <div class="card-body p-4">
-                <h5 class="fw-bold mb-3 text-dark">ตั้งค่าการแจ้งเตือน</h5>
-                
-                <form action="/user/save_schedule" method="POST"> 
+                <form id="scheduleForm" action="/user/save_schedule" method="POST"> 
                     <input type="hidden" name="patient_id" value="{{ patient_id }}">
                     <input type="hidden" name="exercise_id" value="{{ plan.id }}">
+                    <input type="hidden" name="exercise_name" value="{{ plan.name }}">
                     
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">วันที่เริ่มฝึก</label>
-                            <input type="date" class="form-control form-control-lg" name="start_date" required>
+                    <input type="hidden" name="selected_dates_json" id="selectedDatesJson">
+
+                    <div id="step1" class="step-section active">
+                        <h5 class="fw-bold mb-3 text-dark border-start border-5 border-success ps-3">ขั้นตอนที่ 1: เลือกวันเริ่มต้น</h5>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">คุณต้องการเริ่มฝึกวันไหน?</label>
+                                <input type="date" class="form-control form-control-lg w-100" id="startDateInput" name="start_date" required>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">เวลาที่สะดวก</label>
-                            <input type="time" class="form-control form-control-lg" name="reminder_time" value="17:00">
+                        <div class="mt-4 text-end">
+                            <a href="/user/select_plan/{{ patient_id }}" class="btn btn-secondary me-2">ย้อนกลับ</a>
+                            <button type="button" class="btn btn-primary px-4" onclick="goToStep2()">
+                                ถัดไป <i class="bi bi-arrow-right"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="mt-4 pt-2">
-                        <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow-sm">
-                            ยืนยันแผนการรักษา <i class="bi bi-arrow-right-circle-fill ms-2"></i>
-                        </button>
+                    <div id="step2" class="step-section">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark border-start border-5 border-success ps-3 mb-0">ขั้นตอนที่ 2: เลือกวันออกกำลังกาย</h5>
+                            <span class="badge bg-light text-dark border">
+                                <i class="bi bi-calendar3"></i> แผน 30 วัน
+                            </span>
+                        </div>
+                        
+                        <div class="alert alert-info py-2 small">
+                            <i class="bi bi-info-circle-fill me-1"></i> เงื่อนไข: เลือกได้ไม่เกิน <strong>5 วัน</strong> ต่อสัปดาห์
+                        </div>
+
+                        <div class="calendar-grid mb-2">
+                            <div class="calendar-day-header">จ.</div>
+                            <div class="calendar-day-header">อ.</div>
+                            <div class="calendar-day-header">พ.</div>
+                            <div class="calendar-day-header">พฤ.</div>
+                            <div class="calendar-day-header">ศ.</div>
+                            <div class="calendar-day-header text-danger">ส.</div>
+                            <div class="calendar-day-header text-danger">อา.</div>
+                        </div>
+
+                        <div id="calendarContainer" class="calendar-grid">
+                            </div>
+
+                        <div class="mt-4 pt-2 row gx-2">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-secondary w-100 py-3" onclick="backToStep1()">
+                                    <i class="bi bi-arrow-left"></i> แก้ไขวันเริ่ม
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-success w-100 py-3 fw-bold shadow-sm">
+                                    ยืนยันตาราง <i class="bi bi-check-circle-fill ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
                 </form>
             </div>
         </div>
@@ -168,5 +203,120 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isoWeek.js"></script>
+    <script>dayjs.extend(window.dayjs_plugin_isoWeek)</script>
+
+    <script>
+        let selectedDates = new Set(); 
+
+        function goToStep2() {
+            const startDateVal = document.getElementById('startDateInput').value;
+            if (!startDateVal) {
+                Swal.fire('แจ้งเตือน', 'กรุณาเลือกวันที่เริ่มฝึกก่อน', 'warning');
+                return;
+            }
+            
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            
+            renderCalendar(startDateVal);
+        }
+
+        function backToStep1() {
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+            selectedDates.clear(); 
+        }
+
+        function renderCalendar(startDateStr) {
+            const container = document.getElementById('calendarContainer');
+            container.innerHTML = '';
+            
+            const start = dayjs(startDateStr);
+            const totalDays = 30;
+            
+            let startDayOfWeek = start.day(); 
+            if (startDayOfWeek === 0) startDayOfWeek = 7;
+            
+            for (let i = 1; i < startDayOfWeek; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.classList.add('calendar-day', 'disabled');
+                container.appendChild(emptyDiv);
+            }
+
+            for (let i = 0; i < totalDays; i++) {
+                const current = start.add(i, 'day');
+                const dateStr = current.format('YYYY-MM-DD');
+                
+                const div = document.createElement('div');
+                div.className = 'calendar-day';
+                div.innerHTML = `
+                    <div class="day-number">${current.date()}</div>
+                    <div class="day-label text-muted" style="font-size:0.6rem;">${current.format('MMM')}</div>
+                `;
+                
+                div.onclick = () => toggleDate(div, current);
+                div.dataset.date = dateStr;
+                
+                container.appendChild(div);
+            }
+        }
+
+        function toggleDate(element, dayjsDate) {
+            const dateStr = dayjsDate.format('YYYY-MM-DD');
+            const weekKey = dayjsDate.isoWeek();
+
+            if (selectedDates.has(dateStr)) {
+                selectedDates.delete(dateStr);
+                element.classList.remove('selected');
+            } 
+            else {
+                let countInWeek = 0;
+                selectedDates.forEach(d => {
+                    if (dayjs(d).isoWeek() === weekKey) countInWeek++;
+                });
+
+                if (countInWeek >= 5) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'warning',
+                        title: 'เลือกได้สูงสุด 5 วัน/สัปดาห์',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    return; 
+                }
+
+                selectedDates.add(dateStr);
+                element.classList.add('selected');
+            }
+        }
+
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (selectedDates.size === 0) {
+                Swal.fire('ลืมเลือกวันหรือเปล่า?', 'กรุณาเลือกวันที่ต้องการออกกำลังกายอย่างน้อย 1 วัน', 'warning');
+                return;
+            }
+
+            const datesArray = Array.from(selectedDates).sort();
+            document.getElementById('selectedDatesJson').value = JSON.stringify(datesArray);
+
+            Swal.fire({
+                title: 'กำลังบันทึกตาราง...',
+                text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            setTimeout(() => {
+                this.submit();
+            }, 800);
+        });
+    </script>
 </body>
 </html>

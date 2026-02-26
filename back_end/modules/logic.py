@@ -185,9 +185,21 @@ def process_patient_realtime(patient_id, input_data=None):
                     details.append(f"ความถี่: {txt}")
             except: pass
             
-            # ถ้าเป็น Favorite ล้วนๆ อาจจะไม่มี details ติดมา ก็ให้แสดงแค่ชื่อ
-            if details: recs.append(f"{name} ({', '.join(details)})")
-            else: recs.append(name)
+            # 1. สร้างชื่อ label แบบเต็ม (มีชื่อไทย + รายละเอียด)
+            final_label = f"{name} ({', '.join(details)})" if details else name
+
+            # 2. ดึง Type ทั้งหมดของท่าออกกำลังกายนี้ (ใช้ .is_a ของ Owlready2)
+            ex_types = []
+            for c in getattr(r, "is_a", []):
+                if hasattr(c, "name"):
+                    ex_types.append(c.name)
+            type_str = ",".join(ex_types) # จะได้ข้อความเช่น "Running,AerobicSport,Exercise"
+
+            # 3. ส่งข้อมูลเก็บเข้า list ในรูปแบบ Dictionary
+            recs.append({
+                "label": final_label,
+                "type": type_str
+            })
 
         # 2. Warnings / Comorbs / Complis
         for w in p.hasPatientWarning: 
@@ -202,7 +214,7 @@ def process_patient_realtime(patient_id, input_data=None):
         for i in getattr(p, "intensityOfExercise", []): s_intens.append(i.name)
         for f in getattr(p, "exerciseFrequency", []): s_freqs.append(f.name)
 
-        recs = list(set(recs)); warns = list(set(warns))
+        warns = list(set(warns))
         comorbs = list(set(comorbs)); complis = list(set(complis))
 
         print(f"✅ Result: Ex={len(recs)}, W={len(warns)}, Avoid={len(s_avoids)}")

@@ -26,9 +26,29 @@ def safe_float(value):
         return None
 
 def get_thai_text(entity):
+    # 1. เช็ค description และ label ก่อน (เผื่อใน GraphDB มีข้อมูลภาษาไทยอยู่แล้ว)
     if hasattr(entity, "description") and entity.description: return str(entity.description[0])
     if hasattr(entity, "label") and entity.label: return str(entity.label[0])
-    return entity.name
+    
+    # 2. ถ้าใน GraphDB ไม่มี label ภาษาไทย ให้เอาชื่อ (name) มาดักแปลภาษา
+    name_str = entity.name
+    
+    # พจนานุกรมแปลภาษา (เพิ่มคำอื่นๆ ที่ต้องการแปลได้ที่นี่เลย)
+    translations = {
+        "NoComorbidity": "ไม่มีโรคร่วม",
+        "NoGeneralComplication": "ไม่มีภาวะแทรกซ้อนทั่วไป",
+        "NoOtherComplication": "ไม่มีภาวะแทรกซ้อนอื่นๆ",
+        "Retinopathy": "จอประสาทตาเสื่อม (Retinopathy)",
+        "HeartDisease": "โรคหัวใจ (Heart Disease)",
+        "PeripheralNeuropathy": "ปลายประสาทเสื่อม (Neuropathy)",
+        "AutonomicNeuropathy": "ระบบประสาทอัตโนมัติผิดปกติ"
+    }
+    
+    # เช็คว่าถ้าชื่อตรงกับใน Dictionary ให้แปลเป็นไทย ถ้าไม่ตรงให้ใช้ชื่อเดิม
+    if name_str in translations:
+        return translations[name_str]
+        
+    return name_str
 
 def safe_get_name(uri):
     if not uri: return ""

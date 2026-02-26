@@ -12,96 +12,376 @@
     <style>
         body {
             font-family: 'Prompt', sans-serif;
-            background-color: #ffffff;
-        }
-
-        .main-content {
-            background-color: #ffffff;
+            background-color: #f8f9fa;
             min-height: 100vh;
+            display: flex; flex-direction: column;
         }
 
-        .header-banner {
-            background-color: #85a2ff;
-            color: white;
-            padding: 1.25rem 1rem;
-            font-size: 2.5rem;
-            font-weight: 600;
+        /* --- Calendar Layout --- */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 10px;
         }
 
-        .welcome-card {
-            max-width: 900px;
-            margin: 0 auto;
-            border-radius: 20px;
-            padding: 50px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        /* ✅ แก้ไขปัญหาตารางเบี้ยว: ให้หัวตารางและเนื้อหามีสไตล์เหมือนกัน */
+        .weekday-header {
+            text-align: center; font-weight: bold; color: #6c757d;
+            padding: 10px 0;
+            background: #e9ecef; border-radius: 8px;
         }
 
-        .welcome-icon {
-            font-size: 5rem;
+        /* การ์ดวันที่แบบมีแผน */
+        .day-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            min-height: 110px; 
+            padding: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            border: 1px solid #dee2e6;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        /* การ์ดวันที่ "ไม่มีแผน" (เติมเต็มตาราง) */
+        .empty-day {
+            background: #f8f9fa;
+            border: 1px dashed #e0e0e0;
+            opacity: 0.6;
+        }
+
+        /* ไฮไลท์วันนี้ */
+        .today-card {
+            border: 2px solid #4f7cff !important;
+            background-color: #f0f7ff !important;
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(79, 124, 255, 0.2);
+            opacity: 1 !important; 
+        }
+        .today-badge {
+            background-color: #4f7cff; color: white;
+            padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+        }
+
+        /* เลขวันที่ */
+        .date-number {
+            font-size: 1.1rem; font-weight: bold; color: #333;
+            align-self: flex-start;
+            margin-bottom: 5px;
+        }
+        .today-card .date-number { color: #4f7cff; }
+
+        /* ไอคอนและชื่อกิจกรรม */
+        .exercise-icon { font-size: 1.5rem; color: #198754; }
+        .rest-icon { font-size: 1.5rem; color: #adb5bd; }
+        .ex-name { font-size: 0.85rem; font-weight: 600; text-align: center; line-height: 1.2; }
+
+        /* Checkbox */
+        .check-btn { cursor: pointer; font-size: 1.5rem; color: #e9ecef; transition: all 0.2s; }
+        .check-btn.completed { color: #198754; }
+        
+        /* ลูกศรซ้ายขวา */
+        .nav-arrow {
+            background: white;
+            border: 1px solid #dee2e6;
             color: #4f7cff;
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            flex-shrink: 0;
         }
-
-        .welcome-title {
-            font-size: 2.2rem;
-            font-weight: 600;
-            margin-top: 20px;
-        }
-
-        .welcome-desc {
-            font-size: 1.1rem;
-            color: #555;
-            margin: 20px 0 35px;
-        }
-
-        .btn-start {
-            background-color: #4f7cff;
+        .nav-arrow i { font-size: 1.5rem; font-weight: bold; }
+        .nav-arrow:hover:not(:disabled) {
+            background: #4f7cff;
             color: white;
-            font-size: 1.2rem;
-            padding: 15px 40px;
-            border-radius: 12px;
-            border: none;
+            transform: scale(1.1);
+        }
+        .nav-arrow:disabled {
+            color: #dee2e6;
+            background: #f8f9fa;
+            cursor: not-allowed;
+            box-shadow: none;
         }
 
-        .btn-start:hover {
-            background-color: #3e66d6;
+        @media (max-width: 768px) {
+            .calendar-grid { grid-template-columns: 1fr; }
+            .weekday-header { display: none; } 
+            .day-card { flex-direction: row; min-height: auto; padding: 15px; }
+            .empty-day { display: none; } 
+            .date-number { margin-bottom: 0; margin-right: 15px; width: 30px; }
+            .nav-arrow { width: 40px; height: 40px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- คุณ include navbar เอง -->
     {% include 'includes/navbar_user.html' %}
 
-    <div class="main-content d-flex flex-column">
-        <!-- Header -->
-        <div class="header-banner">
-            หน้าหลัก
-        </div>
+    <div class="container py-4 px-3 px-md-4 flex-grow-1 d-flex flex-column">
 
-        <!-- Content -->
-        <div class="container d-flex flex-grow-1 align-items-center justify-content-center py-5">
-            <div class="welcome-card text-center bg-white">
-                <div class="welcome-icon">
-                    <i class="bi bi-clipboard2-pulse"></i>
+        {% if schedule %}
+            
+            <div class="d-flex justify-content-between align-items-end mb-3">
+                <div>
+                    <h2 class="fw-bold mb-0 text-dark" id="monthTitle">
+                        กำลังโหลด...
+                    </h2>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-calendar-event me-1"></i> 
+                        วันนี้: {{ info.day }} {{ info.month_name }}
+                    </p>
                 </div>
-
-                <div class="welcome-title">
-                    ยินดีต้อนรับเข้าสู่ DiaBalance
-                </div>
-
-                <div class="welcome-desc">
-                    กรุณากรอกผลตรวจสุขภาพของคุณเพื่อให้ระบบสามารถวิเคราะห์
-                    <br>
-                    และแนะนำแผนการออกกำลังกายที่เหมาะสมสำหรับคุณ
-                </div>
-
-                <a href="/user/recommendations" class="btn btn-start">
-                    <i class="bi bi-pencil-square me-2"></i>
-                    เริ่มต้นใช้งาน
-                </a>
+                <button type="button" class="btn btn-outline-danger" onclick="confirmClearPlan()">
+                    <i class="bi bi-trash"></i> ล้างแผน
+                </button>
             </div>
-        </div>
+
+            <div class="d-flex align-items-center justify-content-center w-100 flex-grow-1">
+                
+                <button id="prevMonthBtn" class="nav-arrow me-2 me-md-4" onclick="changeMonth(-1)">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                <div class="flex-grow-1 w-100">
+                    <div class="calendar-grid mb-2 d-none d-md-grid">
+                        <div class="weekday-header">จันทร์</div>
+                        <div class="weekday-header">อังคาร</div>
+                        <div class="weekday-header">พุธ</div>
+                        <div class="weekday-header">พฤหัสฯ</div>
+                        <div class="weekday-header">ศุกร์</div>
+                        <div class="weekday-header">เสาร์</div>
+                        <div class="weekday-header">อาทิตย์</div>
+                    </div>
+
+                    <div class="calendar-grid" id="calendarDays">
+                        </div>
+                </div>
+
+                <button id="nextMonthBtn" class="nav-arrow ms-2 ms-md-4" onclick="changeMonth(1)">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+
+            </div>
+
+            <div id="rawData" class="d-none">
+                {% for day in schedule %}
+                <div class="raw-data-item" 
+                     data-id="{{ day.id }}"
+                     data-day="{{ day.date_num }}"
+                     data-month="{{ day.month_index }}"
+                     data-year="{{ day.year }}"
+                     data-istoday="{{ 'true' if day.is_today else 'false' }}"
+                     data-isexercise="{{ 'true' if day.is_exercise_day else 'false' }}"
+                     data-exname="{{ day.exercise_name }}"
+                     data-completed="{{ 'true' if day.completed else 'false' }}">
+                </div>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <div class="d-flex justify-content-center align-items-center h-100 mt-5">
+                <div class="text-center bg-white p-5 rounded-4 shadow-sm" style="max-width: 600px;">
+                    <i class="bi bi-clipboard2-pulse text-primary display-1 mb-3"></i>
+                    <h2 class="fw-bold">ยังไม่มีตารางกิจกรรม</h2>
+                    <p class="text-muted">กรุณาทำแบบประเมินเพื่อสร้างแผนการออกกำลังกาย</p>
+                    <a href="/user/recommendations" class="btn btn-primary rounded-pill px-4 mt-3">
+                        เริ่มต้นใช้งาน
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const fullThaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        
+        let planData = [];
+        let activeMonthsMap = new Map(); // เก็บว่ามีเดือนไหน ปีไหนบ้าง
+        let monthsArray = []; // เรียงลำดับเดือน
+        let currentIndex = 0; // ตำแหน่งเดือนที่กำลังแสดงผล
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const rawItems = document.querySelectorAll('.raw-data-item');
+            if (rawItems.length === 0) return;
+
+            // ✅ อ่านข้อมูลที่ส่งมาจาก Python โดนตรง 
+            rawItems.forEach(item => {
+                let dYear = parseInt(item.dataset.year);
+                let dMonth = parseInt(item.dataset.month);
+                
+                planData.push({
+                    id: item.dataset.id,
+                    day: parseInt(item.dataset.day),
+                    monthIndex: dMonth,
+                    year: dYear,
+                    isToday: item.dataset.istoday === "true",
+                    isExercise: item.dataset.isexercise === "true",
+                    exName: item.dataset.exname,
+                    completed: item.dataset.completed === "true"
+                });
+
+                // บันทึกปีและเดือนที่มีแผน (ป้องกันกรณีข้ามปี เช่น ธ.ค. -> ม.ค.)
+                let monthKey = `${dYear}-${dMonth}`;
+                if (!activeMonthsMap.has(monthKey)) {
+                    activeMonthsMap.set(monthKey, { year: dYear, month: dMonth });
+                }
+            });
+
+            // นำเดือนทั้งหมดมาเรียงลำดับเวลาให้ถูกต้อง
+            monthsArray = Array.from(activeMonthsMap.values()).sort((a,b) => {
+                if (a.year !== b.year) return a.year - b.year;
+                return a.month - b.month;
+            });
+            
+            if (monthsArray.length > 0) {
+                currentIndex = 0;
+                renderCalendar(monthsArray[currentIndex]);
+            }
+        });
+
+        function renderCalendar(monthData) {
+            let year = monthData.year;
+            let mIndex = monthData.month;
+            
+            // แสดงหัวเรื่องเต็มพร้อม พ.ศ.
+            let yearTH = year > 2500 ? year : year + 543; // เผื่อ Python ส่งปีค.ศ. มา
+            document.getElementById('monthTitle').innerText = `${fullThaiMonths[mIndex]} ${yearTH}`;
+
+            const grid = document.getElementById('calendarDays');
+            grid.innerHTML = "";
+
+            // การคำนวณวันแรกของเดือน เพื่อให้ตรงกับจันทร์-อาทิตย์
+            let firstDay = new Date(year, mIndex, 1).getDay(); // 0 คือ วันอาทิตย์
+            let offset = firstDay === 0 ? 6 : firstDay - 1; // ขยับให้วันจันทร์เป็นช่องแรกสุด (0)
+            let daysInMonth = new Date(year, mIndex + 1, 0).getDate();
+
+            // 1. เติมช่องว่างด้านหน้า
+            for(let i=0; i<offset; i++) {
+                grid.innerHTML += `<div class="day-card empty-day d-none d-md-flex"></div>`;
+            }
+
+            let todayObj = new Date();
+            
+            // 2. วาดการ์ดวันที่ 1 ถึงสิ้นเดือน
+            for(let d=1; d<=daysInMonth; d++) {
+                let plan = planData.find(p => p.day === d && p.monthIndex === mIndex && p.year === year);
+                let isRealToday = (todayObj.getDate() === d && todayObj.getMonth() === mIndex && todayObj.getFullYear() === year);
+
+                if (plan) {
+                    let todayClass = isRealToday ? 'today-card' : '';
+                    let badge = isRealToday ? '<div class="today-badge">วันนี้</div>' : '';
+                    
+                    let contentHtml = '';
+                    if (plan.isExercise) {
+                        let compClass = plan.completed ? 'completed' : '';
+                        contentHtml = `
+                            <div class="text-center">
+                                <i class="bi bi-activity exercise-icon"></i>
+                                <div class="ex-name mt-1">${plan.exName}</div>
+                            </div>
+                            <div class="mt-2" style="z-index: 20;">
+                                <i class="bi bi-check-circle-fill check-btn ${compClass}" id="btn-${plan.id}" onclick="toggleStatus('${plan.id}')"></i>
+                            </div>
+                        `;
+                    } else {
+                        contentHtml = `
+                            <div class="text-center opacity-50">
+                                <i class="bi bi-cup-hot rest-icon"></i>
+                                <div class="ex-name mt-1">พัก</div>
+                            </div>
+                            <div style="height: 24px;"></div>
+                        `;
+                    }
+
+                    grid.innerHTML += `
+                        <div class="day-card ${todayClass}">
+                            ${badge}
+                            <div class="date-number">${d}</div>
+                            ${contentHtml}
+                        </div>
+                    `;
+                } else {
+                    let todayClass = isRealToday ? 'today-card' : 'empty-day d-none d-md-flex';
+                    let badge = isRealToday ? '<div class="today-badge" style="background:#6c757d;">วันนี้</div>' : '';
+                    
+                    grid.innerHTML += `
+                        <div class="day-card ${todayClass}">
+                            ${badge}
+                            <div class="date-number" style="opacity: 0.5;">${d}</div>
+                            <div class="text-center" style="opacity: 0.1;">
+                                <i class="bi bi-dash-lg" style="font-size:1.5rem;"></i>
+                            </div>
+                            <div style="height: 24px;"></div>
+                        </div>
+                    `;
+                }
+            }
+
+            // จัดการเปิด/ปิดปุ่มลูกศร
+            document.getElementById('prevMonthBtn').disabled = (currentIndex === 0);
+            document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
+        }
+
+        function changeMonth(step) {
+            let newIndex = currentIndex + step;
+            if (newIndex >= 0 && newIndex < monthsArray.length) {
+                currentIndex = newIndex;
+                renderCalendar(monthsArray[currentIndex]);
+            }
+        }
+
+        function toggleStatus(dayId) {
+            const btn = document.getElementById(`btn-${dayId}`);
+            const isCompleted = btn.classList.contains('completed');
+            
+            if (!isCompleted) btn.classList.add('completed');
+            else btn.classList.remove('completed');
+
+            fetch('/user/update_day_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ day_id: dayId, completed: !isCompleted })
+            });
+        }
+
+        function confirmClearPlan() {
+            Swal.fire({
+                title: 'ยืนยันการล้างตาราง?',
+                text: "หากล้างแผนแล้ว จะต้องสร้างตารางใหม่ทั้งหมด!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'ใช่, ล้างตารางเลย!',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'กำลังล้างข้อมูล...',
+                        text: 'กรุณารอสักครู่',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        willOpen: () => { Swal.showLoading(); }
+                    });
+
+                    fetch('/user/reset_plan', { method: 'POST' })
+                    .then(response => {
+                        if(response.ok) { window.location.reload(); } 
+                        else { Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการล้างแผน', 'error'); }
+                    })
+                    .catch(err => { Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); });
+                }
+            });
+        }
+    </script>
 </body>
 </html>

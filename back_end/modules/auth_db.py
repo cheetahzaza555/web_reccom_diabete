@@ -45,14 +45,11 @@ def get_user(identifier):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute(
-            """
-            SELECT id, username, password_hash, role 
+        cur.execute("""
+            SELECT id, username, password_hash, role, firstname, lastname 
             FROM users 
             WHERE username = %s OR email = %s
-            """,
-            (identifier, identifier) # ส่งตัวแปรเข้าไป 2 รอบ เพื่อแทนที่ %s ทั้งสองตำแหน่ง
-        )
+        """, (identifier, identifier))
         
         user = cur.fetchone()
         return user # จะคืนค่าเป็น tuple (id, username, hash, role) หรือ None

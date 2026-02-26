@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from modules.auth_db import get_db_connection
 import psycopg2
+import json
 
 user_bp = Blueprint('user', __name__)
 
@@ -184,8 +185,6 @@ def select_plan2_page(patient_id, exercise_id):
     return render_template('user/select_plan2.html', 
                            patient_id=patient_id, 
                            plan=exercise_info)
-
-import json
 
 @user_bp.route('/save_schedule', methods=['POST'])
 def save_schedule():

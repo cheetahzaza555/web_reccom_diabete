@@ -5,13 +5,12 @@ from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
 from modules.database import get_exercise_details_by_id, get_exercise_by_id, EXERCISE_KNOWLEDGE
 
-
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/dashboard')
 def dashboard_page():
     if 'username' not in session:
-        return redirect(url_for('login_page'))
+         return redirect(url_for('login_page'))
     
     username = session['username']
     conn = get_db_connection()
@@ -85,8 +84,8 @@ def dashboard_page():
         conn.close()
 
     return render_template('user/index.html', 
-                        schedule=schedule_data, 
-                        info=current_date_info)
+                           schedule=schedule_data, 
+                           info=current_date_info)
 
 @user_bp.route('/recommendations')
 def user_recommendations():
@@ -99,6 +98,36 @@ def user_exercise():
     
     # 2. ส่งข้อมูลไปที่หน้า HTML (ตัวแปรชื่อ exercises)
     return render_template('user/exercise.html', exercises=exercises_data)
+
+@user_bp.route('/exercise-detail/<ex_id>')
+def exercise_detail(ex_id):
+    # 1. ดึงข้อมูลจากคลัง (ที่มีรูปและหมวดหมู่แยกไว้แล้ว)
+    all_exercises = get_all_exercises_for_library()
+    ex = next((item for item in all_exercises if item['id'] == ex_id), None)
+    
+    if not ex:
+        return "ไม่พบข้อมูล", 404
+
+    # 2. Logic เลือกชุดข้อมูล "วิธีปฏิบัติ" ให้ตรงตามหมวดหมู่ (เจาะจงมากขึ้น)
+    categories = ex.get('all_categories', [])
+    
+    # ตรวจสอบทีละเงื่อนไขเพื่อให้ "สอนทำ" เปลี่ยนไปตามท่า
+    if "StretchingExercise" in categories:
+        info = EXERCISE_KNOWLEDGE["StretchingExercise"]
+    elif any(c in categories for c in ["Resistance", "WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"]):
+        info = EXERCISE_KNOWLEDGE["Resistance"]
+    elif any(c in categories for c in ["Bicycling", "WaterActivity"]):
+        # ถ้าคุณมีชุดข้อมูลเฉพาะสำหรับ กีฬาทางน้ำ หรือ ปั่นจักรยาน ให้เพิ่มตรงนี้
+        info = EXERCISE_KNOWLEDGE.get("Aerobic") 
+    else:
+        info = EXERCISE_KNOWLEDGE["Aerobic"]
+    
+    # 3. แก้ Error: ยัด steps เข้าไปในตัวแปร ex
+    ex['steps'] = info['steps']
+    ex['precaution'] = info['precaution']
+
+    # 4. ส่ง ex ไปที่หน้า HTML (ลบ info ออกเพื่อป้องกันความสับสน)
+    return render_template('user/detail.html', ex=ex)
 
 @user_bp.route('/knowledge')
 def user_knowledge():
@@ -181,21 +210,199 @@ def select_plan2_page(patient_id, exercise_id):
     
     # 2. ส่งข้อมูลไปที่หน้าเว็บ
     return render_template('user/select_plan2.html', 
-                        patient_id=patient_id, 
-                        plan=exercise_info)
+                           patient_id=patient_id, 
+                           plan=exercise_info)
+
+@user_bp.route('/save_schedule', methods=['POST'])
+def save_schedule():
+    if 'username' not in session:
+        return redirect(url_for('login_page'))
+
+    data = request.form
+    exercise_name = data.get('exercise_name')
     
-@user_bp.route('/exercise-detail/<ex_id>')
-def exercise_detail(ex_id):
-    # 1. Query ดึงข้อมูลพื้นฐานจาก GraphDB เหมือนเดิม
-    exercise_data = get_exercise_by_id(ex_id) # ฟังก์ชันสมมติที่ดึงชื่อและหมวดหมู่มา
+    # 1. รับ JSON List ของวันที่ที่ User จิ้มมา
+    selected_dates_json = data.get('selected_dates_json')
     
-    # 2. Logic เลือกข้อมูลฟิกค่า
-    cat = exercise_data['original_type'] # เช่น StretchingExercise
-    
-    # ดึงค่าความรู้ตามหมวดหมู่ (ถ้าไม่เจอให้ใช้ค่า Aerobic เป็นพื้นฐาน)
-    knowledge = EXERCISE_KNOWLEDGE.get(cat)
-    if not knowledge:
-        # ถ้าเป็นพวก Walking, Running ให้ใช้กลุ่ม Aerobic
-        knowledge = EXERCISE_KNOWLEDGE.get("Aerobic")
+    try:
+        # แปลง JSON String กลับเป็น Python List
+        # ตัวอย่าง: ['2026-02-18', '2026-02-20', '2026-02-22']
+        selected_dates_list = json.loads(selected_dates_json)
+    except:
+        return "Error parsing dates", 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        current_username = session['username']
+        cur.execute("SELECT id FROM users WHERE username = %s", (current_username,))
+        user = cur.fetchone()
         
-    return render_template('user/detail.html', ex=exercise_data, info=knowledge)
+        if not user: return "User not found", 404
+        user_db_id = user[0] 
+
+        # เราต้องวนลูปตาม "วันที่ที่ User เลือกมา" แทนการวนลูป 30 วัน
+        # แต่เพื่อความสมบูรณ์ของโครงสร้าง DB (Monthly -> Weekly -> Days)
+        # เราควรสร้าง Monthly/Weekly ให้ครบก่อน แล้วค่อย Insert Day
+        
+        # เรียงวันที่จากน้อยไปมาก
+        selected_dates_list.sort()
+        
+        # แปลง string เป็น date object
+        date_objects = [datetime.strptime(d, '%Y-%m-%d').date() for d in selected_dates_list]
+        
+        if not date_objects:
+            return "No dates selected", 400
+
+        # ใช้ Loop เดิม เพื่อสร้างโครงสร้างพื้นฐาน (Monthly/Weekly) ให้ครบ
+        # แต่ตอน Insert Day ให้เช็คว่า "วันนี้มีใน list ที่ user เลือกไหม"
+        
+        start_date = date_objects[0]
+        # สร้างเผื่อไปเลย 1 เดือน (30 วัน) นับจากวันแรกที่เลือก
+        end_date = start_date + timedelta(days=30) 
+        
+        current_date = start_date
+
+        while current_date < end_date:
+            year = current_date.year
+            month = current_date.month
+
+            # --- A. Monthly Plan ---
+            cur.execute("SELECT id FROM monthly_plan WHERE user_id = %s AND year = %s AND month = %s", (user_db_id, year, month))
+            month_row = cur.fetchone()
+            if month_row:
+                monthly_id = month_row[0]
+            else:
+                cur.execute("INSERT INTO monthly_plan (user_id, year, month) VALUES (%s, %s, %s) RETURNING id", (user_db_id, year, month))
+                monthly_id = cur.fetchone()[0]
+
+            # --- B. Weekly Plan ---
+            week_num = current_date.isocalendar()[1]
+            week_start = current_date - timedelta(days=current_date.weekday())
+
+            cur.execute("SELECT id FROM weekly_plan WHERE monthly_plan_id = %s AND week_number = %s", (monthly_id, week_num))
+            week_row = cur.fetchone()
+            if week_row:
+                weekly_id = week_row[0]
+            else:
+                cur.execute("INSERT INTO weekly_plan (monthly_plan_id, week_number, start_date) VALUES (%s, %s, %s) RETURNING id", (monthly_id, week_num, week_start))
+                weekly_id = cur.fetchone()[0]
+
+            # --- C. Days Plan ---
+            for i in range(7):
+                day_date = week_start + timedelta(days=i)
+                
+                # เช็คว่าวันนี้อยู่ในช่วงเวลาที่เราสนใจไหม
+                if start_date <= day_date < end_date:
+                    
+                    # ✅ CHECKPOINT: วันนี้ user เลือกมาหรือเปล่า?
+                    # แปลง day_date เป็น string เพื่อเทียบกับ list ที่ส่งมา
+                    date_str = day_date.strftime('%Y-%m-%d')
+                    is_exercise = True if date_str in selected_dates_list else False
+                    
+                    cur.execute("SELECT id FROM days_plan WHERE weekly_plan = %s AND day_of_week = %s", (weekly_id, day_date.weekday()))
+                    if not cur.fetchone():
+                        cur.execute("""
+                            INSERT INTO days_plan (day_of_week, weekly_plan, is_exercise_day, exercise_name, completed)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (
+                            day_date.weekday(),
+                            weekly_id,
+                            is_exercise, # True ถ้า user จิ้ม, False ถ้าไม่จิ้ม
+                            exercise_name if is_exercise else "พักผ่อน",
+                            False
+                        ))
+
+            current_date += timedelta(weeks=1)
+            current_date = current_date - timedelta(days=current_date.weekday())
+
+        conn.commit()
+        return redirect(url_for('user.dashboard_page'))
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Error: {e}")
+        return f"Database Error: {e}", 500
+    finally:
+        cur.close()
+        conn.close()
+
+@user_bp.route('/update_day_status', methods=['POST'])
+def update_day_status():
+    data = request.json
+    day_id = data.get('day_id')
+    completed = data.get('completed')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("""
+            UPDATE days_plan 
+            SET completed = %s 
+            WHERE id = %s
+        """, (completed, day_id))
+        conn.commit()
+        return {"status": "success"}
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Database Error", 500
+    finally:
+        cur.close()
+        conn.close()
+
+@user_bp.route('/reset_plan', methods=['POST'])
+def reset_plan():
+    # 1. เช็ค Login
+    if 'username' not in session:
+        return jsonify({"status": "error", "message": "Not logged in"}), 401
+
+    username = session['username']
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # 2. หา User ID
+        cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        if not user:
+            return jsonify({"status": "error", "message": "User not found"}), 404
+        user_id = user[0]
+
+        # 3. ลบข้อมูล (ต้องลบจากลูกไปหาแม่: วัน -> สัปดาห์ -> เดือน)
+        
+        # ลบ Days Plan (รายวัน)
+        cur.execute("""
+            DELETE FROM days_plan
+            WHERE weekly_plan IN (
+                SELECT id FROM weekly_plan
+                WHERE monthly_plan_id IN (
+                    SELECT id FROM monthly_plan WHERE user_id = %s
+                )
+            )
+        """, (user_id,))
+
+        # ลบ Weekly Plan (รายสัปดาห์)
+        cur.execute("""
+            DELETE FROM weekly_plan
+            WHERE monthly_plan_id IN (
+                SELECT id FROM monthly_plan WHERE user_id = %s
+            )
+        """, (user_id,))
+
+        # ลบ Monthly Plan (รายเดือน)
+        cur.execute("DELETE FROM monthly_plan WHERE user_id = %s", (user_id,))
+
+        conn.commit()
+        print(f"🗑️ Plan reset successfully for user: {username}")
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Error resetting plan: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()

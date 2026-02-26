@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from modules.auth_db import get_db_connection
-from flask import Blueprint, render_template, jsonify, request, session, redirect, url_for
+from flask import Blueprint, json, render_template, jsonify, request, session, redirect, url_for
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
-from modules.database import get_exercise_details_by_id, get_exercise_by_id, EXERCISE_KNOWLEDGE
+from modules.database import get_exercise_details_by_id, get_exercise_by_id, EXERCISE_KNOWLEDGE, EXERCISE_VIDEOS
 
 user_bp = Blueprint('user', __name__)
 
@@ -101,32 +101,34 @@ def user_exercise():
 
 @user_bp.route('/exercise-detail/<ex_id>')
 def exercise_detail(ex_id):
-    # 1. ดึงข้อมูลจากคลัง (ที่มีรูปและหมวดหมู่แยกไว้แล้ว)
+    # 1. ดึงข้อมูลจากคลัง (ดึง ID, รูป และหมวดหมู่จาก Ontology มาให้แล้ว)
     all_exercises = get_all_exercises_for_library()
     ex = next((item for item in all_exercises if item['id'] == ex_id), None)
     
     if not ex:
         return "ไม่พบข้อมูล", 404
+    
+    # 2. ดึง YouTube ID รายท่า (สำคัญ: ต้องแน่ใจว่า import EXERCISE_VIDEOS มาจาก database.py)
+    # หากไม่เจอ ID ของท่านั้นๆ จะใช้คลิปกลาง (dQw4w9WgXcQ) เป็นค่าเริ่มต้น
+    ex['youtube_id'] = EXERCISE_VIDEOS.get(ex_id)
 
-    # 2. Logic เลือกชุดข้อมูล "วิธีปฏิบัติ" ให้ตรงตามหมวดหมู่ (เจาะจงมากขึ้น)
+    # 3. Logic เลือกชุดคำสอน (Steps) ตามหมวดหมู่จริงใน Ontology
     categories = ex.get('all_categories', [])
     
-    # ตรวจสอบทีละเงื่อนไขเพื่อให้ "สอนทำ" เปลี่ยนไปตามท่า
     if "StretchingExercise" in categories:
         info = EXERCISE_KNOWLEDGE["StretchingExercise"]
     elif any(c in categories for c in ["Resistance", "WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"]):
         info = EXERCISE_KNOWLEDGE["Resistance"]
-    elif any(c in categories for c in ["Bicycling", "WaterActivity"]):
-        # ถ้าคุณมีชุดข้อมูลเฉพาะสำหรับ กีฬาทางน้ำ หรือ ปั่นจักรยาน ให้เพิ่มตรงนี้
-        info = EXERCISE_KNOWLEDGE.get("Aerobic") 
     else:
-        info = EXERCISE_KNOWLEDGE["Aerobic"]
+        # สำหรับ Aerobic, Bicycling, WaterActivity หรือหมวดหมู่อื่นๆ
+        info = EXERCISE_KNOWLEDGE.get("Aerobic", EXERCISE_KNOWLEDGE["StretchingExercise"]) 
     
-    # 3. แก้ Error: ยัด steps เข้าไปในตัวแปร ex
+    # 4. รวมข้อมูล "วิธีปฏิบัติ" และ "ข้อควรระวัง" เข้าไปในตัวแปร ex
+    # เพื่อให้ HTML เรียกใช้ {{ ex.steps }} และ {{ ex.precaution }} ได้โดยไม่ Error
     ex['steps'] = info['steps']
     ex['precaution'] = info['precaution']
 
-    # 4. ส่ง ex ไปที่หน้า HTML (ลบ info ออกเพื่อป้องกันความสับสน)
+    # 5. ส่ง ex ไปที่หน้า HTML
     return render_template('user/detail.html', ex=ex)
 
 @user_bp.route('/knowledge')
@@ -191,12 +193,6 @@ def save_selection_route():
         exercise_id = data.get('exercise_id')
         
         print(f"📥 Received save request: {patient_id} chose {exercise_id}")
-
-        # เรียกฟังก์ชันบันทึกลง DB
-        if save_patient_selection(patient_id, exercise_id):
-            return jsonify({'status': 'success'})
-        else:
-            return jsonify({'status': 'error', 'message': 'Database Save Failed'}), 500
 
     except Exception as e:
         print(f"Server Error: {e}")

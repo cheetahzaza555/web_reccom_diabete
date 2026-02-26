@@ -64,7 +64,7 @@ def login():
     if not user:
         return jsonify({"status": "error", "message": "User not found"}), 401
 
-    uid, uname, pw_hash, role = user 
+    uid, uname, pw_hash, role, fname, lname = user
 
     if not check_password_hash(pw_hash, data["password"]):
         return jsonify({"status": "error", "message": "Wrong password"}), 401
@@ -72,6 +72,8 @@ def login():
     session["user_id"] = uid
     session["username"] = uname
     session["role"] = role
+    session["firstname"] = fname  
+    session["lastname"] = lname   
 
     token = generate_token(uid, uname, role)
     return jsonify({"token": token})

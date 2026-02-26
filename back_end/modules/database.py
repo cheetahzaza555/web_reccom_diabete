@@ -673,6 +673,10 @@ EXERCISE_KNOWLEDGE = {
         "precaution": "พกลูกอมหรือน้ำหวานติดตัวไว้เสมอ กรณีเกิดอาการน้ำตาลตก (ตัวสั่น เหงื่อออกมาก หน้ามืด)"
     }
 }
+
+EXERCISE_VIDEOS = {
+    "02175": "lKFc1vV59Dk"     
+}
     
 def get_exercise_by_id(ex_id):
     query = f"""

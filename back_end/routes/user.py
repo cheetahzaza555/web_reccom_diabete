@@ -3,14 +3,14 @@ from modules.auth_db import get_db_connection
 from flask import Blueprint, json, render_template, jsonify, request, session, redirect, url_for
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
-from modules.database import get_exercise_details_by_id, get_exercise_by_id, EXERCISE_KNOWLEDGE, EXERCISE_VIDEOS
+from modules.database import get_exercise_details_by_id, get_exercise_by_id, EXERCISE_KNOWLEDGE
 
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/dashboard')
 def dashboard_page():
     if 'username' not in session:
-         return redirect(url_for('login_page'))
+        return redirect(url_for('login_page'))
     
     username = session['username']
     conn = get_db_connection()
@@ -107,10 +107,6 @@ def exercise_detail(ex_id):
     
     if not ex:
         return "ไม่พบข้อมูล", 404
-    
-    # 2. ดึง YouTube ID รายท่า (สำคัญ: ต้องแน่ใจว่า import EXERCISE_VIDEOS มาจาก database.py)
-    # หากไม่เจอ ID ของท่านั้นๆ จะใช้คลิปกลาง (dQw4w9WgXcQ) เป็นค่าเริ่มต้น
-    ex['youtube_id'] = EXERCISE_VIDEOS.get(ex_id)
 
     # 3. Logic เลือกชุดคำสอน (Steps) ตามหมวดหมู่จริงใน Ontology
     categories = ex.get('all_categories', [])

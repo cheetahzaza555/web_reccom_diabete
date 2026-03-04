@@ -658,3 +658,116 @@ def get_all_exercises_for_library():
     except Exception as e:
         print(f"❌ Error in Backend: {e}")
         return []
+    
+EXERCISE_KNOWLEDGE = {
+    "StretchingExercise": {
+        "steps": ["อบอุ่นร่างกายสั้นๆ 5 นาที", "ยืดค้างไว้ในจุดที่รู้สึกตึงแต่ไม่เจ็บ", "หายใจเข้า-ออกลึกๆ ห้ามกลั้นหายใจ", "ค้างไว้ท่าละ 15-30 วินาที"],
+        "precaution": "หากมีอาการปวดแปล็บหรือชาให้หยุดทันที และระวังการก้มหัวต่ำหากมีความดันโลหิตสูง"
+    },
+    "Resistance": {
+        "steps": ["เริ่มจากน้ำหนักเบาๆ หรือน้ำหนักตัว", "โฟกัสที่กล้ามเนื้อส่วนที่ใช้งาน", "หายใจออกตอนออกแรง และหายใจเข้าตอนผ่อน", "พักระหว่างเซตประมาณ 1 นาที"],
+        "precaution": "ห้ามกลั้นหายใจขณะออกแรงเพราะจะทำให้ความดันพุ่งสูง (อันตรายมากสำหรับผู้ป่วยเบาหวาน)"
+    },
+    "Aerobic": {
+        "steps": ["เช็คระดับน้ำตาลก่อนเริ่ม (ควรอยู่ระหว่าง 100-250 mg/dL)", "เริ่มจากความหนักระดับเบาไปหาปานกลาง", "จิบน้ำเป็นระยะเพื่อป้องกันภาวะขาดน้ำ", "คูลดาวน์หลังเสร็จกิจกรรม 5-10 นาที"],
+        "precaution": "พกลูกอมหรือน้ำหวานติดตัวไว้เสมอ กรณีเกิดอาการน้ำตาลตก (ตัวสั่น เหงื่อออกมาก หน้ามืด)"
+    }
+}
+
+EXERCISE_VIDEOS = {
+    "02175": "lKFc1vV59Dk"     
+}
+    
+def get_exercise_by_id(ex_id):
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    SELECT ?name ?desc ?mets (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
+    WHERE {{
+        BIND(ex:{ex_id} AS ?s)
+        ?s rdfs:label ?name .
+        ?s a ?typeUri .
+        ?typeUri rdfs:subClassOf* ex:Exercise .
+        FILTER(?typeUri != ex:Exercise)
+        
+        OPTIONAL {{ ?s ex:description ?desc }}
+        OPTIONAL {{ ?s ex:metValue ?mets }}
+    }}
+    GROUP BY ?name ?desc ?mets
+    """
+    try:
+        results = sparql_read.query().convert()
+        if not results["results"]["bindings"]:
+            return None
+
+        # เนื่องจากเป็น ID เดียว เราดึงเอาสมาชิกตัวแรก [0] มาใช้ได้เลย
+        r = results["results"]["bindings"][0]
+        def val(key): return r[key]["value"] if key in r else ""
+
+        # 1. จัดการเรื่องหมวดหมู่ (เหมือนที่คุณเขียนเป๊ะๆ)
+        types_list = val("allTypes").split(',')
+        raw_names = [t.split('#')[-1] for t in types_list]
+        
+        # ลำดับความสำคัญที่คุณตั้งไว้
+        priority_order = [
+            "NonWeightBearingAerobicSport", "WeightBearingAerobicSport",
+            "NonWeightBearingResistanceExercise", "WeightBearingResistanceExercise",
+            "Walking", "Running", "Dancing", "Bicycling", "WaterActivity",
+            "Aerobic", "Resistance", "StretchingExercise"
+        ]
+
+        chosen_name = ""
+        for p_name in priority_order:
+            if p_name in raw_names:
+                chosen_name = p_name
+                break
+        if not chosen_name: chosen_name = raw_names[0]
+
+        # 2. Mapping รูปภาพ (เหมือนเดิม)
+        img_map = {
+            "nonweightbearingaerobicsport": "non_weight_sport.png",
+            "weightbearingaerobicsport": "weight_sport.png",
+            "nonweightbearingresistanceexercise": "non_weight_resistance.png",
+            "weightbearingresistanceexercise": "weight_resistance.png",      
+            "walking": "walking.png",
+            "running": "running.png",
+            "dancing": "dancing.png",
+            "bicycling": "cycling.png",
+            "wateractivity": "water.png",
+            "stretchingexercise": "flexibility.png", # ปรับให้ตรงกับ class name
+            "aerobic": "aerobic.png",
+            "resistance": "resistance.png"
+        }
+
+        search_key = chosen_name.lower()
+        img_file = "exercise_default.png"
+        if search_key in img_map:
+            img_file = img_map[search_key]
+
+        # 3. ดึงความรู้ที่ฟิกไว้ (ตามหมวดหมู่ที่เลือกมาได้)
+        # เราต้องเช็คหมวดหมู่หลักเพื่อดึง steps/precaution
+        knowledge_key = "Aerobic" # ค่าเริ่มต้น
+        if "StretchingExercise" in raw_names:
+            knowledge_key = "StretchingExercise"
+        elif any(c in raw_names for c in ["Resistance", "WeightBearingResistanceExercise"]):
+            knowledge_key = "Resistance"
+        
+        info = EXERCISE_KNOWLEDGE.get(knowledge_key, EXERCISE_KNOWLEDGE["Aerobic"])
+
+        # 4. ส่งข้อมูลออกไปให้หน้า detail.html
+        return {
+            "id": ex_id,
+            "name": val("name") or ex_id,
+            "original_type": chosen_name,
+            "all_categories": raw_names,
+            "img": f"/static/images/exercises/{img_file}",
+            "mets": val("mets"),
+            "desc": val("desc") or "ไม่มีรายละเอียดเพิ่มเติม",
+            "steps": info["steps"],           # เพิ่มส่วนนี้
+            "precaution": info["precaution"],  # เพิ่มส่วนนี้
+        }
+
+    except Exception as e:
+        print(f"Error in get_exercise_by_id: {e}")
+        return None

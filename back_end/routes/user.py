@@ -1,12 +1,9 @@
-from flask import Blueprint, render_template, jsonify, request, session, redirect, url_for
+from datetime import datetime, timedelta
+from modules.auth_db import get_db_connection
+from flask import Blueprint, json, render_template, jsonify, request, session, redirect, url_for
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
-from modules.database import get_exercise_details_by_id
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from modules.auth_db import get_db_connection
-import psycopg2
-import json
+from modules.database import get_exercise_details_by_id, get_exercise_by_id, EXERCISE_KNOWLEDGE, EXERCISE_VIDEOS
 
 user_bp = Blueprint('user', __name__)
 
@@ -101,6 +98,38 @@ def user_exercise():
     
     # 2. ส่งข้อมูลไปที่หน้า HTML (ตัวแปรชื่อ exercises)
     return render_template('user/exercise.html', exercises=exercises_data)
+
+@user_bp.route('/exercise-detail/<ex_id>')
+def exercise_detail(ex_id):
+    # 1. ดึงข้อมูลจากคลัง (ดึง ID, รูป และหมวดหมู่จาก Ontology มาให้แล้ว)
+    all_exercises = get_all_exercises_for_library()
+    ex = next((item for item in all_exercises if item['id'] == ex_id), None)
+    
+    if not ex:
+        return "ไม่พบข้อมูล", 404
+    
+    # 2. ดึง YouTube ID รายท่า (สำคัญ: ต้องแน่ใจว่า import EXERCISE_VIDEOS มาจาก database.py)
+    # หากไม่เจอ ID ของท่านั้นๆ จะใช้คลิปกลาง (dQw4w9WgXcQ) เป็นค่าเริ่มต้น
+    ex['youtube_id'] = EXERCISE_VIDEOS.get(ex_id)
+
+    # 3. Logic เลือกชุดคำสอน (Steps) ตามหมวดหมู่จริงใน Ontology
+    categories = ex.get('all_categories', [])
+    
+    if "StretchingExercise" in categories:
+        info = EXERCISE_KNOWLEDGE["StretchingExercise"]
+    elif any(c in categories for c in ["Resistance", "WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"]):
+        info = EXERCISE_KNOWLEDGE["Resistance"]
+    else:
+        # สำหรับ Aerobic, Bicycling, WaterActivity หรือหมวดหมู่อื่นๆ
+        info = EXERCISE_KNOWLEDGE.get("Aerobic", EXERCISE_KNOWLEDGE["StretchingExercise"]) 
+    
+    # 4. รวมข้อมูล "วิธีปฏิบัติ" และ "ข้อควรระวัง" เข้าไปในตัวแปร ex
+    # เพื่อให้ HTML เรียกใช้ {{ ex.steps }} และ {{ ex.precaution }} ได้โดยไม่ Error
+    ex['steps'] = info['steps']
+    ex['precaution'] = info['precaution']
+
+    # 5. ส่ง ex ไปที่หน้า HTML
+    return render_template('user/detail.html', ex=ex)
 
 @user_bp.route('/knowledge')
 def user_knowledge():
@@ -321,7 +350,7 @@ def reset_plan():
         cur.execute("SELECT id FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
         if not user:
-             return jsonify({"status": "error", "message": "User not found"}), 404
+            return jsonify({"status": "error", "message": "User not found"}), 404
         user_id = user[0]
 
         # 3. ลบข้อมูล (ต้องลบจากลูกไปหาแม่: วัน -> สัปดาห์ -> เดือน)
@@ -356,6 +385,41 @@ def reset_plan():
         conn.rollback()
         print(f"❌ Error resetting plan: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@user_bp.route('/start_exercise/<int:day_id>')
+def start_exercise(day_id):
+    # เช็คว่าล็อกอินหรือยัง
+    if 'username' not in session:
+        return redirect(url_for('login_page'))
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        # ดึงข้อมูลท่าออกกำลังกาย จาก ID ของวันที่กด
+        cur.execute("SELECT exercise_name, completed FROM days_plan WHERE id = %s", (day_id,))
+        row = cur.fetchone()
+        
+        if row:
+            exercise_name = row[0]
+            is_completed = row[1]
+            
+            # ✅ แก้ไขชื่อไฟล์ให้ตรงกัน
+            return render_template('user/start_exercise.html', 
+                                   exercise_name=exercise_name,
+                                   day_id=day_id,
+                                   is_completed=is_completed)
+        else:
+            print("ไม่พบข้อมูลตารางออกกำลังกาย")
+            return redirect(url_for('user_bp.dashboard_page'))
+            
+    except Exception as e:
+        print(f"Error loading start exercise: {e}")
+        return redirect(url_for('user_bp.dashboard_page'))
+        
     finally:
         cur.close()
         conn.close()

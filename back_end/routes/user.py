@@ -180,20 +180,6 @@ def select_plan_page(patient_id):
     # 2. ส่งตัวแปร exercises (ที่เป็น list of dicts) ไปให้หน้าเว็บ
     return render_template('user/select_plan.html', patient_id=patient_id, exercises=all_recs)
 
-@user_bp.route('/save_selection', methods=['POST'])
-def save_selection_route():
-    try:
-        # รับข้อมูล JSON จากหน้าเว็บ
-        data = request.json
-        patient_id = data.get('patient_id')
-        exercise_id = data.get('exercise_id')
-        
-        print(f"📥 Received save request: {patient_id} chose {exercise_id}")
-
-    except Exception as e:
-        print(f"Server Error: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
 @user_bp.route('/select_plan2/<patient_id>/<exercise_id>')
 def select_plan2_page(patient_id, exercise_id):
     
@@ -395,6 +381,41 @@ def reset_plan():
         conn.rollback()
         print(f"❌ Error resetting plan: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@user_bp.route('/start_exercise/<int:day_id>')
+def start_exercise(day_id):
+    # เช็คว่าล็อกอินหรือยัง
+    if 'username' not in session:
+        return redirect(url_for('login_page'))
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        # ดึงข้อมูลท่าออกกำลังกาย จาก ID ของวันที่กด
+        cur.execute("SELECT exercise_name, completed FROM days_plan WHERE id = %s", (day_id,))
+        row = cur.fetchone()
+        
+        if row:
+            exercise_name = row[0]
+            is_completed = row[1]
+            
+            # ✅ แก้ไขชื่อไฟล์ให้ตรงกัน
+            return render_template('user/start_exercise.html', 
+                                   exercise_name=exercise_name,
+                                   day_id=day_id,
+                                   is_completed=is_completed)
+        else:
+            print("ไม่พบข้อมูลตารางออกกำลังกาย")
+            return redirect(url_for('user_bp.dashboard_page'))
+            
+    except Exception as e:
+        print(f"Error loading start exercise: {e}")
+        return redirect(url_for('user_bp.dashboard_page'))
+        
     finally:
         cur.close()
         conn.close()

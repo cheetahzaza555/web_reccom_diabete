@@ -419,3 +419,33 @@ def start_exercise(day_id):
     finally:
         cur.close()
         conn.close()
+
+@user_bp.route('/active_exercise/<int:day_id>')
+def active_exercise(day_id):
+    if 'username' not in session:
+        return redirect(url_for('login_page'))
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        # ดึงชื่อท่าออกกำลังกายมาแสดงในหน้าจับเวลา
+        cur.execute("SELECT exercise_name FROM days_plan WHERE id = %s", (day_id,))
+        row = cur.fetchone()
+        
+        if row:
+            exercise_name = row[0]
+            # ส่ง exercise_name และ day_id ไปยังหน้า active_exercise.html
+            return render_template('user/active_exercise.html', 
+                                   exercise_name=exercise_name, 
+                                   day_id=day_id)
+        else:
+            return redirect(url_for('user_bp.dashboard_page'))
+            
+    except Exception as e:
+        print(f"Error loading active exercise: {e}")
+        return redirect(url_for('user_bp.dashboard_page'))
+        
+    finally:
+        cur.close()
+        conn.close()

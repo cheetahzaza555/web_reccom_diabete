@@ -70,7 +70,7 @@
 
                         <hr class="my-5 opacity-25">
 
-                        {% if ex.youtube_id %}
+                        {% if ex.video %}
                         <div class="mb-5">
                             <h4 class="fw-bold mb-4">
                                 <i class="fab fa-youtube me-2 text-danger"></i>วิดีโอสาธิตการฝึก
@@ -78,8 +78,8 @@
                             <div class="video-wrapper">
                                 <div class="ratio ratio-16x9">
                                     <iframe 
-                                        src="https://www.youtube.com/embed/{{ ex.youtube_id }}?rel=0" 
-                                        title="{{ ex.name }}" 
+                                        src="https://www.youtube.com/embed/{{ ex.video }}?rel=0" 
+                                        title="{{ ex.video }}" 
                                         frameborder="0" 
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                                         allowfullscreen>

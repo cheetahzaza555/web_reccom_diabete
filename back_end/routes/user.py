@@ -3,7 +3,7 @@ from modules.auth_db import get_db_connection
 from flask import Blueprint, json, render_template, jsonify, request, session, redirect, url_for
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
-from modules.database import get_exercise_details_by_id, get_exercise_by_id, EXERCISE_KNOWLEDGE
+from modules.database import get_exercise_details_by_id, get_exercise_by_id
 
 user_bp = Blueprint('user', __name__)
 
@@ -101,30 +101,16 @@ def user_exercise():
 
 @user_bp.route('/exercise-detail/<ex_id>')
 def exercise_detail(ex_id):
-    # 1. ดึงข้อมูลจากคลัง (ดึง ID, รูป และหมวดหมู่จาก Ontology มาให้แล้ว)
-    all_exercises = get_all_exercises_for_library()
-    ex = next((item for item in all_exercises if item['id'] == ex_id), None)
+    # 1. ใช้ฟังก์ชันใหม่ที่เราเพิ่งเขียน (ดึงข้อมูลตรงจาก GraphDB)
+    # ฟังก์ชันนี้จะคืนค่าทั้ง ข้อมูลพื้นฐาน, steps และ precaution มาให้ในก้อนเดียวเลย
+    ex = get_exercise_by_id(ex_id)
     
+    # 2. ตรวจสอบว่ามีข้อมูลหรือไม่
     if not ex:
-        return "ไม่พบข้อมูล", 404
+        return "ไม่พบข้อมูลท่าออกกำลังกายนี้", 404
 
-    # 3. Logic เลือกชุดคำสอน (Steps) ตามหมวดหมู่จริงใน Ontology
-    categories = ex.get('all_categories', [])
-    
-    if "StretchingExercise" in categories:
-        info = EXERCISE_KNOWLEDGE["StretchingExercise"]
-    elif any(c in categories for c in ["Resistance", "WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"]):
-        info = EXERCISE_KNOWLEDGE["Resistance"]
-    else:
-        # สำหรับ Aerobic, Bicycling, WaterActivity หรือหมวดหมู่อื่นๆ
-        info = EXERCISE_KNOWLEDGE.get("Aerobic", EXERCISE_KNOWLEDGE["StretchingExercise"]) 
-    
-    # 4. รวมข้อมูล "วิธีปฏิบัติ" และ "ข้อควรระวัง" เข้าไปในตัวแปร ex
-    # เพื่อให้ HTML เรียกใช้ {{ ex.steps }} และ {{ ex.precaution }} ได้โดยไม่ Error
-    ex['steps'] = info['steps']
-    ex['precaution'] = info['precaution']
-
-    # 5. ส่ง ex ไปที่หน้า HTML
+    # 3. ส่งข้อมูล 'ex' ไปที่หน้า HTML ได้ทันที
+    # ตอนนี้ ex จะมี ex['steps'] เป็น list และ ex['precaution'] เป็น string ตามที่ดึงมาจาก Graph
     return render_template('user/detail.html', ex=ex)
 
 @user_bp.route('/knowledge')

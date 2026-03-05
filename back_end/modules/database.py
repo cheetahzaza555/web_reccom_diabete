@@ -573,7 +573,8 @@ def get_all_exercises_for_library():
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT ?id ?name ?desc ?mets (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
+    # เพิ่ม ?youtube_id เข้าไปใน SELECT และ GROUP BY
+    SELECT ?id ?name  ?mets ?youtube_id (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
     WHERE {
         ?s a ?typeUri .
         ?typeUri rdfs:subClassOf* ex:Exercise . 
@@ -581,10 +582,13 @@ def get_all_exercises_for_library():
 
         BIND(STRAFTER(STR(?s), "#") AS ?id)
         OPTIONAL { ?s rdfs:label ?name }
-        OPTIONAL { ?s ex:description ?desc }
         OPTIONAL { ?s ex:metValue ?mets }
+        
+        # แก้ไขจุดนี้: ใช้ ?s (ซึ่งคือตัวแปรของ Instance) และใช้ Prefix ex: ให้ถูกต้อง
+        OPTIONAL { ?s ex:hasYoutubeID ?youtube_id }
     }
-    GROUP BY ?id ?name ?desc ?mets
+    # ต้องเพิ่ม ?youtube_id ใน GROUP BY ด้วยเพื่อให้ Query สมบูรณ์
+    GROUP BY ?id ?name ?mets ?youtube_id
     """
     try:
         sparql_read.setQuery(query)
@@ -651,7 +655,7 @@ def get_all_exercises_for_library():
                 "all_categories": raw_names,
                 "img": f"/static/images/exercises/{img_file}",
                 "mets": float(val("mets")) if val("mets") else 0,
-                "desc": val("desc") or "ไม่มีรายละเอียดเพิ่มเติม"
+                "youtube_id": val("youtube_id") if val("youtube_id") else ""
             })
             
         return exercises
@@ -659,31 +663,17 @@ def get_all_exercises_for_library():
         print(f"❌ Error in Backend: {e}")
         return []
     
-EXERCISE_KNOWLEDGE = {
-    "StretchingExercise": {
-        "steps": ["อบอุ่นร่างกายสั้นๆ 5 นาที", "ยืดค้างไว้ในจุดที่รู้สึกตึงแต่ไม่เจ็บ", "หายใจเข้า-ออกลึกๆ ห้ามกลั้นหายใจ", "ค้างไว้ท่าละ 15-30 วินาที"],
-        "precaution": "หากมีอาการปวดแปล็บหรือชาให้หยุดทันที และระวังการก้มหัวต่ำหากมีความดันโลหิตสูง"
-    },
-    "Resistance": {
-        "steps": ["เริ่มจากน้ำหนักเบาๆ หรือน้ำหนักตัว", "โฟกัสที่กล้ามเนื้อส่วนที่ใช้งาน", "หายใจออกตอนออกแรง และหายใจเข้าตอนผ่อน", "พักระหว่างเซตประมาณ 1 นาที"],
-        "precaution": "ห้ามกลั้นหายใจขณะออกแรงเพราะจะทำให้ความดันพุ่งสูง (อันตรายมากสำหรับผู้ป่วยเบาหวาน)"
-    },
-    "Aerobic": {
-        "steps": ["เช็คระดับน้ำตาลก่อนเริ่ม (ควรอยู่ระหว่าง 100-250 mg/dL)", "เริ่มจากความหนักระดับเบาไปหาปานกลาง", "จิบน้ำเป็นระยะเพื่อป้องกันภาวะขาดน้ำ", "คูลดาวน์หลังเสร็จกิจกรรม 5-10 นาที"],
-        "precaution": "พกลูกอมหรือน้ำหวานติดตัวไว้เสมอ กรณีเกิดอาการน้ำตาลตก (ตัวสั่น เหงื่อออกมาก หน้ามืด)"
-    }
-}
-
-EXERCISE_VIDEOS = {
-    "02175": "lKFc1vV59Dk"     
-}
     
 def get_exercise_by_id(ex_id):
+    # 1. เพิ่ม ?youtube_id เข้าไปใน SELECT และ GROUP BY
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT ?name ?desc ?mets (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
+    SELECT ?name ?desc ?mets ?youtube_id  # <--- เพิ่ม ?youtube_id ตรงนี้
+            (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
+            (GROUP_CONCAT(DISTINCT ?step; separator="|") AS ?stepsRaw)
+            (GROUP_CONCAT(DISTINCT ?precaution; separator="|") AS ?precautionsRaw)
     WHERE {{
         BIND(ex:{ex_id} AS ?s)
         ?s rdfs:label ?name .
@@ -691,40 +681,46 @@ def get_exercise_by_id(ex_id):
         ?typeUri rdfs:subClassOf* ex:Exercise .
         FILTER(?typeUri != ex:Exercise)
         
+        # ดึงรายละเอียดพื้นฐาน
         OPTIONAL {{ ?s ex:description ?desc }}
         OPTIONAL {{ ?s ex:metValue ?mets }}
+        
+        # ดึง Youtube ID จาก Instance (เหมือนในรูป image_4ec3c2.png)
+        OPTIONAL {{ ?s ex:hasYoutubeID ?youtube_id }} # <--- เพิ่มบรรทัดนี้
+
+        # ดึง Steps และ Precaution
+        OPTIONAL {{ 
+            ?source ex:hasStep ?step .
+            FILTER(?source = ?s || ?source = ?typeUri)
+        }}
+        OPTIONAL {{ 
+            ?source ex:hasPrecaution ?precaution .
+            FILTER(?source = ?s || ?source = ?typeUri)
+        }}
     }}
-    GROUP BY ?name ?desc ?mets
+    GROUP BY ?name ?desc ?mets ?youtube_id # <--- เพิ่ม ?youtube_id ตรงนี้
     """
+
     try:
+        sparql_read.setQuery(query)
         results = sparql_read.query().convert()
+        
         if not results["results"]["bindings"]:
             return None
 
-        # เนื่องจากเป็น ID เดียว เราดึงเอาสมาชิกตัวแรก [0] มาใช้ได้เลย
         r = results["results"]["bindings"][0]
         def val(key): return r[key]["value"] if key in r else ""
 
-        # 1. จัดการเรื่องหมวดหมู่ (เหมือนที่คุณเขียนเป๊ะๆ)
+        # --- ส่วนการจัดการหมวดหมู่และรูปภาพคงเดิม ---
         types_list = val("allTypes").split(',')
         raw_names = [t.split('#')[-1] for t in types_list]
-        
-        # ลำดับความสำคัญที่คุณตั้งไว้
         priority_order = [
             "NonWeightBearingAerobicSport", "WeightBearingAerobicSport",
             "NonWeightBearingResistanceExercise", "WeightBearingResistanceExercise",
             "Walking", "Running", "Dancing", "Bicycling", "WaterActivity",
             "Aerobic", "Resistance", "StretchingExercise"
         ]
-
-        chosen_name = ""
-        for p_name in priority_order:
-            if p_name in raw_names:
-                chosen_name = p_name
-                break
-        if not chosen_name: chosen_name = raw_names[0]
-
-        # 2. Mapping รูปภาพ (เหมือนเดิม)
+        chosen_name = next((p for p in priority_order if p in raw_names), raw_names[0])
         img_map = {
             "nonweightbearingaerobicsport": "non_weight_sport.png",
             "weightbearingaerobicsport": "weight_sport.png",
@@ -735,27 +731,20 @@ def get_exercise_by_id(ex_id):
             "dancing": "dancing.png",
             "bicycling": "cycling.png",
             "wateractivity": "water.png",
-            "stretchingexercise": "flexibility.png", # ปรับให้ตรงกับ class name
+            "stretchingexercise": "flexibility.png",
             "aerobic": "aerobic.png",
             "resistance": "resistance.png"
         }
+        img_file = img_map.get(chosen_name.lower(), "exercise_default.png")
 
-        search_key = chosen_name.lower()
-        img_file = "exercise_default.png"
-        if search_key in img_map:
-            img_file = img_map[search_key]
 
-        # 3. ดึงความรู้ที่ฟิกไว้ (ตามหมวดหมู่ที่เลือกมาได้)
-        # เราต้องเช็คหมวดหมู่หลักเพื่อดึง steps/precaution
-        knowledge_key = "Aerobic" # ค่าเริ่มต้น
-        if "StretchingExercise" in raw_names:
-            knowledge_key = "StretchingExercise"
-        elif any(c in raw_names for c in ["Resistance", "WeightBearingResistanceExercise"]):
-            knowledge_key = "Resistance"
-        
-        info = EXERCISE_KNOWLEDGE.get(knowledge_key, EXERCISE_KNOWLEDGE["Aerobic"])
+        yt_id = val("youtube_id")
 
-        # 4. ส่งข้อมูลออกไปให้หน้า detail.html
+        steps_list = val("stepsRaw").split('|') if val("stepsRaw") else []
+        precautions_list = val("precautionsRaw").split('|') if val("precautionsRaw") else []
+        steps = [s for s in steps_list if s.strip()]
+        precautions = [p for p in precautions_list if p.strip()]
+
         return {
             "id": ex_id,
             "name": val("name") or ex_id,
@@ -764,8 +753,9 @@ def get_exercise_by_id(ex_id):
             "img": f"/static/images/exercises/{img_file}",
             "mets": val("mets"),
             "desc": val("desc") or "ไม่มีรายละเอียดเพิ่มเติม",
-            "steps": info["steps"],           # เพิ่มส่วนนี้
-            "precaution": info["precaution"],  # เพิ่มส่วนนี้
+            "steps": steps if steps else ["ไม่มีระบุขั้นตอน"], 
+            "precaution": precautions[0] if precautions else "ไม่มีระบุข้อควรระวังพิเศษ",
+            "video": yt_id # <--- ส่งค่า video_url กลับไปให้ HTML
         }
 
     except Exception as e:

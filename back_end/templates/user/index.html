@@ -17,21 +17,18 @@
             display: flex; flex-direction: column;
         }
 
-        /* --- Calendar Layout --- */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr); 
             gap: 10px;
         }
 
-        /* ✅ แก้ไขปัญหาตารางเบี้ยว: ให้หัวตารางและเนื้อหามีสไตล์เหมือนกัน */
         .weekday-header {
             text-align: center; font-weight: bold; color: #6c757d;
             padding: 10px 0;
             background: #e9ecef; border-radius: 8px;
         }
 
-        /* การ์ดวันที่แบบมีแผน */
         .day-card {
             background: white;
             border-radius: 10px;
@@ -44,14 +41,12 @@
             transition: transform 0.2s;
         }
 
-        /* การ์ดวันที่ "ไม่มีแผน" (เติมเต็มตาราง) */
         .empty-day {
             background: #f8f9fa;
             border: 1px dashed #e0e0e0;
             opacity: 0.6;
         }
 
-        /* ไฮไลท์วันนี้ */
         .today-card {
             border: 2px solid #4f7cff !important;
             background-color: #f0f7ff !important;
@@ -66,7 +61,6 @@
             position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
         }
 
-        /* เลขวันที่ */
         .date-number {
             font-size: 1.1rem; font-weight: bold; color: #333;
             align-self: flex-start;
@@ -74,16 +68,14 @@
         }
         .today-card .date-number { color: #4f7cff; }
 
-        /* ไอคอนและชื่อกิจกรรม */
         .exercise-icon { font-size: 1.5rem; color: #198754; }
         .rest-icon { font-size: 1.5rem; color: #adb5bd; }
         .ex-name { font-size: 0.85rem; font-weight: 600; text-align: center; line-height: 1.2; }
 
-        /* Checkbox */
-        .check-btn { cursor: pointer; font-size: 1.5rem; color: #e9ecef; transition: all 0.2s; }
+        /* ✅ แก้ไข: ลบ cursor: pointer ออก เพื่อไม่ให้ดูเหมือนกดได้ */
+        .check-btn { font-size: 1.5rem; color: #e9ecef; transition: all 0.2s; cursor: default; }
         .check-btn.completed { color: #198754; }
         
-        /* ลูกศรซ้ายขวา */
         .nav-arrow {
             background: white;
             border: 1px solid #dee2e6;
@@ -128,12 +120,9 @@
             
             <div class="d-flex justify-content-between align-items-end mb-3">
                 <div>
-                    <h2 class="fw-bold mb-0 text-dark" id="monthTitle">
-                        กำลังโหลด...
-                    </h2>
+                    <h2 class="fw-bold mb-0 text-dark" id="monthTitle">กำลังโหลด...</h2>
                     <p class="text-muted mb-0">
-                        <i class="bi bi-calendar-event me-1"></i> 
-                        วันนี้: {{ info.day }} {{ info.month_name }}
+                        <i class="bi bi-calendar-event me-1"></i> วันนี้: {{ info.day }} {{ info.month_name }}
                     </p>
                 </div>
                 <button type="button" class="btn btn-outline-danger" onclick="confirmClearPlan()">
@@ -142,7 +131,6 @@
             </div>
 
             <div class="d-flex align-items-center justify-content-center w-100 flex-grow-1">
-                
                 <button id="prevMonthBtn" class="nav-arrow me-2 me-md-4" onclick="changeMonth(-1)">
                     <i class="bi bi-chevron-left"></i>
                 </button>
@@ -157,20 +145,16 @@
                         <div class="weekday-header">เสาร์</div>
                         <div class="weekday-header">อาทิตย์</div>
                     </div>
-
-                    <div class="calendar-grid" id="calendarDays">
-                        </div>
+                    <div class="calendar-grid" id="calendarDays"></div>
                 </div>
 
                 <button id="nextMonthBtn" class="nav-arrow ms-2 ms-md-4" onclick="changeMonth(1)">
                     <i class="bi bi-chevron-right"></i>
                 </button>
-
             </div>
 
             <div class="mt-4 px-2 mb-5">
-                <div id="startBtnContainer">
-                </div>
+                <div id="startBtnContainer"></div>
             </div>
 
             <div id="rawData" class="d-none">
@@ -194,32 +178,27 @@
                     <i class="bi bi-clipboard2-pulse text-primary display-1 mb-3"></i>
                     <h2 class="fw-bold">ยังไม่มีตารางกิจกรรม</h2>
                     <p class="text-muted">กรุณาทำแบบประเมินเพื่อสร้างแผนการออกกำลังกาย</p>
-                    <a href="/user/recommendations" class="btn btn-primary rounded-pill px-4 mt-3">
-                        เริ่มต้นใช้งาน
-                    </a>
+                    <a href="/user/recommendations" class="btn btn-primary rounded-pill px-4 mt-3">เริ่มต้นใช้งาน</a>
                 </div>
             </div>
         {% endif %}
 
     </div>
     
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         const fullThaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-        
         let planData = [];
-        let activeMonthsMap = new Map(); // เก็บว่ามีเดือนไหน ปีไหนบ้าง
-        let monthsArray = []; // เรียงลำดับเดือน
-        let currentIndex = 0; // ตำแหน่งเดือนที่กำลังแสดงผล
+        let activeMonthsMap = new Map(); 
+        let monthsArray = []; 
+        let currentIndex = 0; 
 
         document.addEventListener("DOMContentLoaded", () => {
             const rawItems = document.querySelectorAll('.raw-data-item');
             if (rawItems.length === 0) return;
 
-            // ✅ อ่านข้อมูลที่ส่งมาจาก Python โดนตรง 
             rawItems.forEach(item => {
                 let dYear = parseInt(item.dataset.year);
                 let dMonth = parseInt(item.dataset.month);
@@ -235,14 +214,12 @@
                     completed: item.dataset.completed === "true"
                 });
 
-                // บันทึกปีและเดือนที่มีแผน (ป้องกันกรณีข้ามปี เช่น ธ.ค. -> ม.ค.)
                 let monthKey = `${dYear}-${dMonth}`;
                 if (!activeMonthsMap.has(monthKey)) {
                     activeMonthsMap.set(monthKey, { year: dYear, month: dMonth });
                 }
             });
 
-            // นำเดือนทั้งหมดมาเรียงลำดับเวลาให้ถูกต้อง
             monthsArray = Array.from(activeMonthsMap.values()).sort((a,b) => {
                 if (a.year !== b.year) return a.year - b.year;
                 return a.month - b.month;
@@ -258,26 +235,22 @@
             let year = monthData.year;
             let mIndex = monthData.month;
             
-            // แสดงหัวเรื่องเต็มพร้อม พ.ศ.
-            let yearTH = year > 2500 ? year : year + 543; // เผื่อ Python ส่งปีค.ศ. มา
+            let yearTH = year > 2500 ? year : year + 543; 
             document.getElementById('monthTitle').innerText = `${fullThaiMonths[mIndex]} ${yearTH}`;
 
             const grid = document.getElementById('calendarDays');
             grid.innerHTML = "";
 
-            // การคำนวณวันแรกของเดือน เพื่อให้ตรงกับจันทร์-อาทิตย์
-            let firstDay = new Date(year, mIndex, 1).getDay(); // 0 คือ วันอาทิตย์
-            let offset = firstDay === 0 ? 6 : firstDay - 1; // ขยับให้วันจันทร์เป็นช่องแรกสุด (0)
+            let firstDay = new Date(year, mIndex, 1).getDay(); 
+            let offset = firstDay === 0 ? 6 : firstDay - 1; 
             let daysInMonth = new Date(year, mIndex + 1, 0).getDate();
 
-            // 1. เติมช่องว่างด้านหน้า
             for(let i=0; i<offset; i++) {
                 grid.innerHTML += `<div class="day-card empty-day d-none d-md-flex"></div>`;
             }
 
             let todayObj = new Date();
             
-            // 2. วาดการ์ดวันที่ 1 ถึงสิ้นเดือน
             for(let d=1; d<=daysInMonth; d++) {
                 let plan = planData.find(p => p.day === d && p.monthIndex === mIndex && p.year === year);
                 let isRealToday = (todayObj.getDate() === d && todayObj.getMonth() === mIndex && todayObj.getFullYear() === year);
@@ -295,7 +268,7 @@
                                 <div class="ex-name mt-1">${plan.exName}</div>
                             </div>
                             <div class="mt-2" style="z-index: 20;">
-                                <i class="bi bi-check-circle-fill check-btn ${compClass}" id="btn-${plan.id}" onclick="toggleStatus('${plan.id}')"></i>
+                                <i class="bi bi-check-circle-fill check-btn ${compClass}" id="btn-${plan.id}"></i>
                             </div>
                         `;
                     } else {
@@ -332,11 +305,10 @@
                 }
             }
 
-            // จัดการเปิด/ปิดปุ่มลูกศร
             document.getElementById('prevMonthBtn').disabled = (currentIndex === 0);
             document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
 
-            updateStartButton(mIndex, year);
+            updateStartButton();
         }
 
         function changeMonth(step) {
@@ -347,7 +319,7 @@
             }
         }
 
-function updateStartButton() {
+        function updateStartButton() {
             const container = document.getElementById('startBtnContainer');
             if (!container) return;
 
@@ -356,7 +328,6 @@ function updateStartButton() {
             const tMonth = todayObj.getMonth();
             const tYear = todayObj.getFullYear();
 
-            // ค้นหาคิวของ "วันนี้" (ของจริง) จากข้อมูลทั้งหมดที่มี
             const todayPlan = planData.find(p => 
                 p.day === tDay && 
                 p.monthIndex === tMonth && 
@@ -379,20 +350,7 @@ function updateStartButton() {
             }
         }
 
-
-        function toggleStatus(dayId) {
-            const btn = document.getElementById(`btn-${dayId}`);
-            const isCompleted = btn.classList.contains('completed');
-            
-            if (!isCompleted) btn.classList.add('completed');
-            else btn.classList.remove('completed');
-
-            fetch('/user/update_day_status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ day_id: dayId, completed: !isCompleted })
-            });
-        }
+        // ✅ ลบ function toggleStatus() ออกไปแล้ว เพื่อให้ไม่สามารถแก้ไขจากหน้านี้ได้
 
         function confirmClearPlan() {
             Swal.fire({

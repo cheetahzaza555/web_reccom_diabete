@@ -14,117 +14,48 @@
             font-family: 'Prompt', sans-serif; 
             background-color: #f8f9fa; 
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
         
+        /* กล่องเนื้อหาหลัก ให้อยู่ตรงกลางจอ (ทำงานร่วมกับ Navbar ได้) */
         .timer-container {
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 40px 20px;
+            min-height: calc(100vh - 80px); /* ลบความสูง navbar ออก */
         }
 
         .exercise-title {
-            font-size: 1.5rem;
-            color: #6c757d;
-            margin-bottom: 20px;
-            font-weight: 600;
+            font-size: 1.8rem;
+            color: #495057;
+            margin-bottom: 30px;
+            font-weight: 700;
             text-align: center;
         }
 
-        /* วงกลมจับเวลา */
         .timer-circle {
-            width: 280px;
-            height: 280px;
-            border-radius: 50%;
-            background-color: #ffffff;
-            border: 12px solid #335da1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 30px rgba(51, 93, 161, 0.2);
-            margin-bottom: 30px;
+            width: 280px; height: 280px; border-radius: 50%; background-color: #ffffff;
+            border: 12px solid #335da1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            box-shadow: 0 10px 30px rgba(51, 93, 161, 0.2); margin-bottom: 40px;
             transition: border-color 0.3s ease;
         }
+        .timer-circle.paused { border-color: #ffc107; }
+        .timer-circle.goal-reached { border-color: #198754; }
 
-        .timer-circle.paused {
-            border-color: #ffc107; 
-        }
-        
-        .timer-circle.goal-reached {
-            border-color: #198754; /* เปลี่ยนเป็นสีเขียวเมื่อถึงเป้าหมาย */
-        }
+        .time-display { font-size: 4rem; font-weight: 700; color: #333; font-variant-numeric: tabular-nums; }
 
-        .time-display {
-            font-size: 4rem;
-            font-weight: 700;
-            color: #333;
-            font-variant-numeric: tabular-nums;
-        }
+        .progress-container { width: 100%; max-width: 350px; margin-bottom: 40px; }
+        .progress-label { display: flex; justify-content: space-between; font-weight: 600; color: #6c757d; margin-bottom: 8px; font-size: 0.95rem; }
+        .progress { height: 18px; border-radius: 10px; background-color: #e9ecef; box-shadow: inset 0 1px 2px rgba(0,0,0,.1); }
+        .progress-bar { background-color: #335da1; transition: width 1s linear, background-color 0.5s ease; }
+        .progress-bar.completed { background-color: #198754; }
 
-        /* ✅ สไตล์สำหรับหลอดเป้าหมาย */
-        .progress-container {
-            width: 100%;
-            max-width: 350px;
-            margin-bottom: 40px;
-        }
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-weight: 600;
-            color: #6c757d;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-        .progress {
-            height: 18px;
-            border-radius: 10px;
-            background-color: #e9ecef;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
-        }
-        .progress-bar {
-            background-color: #335da1;
-            transition: width 1s linear, background-color 0.5s ease;
-        }
-        .progress-bar.completed {
-            background-color: #198754; /* สีเขียวเมื่อสำเร็จ */
-        }
-
-        .control-buttons {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            max-width: 350px;
-        }
-
-        .btn-pause {
-            flex: 1;
-            background-color: #ffc107;
-            color: #000;
-            border: none;
-            padding: 15px;
-            border-radius: 15px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
+        .control-buttons { display: flex; gap: 20px; width: 100%; max-width: 350px; }
+        .btn-pause { flex: 1; background-color: #ffc107; color: #000; border: none; padding: 15px; border-radius: 15px; font-size: 1.2rem; font-weight: 600; transition: all 0.2s; }
         .btn-pause:hover { background-color: #e0a800; transform: scale(1.05); }
-
-        .btn-finish {
-            flex: 1;
-            background-color: #198754;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 15px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
+        .btn-finish { flex: 1; background-color: #198754; color: white; border: none; padding: 15px; border-radius: 15px; font-size: 1.2rem; font-weight: 600; transition: all 0.2s; }
         .btn-finish:hover { background-color: #157347; transform: scale(1.05); }
     </style>
 </head>
@@ -132,31 +63,33 @@
 
     {% include 'includes/navbar_user.html' %}
 
-    <div class="timer-container">
-        <h2 class="exercise-title">{{ exercise_name }}</h2>
-        
-        <div class="timer-circle" id="timerCircle">
-            <div class="time-display" id="timeDisplay">00:00</div>
-            <div class="text-muted mt-2" id="statusText">กำลังจับเวลา...</div>
-        </div>
-
-        <div class="progress-container">
-            <div class="progress-label">
-                <span id="progressText">ความคืบหน้า: 0%</span>
-                <span id="goalText"><i class="bi bi-flag-fill"></i> เป้าหมาย: 30 นาที</span>
+    <div class="container d-flex justify-content-center">
+        <div class="timer-container w-100">
+            <h2 class="exercise-title">{{ exercise_name }}</h2>
+            
+            <div class="timer-circle" id="timerCircle">
+                <div class="time-display" id="timeDisplay">00:00</div>
+                <div class="text-muted mt-2 fw-bold" id="statusText">กำลังจับเวลา...</div>
             </div>
-            <div class="progress">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width: 0%"></div>
-            </div>
-        </div>
 
-        <div class="control-buttons">
-            <button class="btn-pause shadow-sm" id="pauseBtn" onclick="togglePause()">
-                <i class="bi bi-pause-fill"></i> พัก
-            </button>
-            <button class="btn-finish shadow-sm" onclick="finishExercise()">
-                <i class="bi bi-check-circle-fill"></i> เสร็จสิ้น
-            </button>
+            <div class="progress-container">
+                <div class="progress-label">
+                    <span id="progressText">ความคืบหน้า: 0%</span>
+                    <span id="goalText"><i class="bi bi-flag-fill"></i> เป้าหมาย: 30 นาที</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="control-buttons">
+                <button class="btn-pause shadow-sm" id="pauseBtn" onclick="togglePause()">
+                    <i class="bi bi-pause-fill"></i> พัก
+                </button>
+                <button class="btn-finish shadow-sm" onclick="finishExercise()">
+                    <i class="bi bi-check-circle-fill"></i> เสร็จสิ้น
+                </button>
+            </div>
         </div>
     </div>
 
@@ -167,8 +100,7 @@
         let paused = false;
         let savedTime = 0;
 
-        // ✅ ตั้งเป้าหมายเวลา (หน่วยเป็นวินาที)
-        // 30 นาที = 30 * 60 = 1800 วินาที
+        // เป้าหมาย 30 นาที (1800 วินาที)
         const targetSeconds = 1800; 
 
         window.onload = function() {
@@ -185,20 +117,14 @@
                 difference = updatedTime - startTime;
             }
             
-            // คำนวณเวลาที่ผ่านไปทั้งหมดเป็นวินาที
             let totalSeconds = Math.floor(difference / 1000);
-
-            // คำนวณ นาที และ วินาที สำหรับแสดงในวงกลม
             let displayMinutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
             let displaySeconds = Math.floor((difference % (1000 * 60)) / 1000);
             
-            // ทำให้เป็นรูปแบบ 00:00
             let formattedMins = (displayMinutes < 10) ? "0" + displayMinutes : displayMinutes;
             let formattedSecs = (displaySeconds < 10) ? "0" + displaySeconds : displaySeconds;
             
             document.getElementById("timeDisplay").innerHTML = formattedMins + ":" + formattedSecs;
-
-            // ✅ อัปเดตหลอดความคืบหน้า
             updateProgressBar(totalSeconds);
         }
 
@@ -208,16 +134,14 @@
             const timerCircle = document.getElementById("timerCircle");
             const goalText = document.getElementById("goalText");
 
-            // คำนวณเปอร์เซ็นต์ (ไม่ให้เกิน 100%)
             let percent = (elapsedSeconds / targetSeconds) * 100;
             let displayPercent = Math.min(percent, 100).toFixed(0);
 
             progressBar.style.width = displayPercent + "%";
 
-            // ถ้าถึงเป้าหมายแล้ว (100%)
             if (elapsedSeconds >= targetSeconds) {
                 progressBar.classList.add("completed");
-                timerCircle.classList.add("goal-reached"); // เปลี่ยนขอบนาฬิกาเป็นสีเขียวด้วย
+                timerCircle.classList.add("goal-reached");
                 progressText.innerHTML = "สำเร็จเป้าหมายแล้ว! 🎉";
                 progressText.style.color = "#198754";
                 goalText.style.color = "#198754";
@@ -233,52 +157,53 @@
             const progressBar = document.getElementById("progressBar");
 
             if (!paused) {
-                // กดหยุดพัก
                 clearInterval(tInterval);
                 savedTime = difference;
                 paused = true;
                 pauseBtn.innerHTML = '<i class="bi bi-play-fill"></i> ทำต่อ';
                 pauseBtn.style.backgroundColor = '#17a2b8'; 
                 pauseBtn.style.color = 'white';
-                
-                // ถ้ายกดพัก ให้หยุดอนิเมชั่นของหลอด
                 progressBar.classList.remove('progress-bar-animated');
                 
-                // เปลี่ยนสีขอบวงกลมถ้ายังไม่ถึงเป้าหมาย
                 if (!timerCircle.classList.contains("goal-reached")) {
                     timerCircle.classList.add('paused');
                 }
                 statusText.innerHTML = "หยุดพักชั่วคราว";
             } else {
-                // กดทำต่อ
                 startTime = new Date().getTime();
                 tInterval = setInterval(getShowTime, 1000);
                 paused = false;
                 pauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i> พัก';
                 pauseBtn.style.backgroundColor = '#ffc107'; 
                 pauseBtn.style.color = '#000';
-                
                 progressBar.classList.add('progress-bar-animated');
-
                 timerCircle.classList.remove('paused');
                 statusText.innerHTML = "กำลังจับเวลา...";
             }
         }
 
-        function finishExercise() {
+function finishExercise() {
             clearInterval(tInterval);
             
+            // คำนวณเวลาที่ทำได้จริงเป็นนาที
+            let totalMinutesCompleted = Math.floor(difference / (1000 * 60));
+
             Swal.fire({
                 title: 'ยอดเยี่ยมมาก!',
-                text: 'คุณทำสำเร็จแล้ว ระบบกำลังบันทึกข้อมูล...',
+                text: `คุณออกกำลังกายไป ${totalMinutesCompleted} นาที ระบบกำลังบันทึกข้อมูล...`,
                 icon: 'success',
                 showConfirmButton: false,
-                timer: 2000
+                timer: 2500
             }).then(() => {
                 fetch('/user/update_day_status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ day_id: "{{ day_id }}", completed: true })
+                    // ✅ เพิ่ม duration เข้าไปเพื่อส่งไปให้ Python
+                    body: JSON.stringify({ 
+                        day_id: "{{ day_id }}", 
+                        completed: true, 
+                        duration: totalMinutesCompleted 
+                    })
                 }).then(() => {
                     window.location.href = '/user/dashboard';
                 });

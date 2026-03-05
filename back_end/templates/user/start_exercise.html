@@ -130,18 +130,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
+<script>
         function startTimer() {
-            Swal.fire({
-                title: 'เริ่มการออกกำลังกาย!',
-                text: 'ขอให้สนุกกับการรักษาสุขภาพนะครับ',
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false
-            }).then(() => {
-                // พอกดเริ่มเสร็จ หรือทำกิจกรรมเสร็จ ค่อยพากลับหน้า Dashboard
-                window.location.href = "/user/dashboard"; 
-            });
+            window.location.href = `/user/active_exercise/{{ day_id }}`;
         }
     </script>
 </body>

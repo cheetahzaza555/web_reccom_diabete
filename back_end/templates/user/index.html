@@ -14,7 +14,6 @@
             font-family: 'Prompt', sans-serif;
             background-color: #f8f9fa;
             min-height: 100vh;
-            display: flex; flex-direction: column;
         }
 
         .calendar-grid {
@@ -41,12 +40,6 @@
             transition: transform 0.2s;
         }
 
-        .empty-day {
-            background: #f8f9fa;
-            border: 1px dashed #e0e0e0;
-            opacity: 0.6;
-        }
-
         .today-card {
             border: 2px solid #4f7cff !important;
             background-color: #f0f7ff !important;
@@ -69,42 +62,25 @@
         .today-card .date-number { color: #4f7cff; }
 
         .exercise-icon { font-size: 1.5rem; color: #198754; }
-        .rest-icon { font-size: 1.5rem; color: #adb5bd; }
         .ex-name { font-size: 0.85rem; font-weight: 600; text-align: center; line-height: 1.2; }
 
-        /* ✅ แก้ไข: ลบ cursor: pointer ออก เพื่อไม่ให้ดูเหมือนกดได้ */
-        .check-btn { font-size: 1.5rem; color: #e9ecef; transition: all 0.2s; cursor: default; }
+        /* ไม่ให้เคอร์เซอร์เป็นรูปนิ้วมือเวลาชี้ที่ติ๊กถูก */
+        .check-btn { font-size: 1.5rem; color: #e9ecef; cursor: default; }
         .check-btn.completed { color: #198754; }
         
         .nav-arrow {
-            background: white;
-            border: 1px solid #dee2e6;
-            color: #4f7cff;
-            border-radius: 50%;
-            width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.2s;
-            flex-shrink: 0;
+            background: white; border: 1px solid #dee2e6; color: #4f7cff; border-radius: 50%;
+            width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s; flex-shrink: 0;
         }
         .nav-arrow i { font-size: 1.5rem; font-weight: bold; }
-        .nav-arrow:hover:not(:disabled) {
-            background: #4f7cff;
-            color: white;
-            transform: scale(1.1);
-        }
-        .nav-arrow:disabled {
-            color: #dee2e6;
-            background: #f8f9fa;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
+        .nav-arrow:hover:not(:disabled) { background: #4f7cff; color: white; transform: scale(1.1); }
+        .nav-arrow:disabled { color: #dee2e6; background: #f8f9fa; cursor: not-allowed; box-shadow: none; }
 
         @media (max-width: 768px) {
             .calendar-grid { grid-template-columns: 1fr; }
             .weekday-header { display: none; } 
             .day-card { flex-direction: row; min-height: auto; padding: 15px; }
-            .empty-day { display: none; } 
             .date-number { margin-bottom: 0; margin-right: 15px; width: 30px; }
             .nav-arrow { width: 40px; height: 40px; }
         }
@@ -114,10 +90,9 @@
 
     {% include 'includes/navbar_user.html' %}
 
-    <div class="container py-4 px-3 px-md-4 flex-grow-1 d-flex flex-column">
+    <div class="container py-4 px-3 px-md-4 d-flex flex-column">
 
         {% if schedule %}
-            
             <div class="d-flex justify-content-between align-items-end mb-3">
                 <div>
                     <h2 class="fw-bold mb-0 text-dark" id="monthTitle">กำลังโหลด...</h2>
@@ -128,6 +103,18 @@
                 <button type="button" class="btn btn-outline-danger" onclick="confirmClearPlan()">
                     <i class="bi bi-trash"></i> ล้างแผน
                 </button>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-dark">เป้าหมายสัปดาห์นี้</span>
+                        <span class="fw-bold text-primary">0 / 150 นาที</span>
+                    </div>
+                    <div class="progress" style="height: 15px;">
+                        <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
             </div>
 
             <div class="d-flex align-items-center justify-content-center w-100 flex-grow-1">
@@ -167,8 +154,8 @@
                      data-istoday="{{ 'true' if day.is_today else 'false' }}"
                      data-isexercise="{{ 'true' if day.is_exercise_day else 'false' }}"
                      data-exname="{{ day.exercise_name }}"
-                     data-completed="{{ 'true' if day.completed else 'false' }}">
-                </div>
+                     data-completed="{{ 'true' if day.completed else 'false' }}"
+                     data-duration="{{ day.duration_minutes }}"></div>
                 {% endfor %}
             </div>
 
@@ -185,7 +172,7 @@
 
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -195,9 +182,17 @@
         let monthsArray = []; 
         let currentIndex = 0; 
 
-        document.addEventListener("DOMContentLoaded", () => {
+        function initDashboard() {
+            planData = [];
+            activeMonthsMap.clear();
+            monthsArray = [];
+
             const rawItems = document.querySelectorAll('.raw-data-item');
-            if (rawItems.length === 0) return;
+            if (rawItems.length === 0) {
+                const titleEl = document.getElementById('monthTitle');
+                if (titleEl) titleEl.innerText = "ไม่พบข้อมูลตาราง";
+                return;
+            }
 
             rawItems.forEach(item => {
                 let dYear = parseInt(item.dataset.year);
@@ -211,7 +206,8 @@
                     isToday: item.dataset.istoday === "true",
                     isExercise: item.dataset.isexercise === "true",
                     exName: item.dataset.exname,
-                    completed: item.dataset.completed === "true"
+                    completed: item.dataset.completed === "true",
+                    duration: parseInt(item.dataset.duration) || 0
                 });
 
                 let monthKey = `${dYear}-${dMonth}`;
@@ -226,9 +222,21 @@
             });
             
             if (monthsArray.length > 0) {
-                currentIndex = 0;
+                const today = new Date();
+                const tYear = today.getFullYear();
+                const tMonth = today.getMonth();
+
+                let targetIndex = monthsArray.findIndex(m => m.year === tYear && m.month === tMonth);
+                currentIndex = targetIndex !== -1 ? targetIndex : 0;
+
                 renderCalendar(monthsArray[currentIndex]);
             }
+        }
+
+        initDashboard();
+
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) initDashboard();
         });
 
         function renderCalendar(monthData) {
@@ -241,18 +249,24 @@
             const grid = document.getElementById('calendarDays');
             grid.innerHTML = "";
 
-            let firstDay = new Date(year, mIndex, 1).getDay(); 
-            let offset = firstDay === 0 ? 6 : firstDay - 1; 
-            let daysInMonth = new Date(year, mIndex + 1, 0).getDate();
+            let plansInThisMonth = planData.filter(p => p.monthIndex === mIndex && p.year === year);
+            if (plansInThisMonth.length === 0) return;
+
+            let minDay = Math.min(...plansInThisMonth.map(p => p.day));
+            let maxDay = Math.max(...plansInThisMonth.map(p => p.day));
+
+            let startViewDate = new Date(year, mIndex, minDay);
+            let firstDayOfWeek = startViewDate.getDay(); 
+            let offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; 
 
             for(let i=0; i<offset; i++) {
-                grid.innerHTML += `<div class="day-card empty-day d-none d-md-flex"></div>`;
+                grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
             }
 
             let todayObj = new Date();
             
-            for(let d=1; d<=daysInMonth; d++) {
-                let plan = planData.find(p => p.day === d && p.monthIndex === mIndex && p.year === year);
+            for(let d = minDay; d <= maxDay; d++) {
+                let plan = plansInThisMonth.find(p => p.day === d);
                 let isRealToday = (todayObj.getDate() === d && todayObj.getMonth() === mIndex && todayObj.getFullYear() === year);
 
                 if (plan) {
@@ -260,55 +274,50 @@
                     let badge = isRealToday ? '<div class="today-badge">วันนี้</div>' : '';
                     
                     let contentHtml = '';
+                    
+                    // ✅ 1. แยกหน้าตา วันออกกำลังกาย กับ วันพักผ่อน
                     if (plan.isExercise) {
-                        let compClass = plan.completed ? 'completed' : '';
-                        contentHtml = `
-                            <div class="text-center">
-                                <i class="bi bi-activity exercise-icon"></i>
-                                <div class="ex-name mt-1">${plan.exName}</div>
-                            </div>
-                            <div class="mt-2" style="z-index: 20;">
-                                <i class="bi bi-check-circle-fill check-btn ${compClass}" id="btn-${plan.id}"></i>
-                            </div>
-                        `;
+                        if (plan.completed) {
+                            contentHtml = `
+                                <div class="text-center">
+                                    <i class="bi bi-activity exercise-icon text-success"></i>
+                                    <div class="ex-name mt-1 text-success">${plan.exName}</div>
+                                </div>
+                                <div class="mt-2" style="z-index: 20;">
+                                    <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
+                                </div>
+                            `;
+                        } else {
+                            contentHtml = `
+                                <div class="text-center">
+                                    <i class="bi bi-person-walking text-primary" style="font-size: 1.5rem;"></i>
+                                    <div class="ex-name mt-1 text-primary" style="font-size: 0.75rem;">ต้องออกกำลังกาย</div>
+                                </div>
+                                <div style="height: 24px;"></div>
+                            `;
+                        }
                     } else {
+                        // หน้าตาวันพักผ่อน
                         contentHtml = `
                             <div class="text-center opacity-50">
-                                <i class="bi bi-cup-hot rest-icon"></i>
-                                <div class="ex-name mt-1">พัก</div>
+                                <i class="bi bi-cup-hot-fill text-secondary" style="font-size: 1.5rem;"></i>
+                                <div class="ex-name mt-1 text-secondary" style="font-size: 0.75rem;">วันพักผ่อน</div>
                             </div>
                             <div style="height: 24px;"></div>
                         `;
                     }
 
-                    grid.innerHTML += `
-                        <div class="day-card ${todayClass}">
-                            ${badge}
-                            <div class="date-number">${d}</div>
-                            ${contentHtml}
-                        </div>
-                    `;
+                    grid.innerHTML += `<div class="day-card ${todayClass}">${badge}<div class="date-number">${d}</div>${contentHtml}</div>`;
                 } else {
-                    let todayClass = isRealToday ? 'today-card' : 'empty-day d-none d-md-flex';
-                    let badge = isRealToday ? '<div class="today-badge" style="background:#6c757d;">วันนี้</div>' : '';
-                    
-                    grid.innerHTML += `
-                        <div class="day-card ${todayClass}">
-                            ${badge}
-                            <div class="date-number" style="opacity: 0.5;">${d}</div>
-                            <div class="text-center" style="opacity: 0.1;">
-                                <i class="bi bi-dash-lg" style="font-size:1.5rem;"></i>
-                            </div>
-                            <div style="height: 24px;"></div>
-                        </div>
-                    `;
+                    grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
                 }
             }
 
             document.getElementById('prevMonthBtn').disabled = (currentIndex === 0);
             document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
-
+            
             updateStartButton();
+            updateWeeklyProgress(); 
         }
 
         function changeMonth(step) {
@@ -328,29 +337,36 @@
             const tMonth = todayObj.getMonth();
             const tYear = todayObj.getFullYear();
 
-            const todayPlan = planData.find(p => 
-                p.day === tDay && 
-                p.monthIndex === tMonth && 
-                p.year === tYear && 
-                p.isExercise === true
-            );
+            // ✅ 2. หาว่าวันนี้มีแผนไหม (ไม่ว่าจะออกกำลังกายหรือพัก)
+            const todayPlan = planData.find(p => p.day === tDay && p.monthIndex === tMonth && p.year === tYear);
 
             if (todayPlan) {
-                container.innerHTML = `
-                    <a href="/user/start_exercise/${todayPlan.id}" class="btn w-100 py-3 fw-bold shadow-sm text-white" style="background-color: #335da1; border-radius: 12px; font-size: 1.2rem;">
-                        เริ่มการออกกำลังกายวันนี้
-                    </a>
-                `;
+                if (todayPlan.isExercise) {
+                    if (todayPlan.completed) {
+                        container.innerHTML = `
+                            <button class="btn btn-success w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem;">
+                                <i class="bi bi-check-circle-fill me-2"></i> วันนี้คุณออกกำลังกายแล้ว ยอดเยี่ยมมาก!
+                            </button>
+                        `;
+                    } else {
+                        container.innerHTML = `
+                            <a href="/user/start_exercise/${todayPlan.id}" class="btn w-100 py-3 fw-bold shadow-sm text-white" style="background-color: #335da1; border-radius: 12px; font-size: 1.2rem;">
+                                เริ่มการออกกำลังกายวันนี้
+                            </a>
+                        `;
+                    }
+                } else {
+                    // ✅ 3. ถ้าเป็นวันพักผ่อน ให้ล็อคปุ่มเป็นสีเทา กดเริ่มไม่ได้
+                    container.innerHTML = `
+                        <button class="btn btn-secondary w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem; background-color: #6c757d;">
+                            <i class="bi bi-cup-hot-fill me-2"></i> วันนี้เป็นวันพักผ่อน (ไม่ต้องออกกำลังกาย)
+                        </button>
+                    `;
+                }
             } else {
-                container.innerHTML = `
-                    <button class="btn btn-secondary w-100 py-3 fw-bold opacity-50" disabled style="border-radius: 12px;">
-                        วันนี้ไม่มีตารางออกกำลังกาย
-                    </button>
-                `;
+                container.innerHTML = `<button class="btn btn-secondary w-100 py-3 fw-bold opacity-50" disabled style="border-radius: 12px;">วันนี้ไม่มีตาราง</button>`;
             }
         }
-
-        // ✅ ลบ function toggleStatus() ออกไปแล้ว เพื่อให้ไม่สามารถแก้ไขจากหน้านี้ได้
 
         function confirmClearPlan() {
             Swal.fire({
@@ -364,22 +380,46 @@
                 cancelButtonText: 'ยกเลิก'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'กำลังล้างข้อมูล...',
-                        text: 'กรุณารอสักครู่',
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        willOpen: () => { Swal.showLoading(); }
-                    });
-
+                    Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, willOpen: () => { Swal.showLoading(); } });
                     fetch('/user/reset_plan', { method: 'POST' })
                     .then(response => {
                         if(response.ok) { window.location.reload(); } 
                         else { Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการล้างแผน', 'error'); }
-                    })
-                    .catch(err => { Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); });
+                    }).catch(err => { Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); });
                 }
             });
+        }
+
+        function updateWeeklyProgress() {
+            const today = new Date();
+            const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay(); 
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - dayOfWeek + 1);
+            monday.setHours(0,0,0,0);
+            
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            sunday.setHours(23,59,59,999);
+
+            let totalMinutes = 0;
+            planData.forEach(p => {
+                let planDate = new Date(p.year, p.monthIndex, p.day);
+                if (planDate >= monday && planDate <= sunday && p.completed) {
+                    totalMinutes += p.duration;
+                }
+            });
+
+            const target = 150;
+            let percent = (totalMinutes / target) * 100;
+            if (percent > 100) percent = 100;
+
+            document.querySelector('.progress-bar').style.width = percent + '%';
+            document.querySelector('.text-primary').innerText = `${totalMinutes} / ${target} นาที`;
+            
+            if(percent >= 100) {
+                document.querySelector('.progress-bar').classList.replace('bg-primary', 'bg-success');
+                document.querySelector('.text-primary').classList.replace('text-primary', 'text-success');
+            }
         }
     </script>
 </body>

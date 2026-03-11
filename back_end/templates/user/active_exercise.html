@@ -16,14 +16,13 @@
             min-height: 100vh;
         }
         
-        /* กล่องเนื้อหาหลัก ให้อยู่ตรงกลางจอ (ทำงานร่วมกับ Navbar ได้) */
         .timer-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 40px 20px;
-            min-height: calc(100vh - 80px); /* ลบความสูง navbar ออก */
+            min-height: calc(100vh - 80px); 
         }
 
         .exercise-title {
@@ -75,7 +74,7 @@
             <div class="progress-container">
                 <div class="progress-label">
                     <span id="progressText">ความคืบหน้า: 0%</span>
-                    <span id="goalText"><i class="bi bi-flag-fill"></i> เป้าหมาย: 30 นาที</span>
+                    <span id="goalText"><i class="bi bi-flag-fill"></i> เป้าหมาย: {{ target_minutes }} นาที</span>
                 </div>
                 <div class="progress">
                     <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width: 0%"></div>
@@ -100,8 +99,9 @@
         let paused = false;
         let savedTime = 0;
 
-        // เป้าหมาย 30 นาที (1800 วินาที)
-        const targetSeconds = 1800; 
+        // ✅ รับค่าเป้าหมายจาก Python และแปลงเป็นวินาที
+        const targetMinutes = parseInt("{{ target_minutes }}") || 30;
+        const targetSeconds = targetMinutes * 60; 
 
         window.onload = function() {
             startTime = new Date().getTime();
@@ -182,7 +182,7 @@
             }
         }
 
-function finishExercise() {
+        function finishExercise() {
             clearInterval(tInterval);
             
             // คำนวณเวลาที่ทำได้จริงเป็นนาที
@@ -198,7 +198,6 @@ function finishExercise() {
                 fetch('/user/update_day_status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // ✅ เพิ่ม duration เข้าไปเพื่อส่งไปให้ Python
                     body: JSON.stringify({ 
                         day_id: "{{ day_id }}", 
                         completed: true, 

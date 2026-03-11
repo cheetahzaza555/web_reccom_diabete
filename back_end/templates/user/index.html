@@ -64,6 +64,7 @@
         .exercise-icon { font-size: 1.5rem; color: #198754; }
         .ex-name { font-size: 0.85rem; font-weight: 600; text-align: center; line-height: 1.2; }
 
+        /* ไม่ให้เคอร์เซอร์เป็นรูปนิ้วมือเวลาชี้ที่ติ๊กถูก */
         .check-btn { font-size: 1.5rem; color: #e9ecef; cursor: default; }
         .check-btn.completed { color: #198754; }
         
@@ -154,7 +155,7 @@
                      data-isexercise="{{ 'true' if day.is_exercise_day else 'false' }}"
                      data-exname="{{ day.exercise_name }}"
                      data-completed="{{ 'true' if day.completed else 'false' }}"
-                     data-duration="{{ day.duration_minutes }}"> </div>
+                     data-duration="{{ day.duration_minutes }}"></div>
                 {% endfor %}
             </div>
 
@@ -171,7 +172,7 @@
 
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -181,9 +182,17 @@
         let monthsArray = []; 
         let currentIndex = 0; 
 
-        document.addEventListener("DOMContentLoaded", () => {
+        function initDashboard() {
+            planData = [];
+            activeMonthsMap.clear();
+            monthsArray = [];
+
             const rawItems = document.querySelectorAll('.raw-data-item');
-            if (rawItems.length === 0) return;
+            if (rawItems.length === 0) {
+                const titleEl = document.getElementById('monthTitle');
+                if (titleEl) titleEl.innerText = "ไม่พบข้อมูลตาราง";
+                return;
+            }
 
             rawItems.forEach(item => {
                 let dYear = parseInt(item.dataset.year);
@@ -213,9 +222,21 @@
             });
             
             if (monthsArray.length > 0) {
-                currentIndex = 0;
+                const today = new Date();
+                const tYear = today.getFullYear();
+                const tMonth = today.getMonth();
+
+                let targetIndex = monthsArray.findIndex(m => m.year === tYear && m.month === tMonth);
+                currentIndex = targetIndex !== -1 ? targetIndex : 0;
+
                 renderCalendar(monthsArray[currentIndex]);
             }
+        }
+
+        initDashboard();
+
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) initDashboard();
         });
 
         function renderCalendar(monthData) {
@@ -228,27 +249,22 @@
             const grid = document.getElementById('calendarDays');
             grid.innerHTML = "";
 
-            // ✅ 1. กรองหาแผนเฉพาะเดือนที่กำลังดูอยู่
             let plansInThisMonth = planData.filter(p => p.monthIndex === mIndex && p.year === year);
             if (plansInThisMonth.length === 0) return;
 
-            // ✅ 2. หา "วันแรก" และ "วันสุดท้าย" ของแผนในเดือนนี้
             let minDay = Math.min(...plansInThisMonth.map(p => p.day));
             let maxDay = Math.max(...plansInThisMonth.map(p => p.day));
 
-            // ✅ 3. คำนวณหาวันในสัปดาห์ของ "วันแรกที่เริ่มแผน" (เพื่อจัดคอลัมน์ให้ตรง จ.-อา.)
             let startViewDate = new Date(year, mIndex, minDay);
-            let firstDayOfWeek = startViewDate.getDay(); // 0 = วันอาทิตย์
-            let offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // ขยับให้จันทร์เป็นช่อง 0
+            let firstDayOfWeek = startViewDate.getDay(); 
+            let offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; 
 
-            // 4. เติมช่องว่างเฉพาะ "สัปดาห์ที่เริ่มแผน" เพื่อให้ตรงคอลัมน์
             for(let i=0; i<offset; i++) {
                 grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
             }
 
             let todayObj = new Date();
             
-            // ✅ 5. วาดการ์ดเฉพาะช่วงวันที่อยู่ในแผนเท่านั้น (ไม่วาดตั้งแต่วันที่ 1 แล้ว)
             for(let d = minDay; d <= maxDay; d++) {
                 let plan = plansInThisMonth.find(p => p.day === d);
                 let isRealToday = (todayObj.getDate() === d && todayObj.getMonth() === mIndex && todayObj.getFullYear() === year);
@@ -258,21 +274,34 @@
                     let badge = isRealToday ? '<div class="today-badge">วันนี้</div>' : '';
                     
                     let contentHtml = '';
-                    if (plan.completed) {
-                        contentHtml = `
-                            <div class="text-center">
-                                <i class="bi bi-activity exercise-icon text-success"></i>
-                                <div class="ex-name mt-1 text-success">${plan.exName}</div>
-                            </div>
-                            <div class="mt-2" style="z-index: 20;">
-                                <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
-                            </div>
-                        `;
+                    
+                    // ✅ 1. แยกหน้าตา วันออกกำลังกาย กับ วันพักผ่อน
+                    if (plan.isExercise) {
+                        if (plan.completed) {
+                            contentHtml = `
+                                <div class="text-center">
+                                    <i class="bi bi-activity exercise-icon text-success"></i>
+                                    <div class="ex-name mt-1 text-success">${plan.exName}</div>
+                                </div>
+                                <div class="mt-2" style="z-index: 20;">
+                                    <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
+                                </div>
+                            `;
+                        } else {
+                            contentHtml = `
+                                <div class="text-center">
+                                    <i class="bi bi-person-walking text-primary" style="font-size: 1.5rem;"></i>
+                                    <div class="ex-name mt-1 text-primary" style="font-size: 0.75rem;">ต้องออกกำลังกาย</div>
+                                </div>
+                                <div style="height: 24px;"></div>
+                            `;
+                        }
                     } else {
+                        // หน้าตาวันพักผ่อน
                         contentHtml = `
-                            <div class="text-center opacity-25">
-                                <i class="bi bi-circle text-secondary" style="font-size: 1.5rem;"></i>
-                                <div class="ex-name mt-1 text-secondary" style="font-size: 0.75rem;">รอดำเนินการ</div>
+                            <div class="text-center opacity-50">
+                                <i class="bi bi-cup-hot-fill text-secondary" style="font-size: 1.5rem;"></i>
+                                <div class="ex-name mt-1 text-secondary" style="font-size: 0.75rem;">วันพักผ่อน</div>
                             </div>
                             <div style="height: 24px;"></div>
                         `;
@@ -288,7 +317,7 @@
             document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
             
             updateStartButton();
-            updateWeeklyProgress(); // อย่าลืมใส่บรรทัดนี้ไว้เพื่ออัปเดตหลอด 150 นาที
+            updateWeeklyProgress(); 
         }
 
         function changeMonth(step) {
@@ -308,26 +337,34 @@
             const tMonth = todayObj.getMonth();
             const tYear = todayObj.getFullYear();
 
-            const todayPlan = planData.find(p => p.day === tDay && p.monthIndex === tMonth && p.year === tYear && p.isExercise === true);
+            // ✅ 2. หาว่าวันนี้มีแผนไหม (ไม่ว่าจะออกกำลังกายหรือพัก)
+            const todayPlan = planData.find(p => p.day === tDay && p.monthIndex === tMonth && p.year === tYear);
 
             if (todayPlan) {
-                if (todayPlan.completed) {
-                    // ถ้าทำเสร็จแล้ว เปลี่ยนปุ่มเป็นสีเขียว
-                    container.innerHTML = `
-                        <button class="btn btn-success w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem;">
-                            <i class="bi bi-check-circle-fill me-2"></i> วันนี้คุณออกกำลังกายแล้ว ยอดเยี่ยมมาก!
-                        </button>
-                    `;
+                if (todayPlan.isExercise) {
+                    if (todayPlan.completed) {
+                        container.innerHTML = `
+                            <button class="btn btn-success w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem;">
+                                <i class="bi bi-check-circle-fill me-2"></i> วันนี้คุณออกกำลังกายแล้ว ยอดเยี่ยมมาก!
+                            </button>
+                        `;
+                    } else {
+                        container.innerHTML = `
+                            <a href="/user/start_exercise/${todayPlan.id}" class="btn w-100 py-3 fw-bold shadow-sm text-white" style="background-color: #335da1; border-radius: 12px; font-size: 1.2rem;">
+                                เริ่มการออกกำลังกายวันนี้
+                            </a>
+                        `;
+                    }
                 } else {
-                    // ถ้ายังไม่ทำ ให้เป็นปุ่มสีน้ำเงิน
+                    // ✅ 3. ถ้าเป็นวันพักผ่อน ให้ล็อคปุ่มเป็นสีเทา กดเริ่มไม่ได้
                     container.innerHTML = `
-                        <a href="/user/start_exercise/${todayPlan.id}" class="btn w-100 py-3 fw-bold shadow-sm text-white" style="background-color: #335da1; border-radius: 12px; font-size: 1.2rem;">
-                            เริ่มการออกกำลังกายวันนี้
-                        </a>
+                        <button class="btn btn-secondary w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem; background-color: #6c757d;">
+                            <i class="bi bi-cup-hot-fill me-2"></i> วันนี้เป็นวันพักผ่อน (ไม่ต้องออกกำลังกาย)
+                        </button>
                     `;
                 }
             } else {
-                container.innerHTML = `<button class="btn btn-secondary w-100 py-3 fw-bold opacity-50" disabled style="border-radius: 12px;">วันนี้ไม่มีตารางออกกำลังกาย</button>`;
+                container.innerHTML = `<button class="btn btn-secondary w-100 py-3 fw-bold opacity-50" disabled style="border-radius: 12px;">วันนี้ไม่มีตาราง</button>`;
             }
         }
 
@@ -343,19 +380,12 @@
                 cancelButtonText: 'ยกเลิก'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'กำลังล้างข้อมูล...',
-                        text: 'กรุณารอสักครู่',
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        willOpen: () => { Swal.showLoading(); }
-                    });
+                    Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, willOpen: () => { Swal.showLoading(); } });
                     fetch('/user/reset_plan', { method: 'POST' })
                     .then(response => {
                         if(response.ok) { window.location.reload(); } 
                         else { Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการล้างแผน', 'error'); }
-                    })
-                    .catch(err => { Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); });
+                    }).catch(err => { Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); });
                 }
             });
         }

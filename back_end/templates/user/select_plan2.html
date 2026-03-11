@@ -31,6 +31,37 @@
             border-radius: 12px; display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem; margin-bottom: 10px;
         }
+        
+        /* สไตล์สำหรับปฏิทินเลือกวัน */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .weekday-header {
+            text-align: center; font-weight: bold; color: #6c757d;
+            padding: 8px 0; background: #e9ecef; border-radius: 8px; font-size: 0.9rem;
+        }
+        .day-card {
+            background: white; border-radius: 8px; border: 2px solid #dee2e6;
+            min-height: 80px; padding: 10px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; cursor: pointer;
+            transition: all 0.2s; position: relative;
+        }
+        .day-card:hover:not(.disabled) { border-color: #20c997; background-color: #f8f9fa; }
+        .day-card.selected { border-color: #198754; background-color: #e8f5e9; }
+        .day-card.disabled { background-color: #f1f3f5; color: #adb5bd; cursor: not-allowed; opacity: 0.6; }
+        
+        .date-num { font-size: 1.2rem; font-weight: bold; }
+        .check-icon { display: none; font-size: 1.2rem; color: #198754; position: absolute; top: 2px; right: 5px; }
+        .day-card.selected .check-icon { display: block; }
+
+        @media (max-width: 768px) {
+            .day-card { min-height: 60px; padding: 5px; }
+            .date-num { font-size: 1rem; }
+            .weekday-header { font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -40,11 +71,11 @@
     <div class="header-section text-center">
         <div class="container">
             <h1 class="fw-bold">📅 กำหนดตารางเวลา</h1>
-            <p class="lead mb-0">ยืนยันกิจกรรมและเลือกวันเริ่มต้น</p>
+            <p class="lead mb-0">เลือกวันที่คุณต้องการออกกำลังกายบนปฏิทิน</p>
         </div>
     </div>
 
-    <div class="container pb-5" style="max-width: 800px;">
+    <div class="container pb-5" style="max-width: 900px;">
         
         {% if plan %}
         <div class="card info-card mb-4">
@@ -83,13 +114,22 @@
                     <div class="col-12">
                         <div class="highlight-box">
                             <div class="row text-center">
-                                <div class="col-md-6 mb-3 mb-md-0 border-end">
-                                    <div class="info-label text-success">🎯 เป้าหมายรายสัปดาห์</div>
-                                    <div class="info-value">150 นาที / สัปดาห์</div>
+                                <div class="col-md-4 mb-3 mb-md-0 border-end">
+                                    <div class="info-label text-success">🎯 เป้าหมายรวม 30 วัน</div>
+                                    <div class="info-value">600 นาที</div>
+                                    <div class="small text-muted">(เฉลี่ย 150 นาที/สัปดาห์)</div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="info-label text-success">⏱️ ระยะเวลาที่แนะนำ</div>
-                                    <div class="info-value">30 นาที / ครั้ง</div>
+                                <div class="col-md-4 mb-3 mb-md-0 border-end">
+                                    <div class="info-label text-primary">📅 จำนวนวันที่เลือก</div>
+                                    <div class="info-value">
+                                        <span id="totalDaysDisplay" class="fs-4 fw-bold text-primary">0</span> วัน
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-label text-success">⏱️ เป้าหมายรายครั้ง</div>
+                                    <div class="info-value">
+                                        <span id="dailyTargetDisplay" class="text-success fs-3 fw-bold">0</span> นาที / ครั้ง
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -104,24 +144,48 @@
                     <input type="hidden" name="patient_id" value="{{ patient_id }}">
                     <input type="hidden" name="exercise_id" value="{{ plan.id }}">
                     <input type="hidden" name="exercise_name" value="{{ plan.name }}">
+                    <input type="hidden" name="daily_target_minutes" id="dailyTargetInput" value="0">
+                    
+                    <div class="mb-4">
+                        <h5 class="fw-bold mb-3 text-dark border-start border-5 border-success ps-3">
+                            เลือกวันออกกำลังกายของคุณ
+                        </h5>
+                        <div class="alert alert-info py-2 small mb-3">
+                            <ul class="mb-0 ps-3">
+                                <li>ระยะเวลาของแผนคือ <strong>30 วัน</strong> นับจากวันนี้</li>
+                                <li>เลือกออกกำลังกายได้สูงสุด <strong>5 วัน ต่อสัปดาห์</strong> เพื่อให้ร่างกายได้พักฟื้น</li>
+                            </ul>
+                        </div>
 
-                    <div>
-                        <h5 class="fw-bold mb-3 text-dark border-start border-5 border-success ps-3">เลือกวันเริ่มต้นของคุณ</h5>
-                        <div class="alert alert-info py-2 small">
-                            <i class="bi bi-info-circle-fill me-1"></i> ระบบจะสร้างแผนออกกำลังกายให้คุณอัตโนมัติ โดยมีเป้าหมายคือสะสมเวลาให้ครบ 150 นาทีต่อสัปดาห์
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label fw-bold">คุณต้องการเริ่มฝึกวันไหน?</label>
-                                <input type="date" class="form-control form-control-lg w-100" id="startDateInput" name="start_date" required>
-                            </div>
-                        </div>
-                        <div class="mt-4 text-end">
-                            <a href="/user/select_plan/{{ patient_id }}" class="btn btn-secondary me-2 px-4 py-2">ย้อนกลับ</a>
-                            <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm">
-                                ยืนยันสร้างตาราง <i class="bi bi-check-circle-fill ms-1"></i>
+                        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-3 mb-2 border">
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-bold" id="prevMonthBtn">
+                                <i class="bi bi-chevron-left"></i> ก่อนหน้า
+                            </button>
+                            <span class="fs-5 fw-bold text-primary" id="monthYearTitle">เดือน...</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-bold" id="nextMonthBtn">
+                                ถัดไป <i class="bi bi-chevron-right"></i>
                             </button>
                         </div>
+
+                        <div class="calendar-grid">
+                            <div class="weekday-header">จ.</div>
+                            <div class="weekday-header">อ.</div>
+                            <div class="weekday-header">พ.</div>
+                            <div class="weekday-header">พฤ.</div>
+                            <div class="weekday-header">ศ.</div>
+                            <div class="weekday-header">ส.</div>
+                            <div class="weekday-header text-danger">อา.</div>
+                        </div>
+                        <div class="calendar-grid" id="interactiveCalendar"></div>
+                    </div>
+
+                    <div id="hiddenInputsContainer"></div>
+
+                    <div class="mt-4 text-end border-top pt-4">
+                        <a href="/user/select_plan/{{ patient_id }}" class="btn btn-secondary me-2 px-4 py-2">ย้อนกลับ</a>
+                        <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm" id="submitBtn" disabled>
+                            ยืนยันสร้างตาราง 30 วัน <i class="bi bi-check-circle-fill ms-1"></i>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -141,32 +205,182 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // กำหนดให้วันที่เลือกได้อย่างน้อยต้องเป็น "วันนี้"
         document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('startDateInput').setAttribute('min', today);
-        });
-
-        // แจ้งเตือนตอนกด submit
-        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+            const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
             
-            const startDateVal = document.getElementById('startDateInput').value;
-            if (!startDateVal) {
-                Swal.fire('แจ้งเตือน', 'กรุณาเลือกวันที่เริ่มฝึกก่อน', 'warning');
-                return;
+            const calendarEl = document.getElementById('interactiveCalendar');
+            const hiddenInputsContainer = document.getElementById('hiddenInputsContainer');
+            const totalDaysDisplay = document.getElementById('totalDaysDisplay');
+            const dailyTargetDisplay = document.getElementById('dailyTargetDisplay');
+            const dailyTargetInput = document.getElementById('dailyTargetInput');
+            const submitBtn = document.getElementById('submitBtn');
+            const monthYearTitle = document.getElementById('monthYearTitle');
+
+            const targetMonthlyMinutes = 600; 
+            let selectedDates = new Set();
+
+            // กำหนดกรอบเวลา 30 วัน
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const planEndDate = new Date(today);
+            planEndDate.setDate(today.getDate() + 29); // นับรวมวันนี้ เป็น 30 วันพอดี
+
+            let viewYear = today.getFullYear();
+            let viewMonth = today.getMonth();
+
+            function renderCalendar() {
+                monthYearTitle.innerText = `${thaiMonths[viewMonth]} ${viewYear > 2500 ? viewYear : viewYear + 543}`;
+
+                const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
+                const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+                
+                let offset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+
+                calendarEl.innerHTML = '';
+                for (let i = 0; i < offset; i++) {
+                    calendarEl.innerHTML += `<div class="day-card border-0 bg-transparent"></div>`;
+                }
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    let cellDate = new Date(viewYear, viewMonth, d);
+                    cellDate.setHours(0,0,0,0);
+                    
+                    let dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    
+                    // ปิดการใช้งานวันที่ผ่านมาแล้ว หรือวันที่เลยกำหนด 30 วันไปแล้ว
+                    if (cellDate < today || cellDate > planEndDate) {
+                        calendarEl.innerHTML += `
+                            <div class="day-card disabled">
+                                <span class="date-num">${d}</span>
+                            </div>
+                        `;
+                    } else {
+                        let isSelected = selectedDates.has(dateString) ? 'selected' : '';
+                        calendarEl.innerHTML += `
+                            <div class="day-card selectable ${isSelected}" data-date="${dateString}">
+                                <i class="bi bi-check-circle-fill check-icon"></i>
+                                <span class="date-num">${d}</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                bindClickEvents();
+                checkNavigationButtons();
             }
 
-            Swal.fire({
-                title: 'กำลังสร้างตารางเป้าหมาย 150 นาที...',
-                text: 'กรุณารอสักครู่',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
+            function checkNavigationButtons() {
+                // ซ่อน/แสดง ปุ่มย้อนกลับเดือน (ไม่ให้ย้อนไปเดือนก่อนหน้าวันนี้)
+                let startMonthObj = new Date(today.getFullYear(), today.getMonth(), 1);
+                let currentViewObj = new Date(viewYear, viewMonth, 1);
+                document.getElementById('prevMonthBtn').disabled = currentViewObj <= startMonthObj;
+
+                // ซ่อน/แสดง ปุ่มไปเดือนถัดไป (ไม่ให้เกินเดือนของวันสุดท้ายแผน)
+                let endMonthObj = new Date(planEndDate.getFullYear(), planEndDate.getMonth(), 1);
+                document.getElementById('nextMonthBtn').disabled = currentViewObj >= endMonthObj;
+            }
+
+            // ปุ่มเปลี่ยนเดือน
+            document.getElementById('prevMonthBtn').addEventListener('click', () => {
+                viewMonth--;
+                if(viewMonth < 0) { viewMonth = 11; viewYear--; }
+                renderCalendar();
             });
 
-            setTimeout(() => {
-                this.submit();
-            }, 800);
+            document.getElementById('nextMonthBtn').addEventListener('click', () => {
+                viewMonth++;
+                if(viewMonth > 11) { viewMonth = 0; viewYear++; }
+                renderCalendar();
+            });
+
+            // ฟังก์ชันเช็คจำนวนวันที่เลือกในสัปดาห์นั้น (จ.-อา.)
+            function getSelectedCountInWeek(dateStr) {
+                const targetDate = new Date(dateStr);
+                const dayOfWeek = targetDate.getDay() === 0 ? 7 : targetDate.getDay();
+                
+                // หาวันจันทร์ของสัปดาห์นั้น
+                const monday = new Date(targetDate);
+                monday.setDate(targetDate.getDate() - dayOfWeek + 1);
+                monday.setHours(0,0,0,0);
+
+                // หาวันอาทิตย์ของสัปดาห์นั้น
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                sunday.setHours(23,59,59,999);
+
+                let count = 0;
+                selectedDates.forEach(d => {
+                    const checkDate = new Date(d);
+                    if (checkDate >= monday && checkDate <= sunday) count++;
+                });
+                return count;
+            }
+
+            function bindClickEvents() {
+                const selectableCards = document.querySelectorAll('.day-card.selectable');
+                selectableCards.forEach(card => {
+                    card.addEventListener('click', function() {
+                        let dateStr = this.getAttribute('data-date');
+                        
+                        if (this.classList.contains('selected')) {
+                            this.classList.remove('selected');
+                            selectedDates.delete(dateStr);
+                        } else {
+                            // เช็คก่อนว่าในสัปดาห์นั้นเลือกไปกี่วันแล้ว
+                            if (getSelectedCountInWeek(dateStr) >= 5) {
+                                Swal.fire({
+                                    title: 'เตือน!',
+                                    text: 'คุณสามารถเลือกออกกำลังกายได้สูงสุด 5 วันต่อสัปดาห์ เพื่อให้ร่างกายได้พักฟื้นครับ',
+                                    icon: 'warning',
+                                    confirmButtonColor: '#198754'
+                                });
+                                return;
+                            }
+                            this.classList.add('selected');
+                            selectedDates.add(dateStr);
+                        }
+                        updateCalculation();
+                    });
+                });
+            }
+
+            function updateCalculation() {
+                let count = selectedDates.size;
+                totalDaysDisplay.innerText = count;
+                hiddenInputsContainer.innerHTML = '';
+                
+                if (count === 0) {
+                    dailyTargetDisplay.innerText = "0";
+                    dailyTargetInput.value = "0";
+                    submitBtn.disabled = true;
+                } else {
+                    let dailyTarget = Math.ceil(targetMonthlyMinutes / count);
+                    dailyTargetDisplay.innerText = dailyTarget;
+                    dailyTargetInput.value = dailyTarget;
+                    submitBtn.disabled = false;
+
+                    selectedDates.forEach(date => {
+                        hiddenInputsContainer.innerHTML += `<input type="hidden" name="exact_dates" value="${date}">`;
+                    });
+                }
+            }
+
+            document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (selectedDates.size === 0) return;
+
+                Swal.fire({
+                    title: 'กำลังสร้างตารางเฉพาะบุคคล...',
+                    text: 'กรุณารอสักครู่',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                setTimeout(() => { this.submit(); }, 800);
+            });
+
+            // โหลดปฏิทินครั้งแรก
+            renderCalendar();
         });
     </script>
 </body>

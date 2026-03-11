@@ -4,6 +4,7 @@ from flask import Blueprint, json, render_template, jsonify, request, session, r
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
 from modules.database import get_exercise_details_by_id, get_exercise_by_id
+import calendar
 
 user_bp = Blueprint('user', __name__)
 
@@ -182,15 +183,19 @@ def save_schedule():
     username = session['username']
     patient_id = request.form.get('patient_id')
     exercise_name = request.form.get('exercise_name')
-    start_date_str = request.form.get('start_date') 
+    
+    # 1. รับค่าวันที่จิ้มในปฏิทิน
+    exact_dates_str = request.form.getlist('exact_dates')
+    if not exact_dates_str:
+        return "Missing selected dates", 400
 
-    if not start_date_str:
-        return "Missing start date", 400
-
-    try:
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-    except ValueError:
-        return "Error parsing start date", 400
+    exact_dates = [datetime.strptime(d, '%Y-%m-%d').date() for d in exact_dates_str]
+    
+    # 2. วันที่เริ่มตาราง คือ "วันนี้" เสมอ ตามที่ UI กำหนดกรอบ 30 วัน
+    start_date = datetime.today().date()
+    
+    daily_target = request.form.get('daily_target_minutes')
+    daily_target_minutes = int(daily_target) if daily_target else 30
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -207,9 +212,11 @@ def save_schedule():
         current_year = None
         current_week_plan_id = None
         
+        # ✅ 3. บังคับลูป 30 วัน (เพื่อครอบคลุม 1 เดือน ข้ามเดือนได้สบาย)
         for i in range(30):
             current_date = start_date + timedelta(days=i)
             
+            # เช็คและสร้าง monthly_plan หากเปลี่ยนเดือน
             if current_date.month != current_month or current_date.year != current_year:
                 current_month = current_date.month
                 current_year = current_date.year
@@ -220,6 +227,7 @@ def save_schedule():
                 """, (user_id, current_month, current_year))
                 current_month_plan_id = cur.fetchone()[0]
             
+            # เช็คและสร้าง weekly_plan (ทำทุกๆ 7 วัน)
             if i % 7 == 0:
                 cur.execute("""
                     INSERT INTO weekly_plan (monthly_plan_id, start_date) 
@@ -227,23 +235,26 @@ def save_schedule():
                 """, (current_month_plan_id, current_date))
                 current_week_plan_id = cur.fetchone()[0]
 
-            # --- จัดการตารางรายวัน (days_plan) ---
-            # ✅ ปลดล็อกให้ทุกวันเป็น True (สามารถออกกำลังกายได้ทุกวัน)
-            is_exercise = True 
+            # ✅ 4. เช็คว่าวันที่กำลังเซฟ ตรงกับวันที่ผู้ใช้จิ้มเลือกไว้หรือไม่
+            is_exercise = current_date in exact_dates 
             
+            day_exercise_name = exercise_name if is_exercise else None
+            day_target_minutes = daily_target_minutes if is_exercise else 0
+            
+            # บันทึกข้อมูล
             cur.execute("""
-                INSERT INTO days_plan (weekly_plan, day_of_week, is_exercise_day, exercise_name, completed) 
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO days_plan (weekly_plan, day_of_week, is_exercise_day, exercise_name, completed, target_minutes) 
+                VALUES (%s, %s, %s, %s, %s, %s)
             """, (
                 current_week_plan_id, 
                 i % 7, 
                 is_exercise, 
-                exercise_name, # ใส่ชื่อท่าไปในทุกๆ วันเลย
-                False 
+                day_exercise_name, 
+                False,
+                day_target_minutes 
             ))
 
         conn.commit()
-        # ✅ แก้ไขตรงนี้ให้ตรงกับชื่อ Blueprint ของคุณ
         return redirect(url_for('user.dashboard_page'))
 
     except Exception as e:
@@ -343,26 +354,29 @@ def start_exercise(day_id):
     cur = conn.cursor()
     
     try:
-        # ดึงข้อมูลท่าออกกำลังกาย จาก ID ของวันที่กด
-        cur.execute("SELECT exercise_name, completed FROM days_plan WHERE id = %s", (day_id,))
+        # ✅ 1. เพิ่ม target_minutes เข้าไปในคำสั่ง SQL
+        cur.execute("SELECT exercise_name, completed, target_minutes FROM days_plan WHERE id = %s", (day_id,))
         row = cur.fetchone()
         
         if row:
             exercise_name = row[0]
             is_completed = row[1]
+            # ✅ 2. ดึงเวลาเป้าหมายออกมา (ถ้าดึงมาแล้วเป็น None ให้ตั้งค่าเริ่มต้นเป็น 30 กันเหนียวไว้)
+            target_minutes = row[2] if row[2] else 30
             
-            # ✅ แก้ไขชื่อไฟล์ให้ตรงกัน
+            # ✅ 3. ส่ง target_minutes ไปให้หน้า HTML ด้วย
             return render_template('user/start_exercise.html', 
                                    exercise_name=exercise_name,
                                    day_id=day_id,
-                                   is_completed=is_completed)
+                                   is_completed=is_completed,
+                                   target_minutes=target_minutes)
         else:
             print("ไม่พบข้อมูลตารางออกกำลังกาย")
-            return redirect(url_for('user_bp.dashboard_page'))
+            return redirect(url_for('user.dashboard_page'))
             
     except Exception as e:
         print(f"Error loading start exercise: {e}")
-        return redirect(url_for('user_bp.dashboard_page'))
+        return redirect(url_for('user.dashboard_page'))
         
     finally:
         cur.close()
@@ -377,22 +391,26 @@ def active_exercise(day_id):
     cur = conn.cursor()
     
     try:
-        # ดึงชื่อท่าออกกำลังกายมาแสดงในหน้าจับเวลา
-        cur.execute("SELECT exercise_name FROM days_plan WHERE id = %s", (day_id,))
+        # ✅ 1. เพิ่มการดึง target_minutes จากฐานข้อมูล
+        cur.execute("SELECT exercise_name, target_minutes FROM days_plan WHERE id = %s", (day_id,))
         row = cur.fetchone()
         
         if row:
             exercise_name = row[0]
-            # ส่ง exercise_name และ day_id ไปยังหน้า active_exercise.html
+            # ✅ 2. ดึงเวลาออกมา (ถ้าไม่มีให้ตั้งเป็น 30 ไว้ก่อน)
+            target_minutes = row[1] if row[1] else 30
+            
+            # ✅ 3. ส่ง target_minutes ไปให้หน้า HTML
             return render_template('user/active_exercise.html', 
-                                   exercise_name=exercise_name, 
-                                   day_id=day_id)
+                                   day_id=day_id, 
+                                   exercise_name=exercise_name,
+                                   target_minutes=target_minutes)
         else:
-            return redirect(url_for('user_bp.dashboard_page'))
+            return redirect(url_for('user.dashboard_page'))
             
     except Exception as e:
         print(f"Error loading active exercise: {e}")
-        return redirect(url_for('user_bp.dashboard_page'))
+        return redirect(url_for('user.dashboard_page'))
         
     finally:
         cur.close()

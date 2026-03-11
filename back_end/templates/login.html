@@ -116,7 +116,7 @@
                 }
 
                 localStorage.setItem("token", data.token);
-                window.location.href = "/"; // สำเร็จ! ไปหน้าแรก
+                window.location.href = "/user/dashboard"; // สำเร็จ! ไปหน้าแรก
 
             } catch (err) {
                 errorDiv.innerText = err.message || "เชื่อมต่อ server ไม่ได้";

@@ -4,6 +4,7 @@ from flask import Blueprint, json, render_template, jsonify, request, session, r
 from modules.logic import process_patient_realtime
 from modules.database import save_raw_patient_data, get_all_recommendations , get_patient_latest_record, get_all_exercises_for_library
 from modules.database import get_exercise_details_by_id, get_exercise_by_id
+import calendar
 
 user_bp = Blueprint('user', __name__)
 
@@ -31,7 +32,7 @@ def dashboard_page():
     }
 
     try:
-        # ✅ แก้ไข SQL Query: ลบเงื่อนไข m.month และ m.year ออก เพื่อดึงข้อมูลแผนทั้งหมด
+        # ✅ 1. เพิ่ม d.duration_minutes เข้าไปใน SQL
         sql_query = """
             SELECT 
                 d.id, 
@@ -39,6 +40,7 @@ def dashboard_page():
                 d.is_exercise_day, 
                 d.exercise_name, 
                 d.completed,
+                d.duration_minutes, 
                 w.start_date
             FROM days_plan d
             JOIN weekly_plan w ON d.weekly_plan = w.id
@@ -53,14 +55,11 @@ def dashboard_page():
         
         if rows:
             for r in rows:
-                week_start = r[5]
+                # ✅ 2. เปลี่ยนจาก r[5] เป็น r[6] เพราะมี duration_minutes มาแทรกตรงกลาง
+                week_start = r[6] 
                 day_offset = r[1]
                 actual_date = week_start + timedelta(days=day_offset)
                 
-                # ✅ ลบเงื่อนไข `if actual_date.month == today.month:` ออก
-                # เพื่อให้เพิ่มข้อมูลทุกวันลงในตาราง ไม่ว่าจะอยู่เดือนไหน
-                
-                # รูปแบบวันที่แบบสั้นๆ (เช่น "25 ก.พ.") เพื่อให้ดูง่ายถ้าข้ามเดือน
                 short_month_name = thai_months[actual_date.month - 1][:3] + "."
                 display_date = f"{actual_date.day} {short_month_name}"
 
@@ -70,6 +69,7 @@ def dashboard_page():
                     'is_exercise_day': r[2],
                     'exercise_name': r[3],
                     'completed': r[4],
+                    'duration_minutes': r[5] if r[5] else 0, # ✅ 3. ดึงเวลาออกมาใส่ในตัวแปร
                     'date_num': actual_date.day,
                     'month_index': actual_date.month - 1, 
                     'year': actual_date.year,
@@ -83,9 +83,7 @@ def dashboard_page():
         cur.close()
         conn.close()
 
-    return render_template('user/index.html', 
-                           schedule=schedule_data, 
-                           info=current_date_info)
+    return render_template('user/index.html', schedule=schedule_data, info=current_date_info)
 
 @user_bp.route('/recommendations')
 def user_recommendations():
@@ -182,112 +180,87 @@ def save_schedule():
     if 'username' not in session:
         return redirect(url_for('login_page'))
 
-    data = request.form
-    exercise_name = data.get('exercise_name')
+    username = session['username']
+    patient_id = request.form.get('patient_id')
+    exercise_name = request.form.get('exercise_name')
     
-    # 1. รับ JSON List ของวันที่ที่ User จิ้มมา
-    selected_dates_json = data.get('selected_dates_json')
+    # 1. รับค่าวันที่จิ้มในปฏิทิน
+    exact_dates_str = request.form.getlist('exact_dates')
+    if not exact_dates_str:
+        return "Missing selected dates", 400
+
+    exact_dates = [datetime.strptime(d, '%Y-%m-%d').date() for d in exact_dates_str]
     
-    try:
-        # แปลง JSON String กลับเป็น Python List
-        # ตัวอย่าง: ['2026-02-18', '2026-02-20', '2026-02-22']
-        selected_dates_list = json.loads(selected_dates_json)
-    except:
-        return "Error parsing dates", 400
+    # 2. วันที่เริ่มตาราง คือ "วันนี้" เสมอ ตามที่ UI กำหนดกรอบ 30 วัน
+    start_date = datetime.today().date()
+    
+    daily_target = request.form.get('daily_target_minutes')
+    daily_target_minutes = int(daily_target) if daily_target else 30
 
     conn = get_db_connection()
     cur = conn.cursor()
 
     try:
-        current_username = session['username']
-        cur.execute("SELECT id FROM users WHERE username = %s", (current_username,))
-        user = cur.fetchone()
+        cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+        user_row = cur.fetchone()
+        if not user_row:
+            return "User not found", 404
+        user_id = user_row[0]
+
+        current_month_plan_id = None
+        current_month = None
+        current_year = None
+        current_week_plan_id = None
         
-        if not user: return "User not found", 404
-        user_db_id = user[0] 
-
-        # เราต้องวนลูปตาม "วันที่ที่ User เลือกมา" แทนการวนลูป 30 วัน
-        # แต่เพื่อความสมบูรณ์ของโครงสร้าง DB (Monthly -> Weekly -> Days)
-        # เราควรสร้าง Monthly/Weekly ให้ครบก่อน แล้วค่อย Insert Day
-        
-        # เรียงวันที่จากน้อยไปมาก
-        selected_dates_list.sort()
-        
-        # แปลง string เป็น date object
-        date_objects = [datetime.strptime(d, '%Y-%m-%d').date() for d in selected_dates_list]
-        
-        if not date_objects:
-            return "No dates selected", 400
-
-        # ใช้ Loop เดิม เพื่อสร้างโครงสร้างพื้นฐาน (Monthly/Weekly) ให้ครบ
-        # แต่ตอน Insert Day ให้เช็คว่า "วันนี้มีใน list ที่ user เลือกไหม"
-        
-        start_date = date_objects[0]
-        # สร้างเผื่อไปเลย 1 เดือน (30 วัน) นับจากวันแรกที่เลือก
-        end_date = start_date + timedelta(days=30) 
-        
-        current_date = start_date
-
-        while current_date < end_date:
-            year = current_date.year
-            month = current_date.month
-
-            # --- A. Monthly Plan ---
-            cur.execute("SELECT id FROM monthly_plan WHERE user_id = %s AND year = %s AND month = %s", (user_db_id, year, month))
-            month_row = cur.fetchone()
-            if month_row:
-                monthly_id = month_row[0]
-            else:
-                cur.execute("INSERT INTO monthly_plan (user_id, year, month) VALUES (%s, %s, %s) RETURNING id", (user_db_id, year, month))
-                monthly_id = cur.fetchone()[0]
-
-            # --- B. Weekly Plan ---
-            week_num = current_date.isocalendar()[1]
-            week_start = current_date - timedelta(days=current_date.weekday())
-
-            cur.execute("SELECT id FROM weekly_plan WHERE monthly_plan_id = %s AND week_number = %s", (monthly_id, week_num))
-            week_row = cur.fetchone()
-            if week_row:
-                weekly_id = week_row[0]
-            else:
-                cur.execute("INSERT INTO weekly_plan (monthly_plan_id, week_number, start_date) VALUES (%s, %s, %s) RETURNING id", (monthly_id, week_num, week_start))
-                weekly_id = cur.fetchone()[0]
-
-            # --- C. Days Plan ---
-            for i in range(7):
-                day_date = week_start + timedelta(days=i)
+        # ✅ 3. บังคับลูป 30 วัน (เพื่อครอบคลุม 1 เดือน ข้ามเดือนได้สบาย)
+        for i in range(30):
+            current_date = start_date + timedelta(days=i)
+            
+            # เช็คและสร้าง monthly_plan หากเปลี่ยนเดือน
+            if current_date.month != current_month or current_date.year != current_year:
+                current_month = current_date.month
+                current_year = current_date.year
                 
-                # เช็คว่าวันนี้อยู่ในช่วงเวลาที่เราสนใจไหม
-                if start_date <= day_date < end_date:
-                    
-                    # ✅ CHECKPOINT: วันนี้ user เลือกมาหรือเปล่า?
-                    # แปลง day_date เป็น string เพื่อเทียบกับ list ที่ส่งมา
-                    date_str = day_date.strftime('%Y-%m-%d')
-                    is_exercise = True if date_str in selected_dates_list else False
-                    
-                    cur.execute("SELECT id FROM days_plan WHERE weekly_plan = %s AND day_of_week = %s", (weekly_id, day_date.weekday()))
-                    if not cur.fetchone():
-                        cur.execute("""
-                            INSERT INTO days_plan (day_of_week, weekly_plan, is_exercise_day, exercise_name, completed)
-                            VALUES (%s, %s, %s, %s, %s)
-                        """, (
-                            day_date.weekday(),
-                            weekly_id,
-                            is_exercise, # True ถ้า user จิ้ม, False ถ้าไม่จิ้ม
-                            exercise_name if is_exercise else "พักผ่อน",
-                            False
-                        ))
+                cur.execute("""
+                    INSERT INTO monthly_plan (user_id, month, year) 
+                    VALUES (%s, %s, %s) RETURNING id
+                """, (user_id, current_month, current_year))
+                current_month_plan_id = cur.fetchone()[0]
+            
+            # เช็คและสร้าง weekly_plan (ทำทุกๆ 7 วัน)
+            if i % 7 == 0:
+                cur.execute("""
+                    INSERT INTO weekly_plan (monthly_plan_id, start_date) 
+                    VALUES (%s, %s) RETURNING id
+                """, (current_month_plan_id, current_date))
+                current_week_plan_id = cur.fetchone()[0]
 
-            current_date += timedelta(weeks=1)
-            current_date = current_date - timedelta(days=current_date.weekday())
+            # ✅ 4. เช็คว่าวันที่กำลังเซฟ ตรงกับวันที่ผู้ใช้จิ้มเลือกไว้หรือไม่
+            is_exercise = current_date in exact_dates 
+            
+            day_exercise_name = exercise_name if is_exercise else None
+            day_target_minutes = daily_target_minutes if is_exercise else 0
+            
+            # บันทึกข้อมูล
+            cur.execute("""
+                INSERT INTO days_plan (weekly_plan, day_of_week, is_exercise_day, exercise_name, completed, target_minutes) 
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                current_week_plan_id, 
+                i % 7, 
+                is_exercise, 
+                day_exercise_name, 
+                False,
+                day_target_minutes 
+            ))
 
         conn.commit()
         return redirect(url_for('user.dashboard_page'))
 
     except Exception as e:
         conn.rollback()
-        print(f"Error: {e}")
-        return f"Database Error: {e}", 500
+        print(f"Error generating automatic schedule: {e}")
+        return f"Database error: {e}", 500
     finally:
         cur.close()
         conn.close()
@@ -297,22 +270,22 @@ def update_day_status():
     data = request.json
     day_id = data.get('day_id')
     completed = data.get('completed')
-    
+    duration = data.get('duration', 0) # ✅ รับเวลามาด้วย (ถ้าไม่มีให้เป็น 0)
+
     conn = get_db_connection()
     cur = conn.cursor()
-    
     try:
+        # ✅ สั่งอัปเดตทั้งสถานะการทำ และเวลาลงใน Database
         cur.execute("""
             UPDATE days_plan 
-            SET completed = %s 
+            SET completed = %s, duration_minutes = %s 
             WHERE id = %s
-        """, (completed, day_id))
+        """, (completed, duration, day_id))
         conn.commit()
-        return {"status": "success"}
-    
+        return jsonify({'status': 'success'})
     except Exception as e:
-        print(f"Error: {e}")
-        return "Database Error", 500
+        conn.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         cur.close()
         conn.close()
@@ -381,26 +354,29 @@ def start_exercise(day_id):
     cur = conn.cursor()
     
     try:
-        # ดึงข้อมูลท่าออกกำลังกาย จาก ID ของวันที่กด
-        cur.execute("SELECT exercise_name, completed FROM days_plan WHERE id = %s", (day_id,))
+        # ✅ 1. เพิ่ม target_minutes เข้าไปในคำสั่ง SQL
+        cur.execute("SELECT exercise_name, completed, target_minutes FROM days_plan WHERE id = %s", (day_id,))
         row = cur.fetchone()
         
         if row:
             exercise_name = row[0]
             is_completed = row[1]
+            # ✅ 2. ดึงเวลาเป้าหมายออกมา (ถ้าดึงมาแล้วเป็น None ให้ตั้งค่าเริ่มต้นเป็น 30 กันเหนียวไว้)
+            target_minutes = row[2] if row[2] else 30
             
-            # ✅ แก้ไขชื่อไฟล์ให้ตรงกัน
+            # ✅ 3. ส่ง target_minutes ไปให้หน้า HTML ด้วย
             return render_template('user/start_exercise.html', 
                                    exercise_name=exercise_name,
                                    day_id=day_id,
-                                   is_completed=is_completed)
+                                   is_completed=is_completed,
+                                   target_minutes=target_minutes)
         else:
             print("ไม่พบข้อมูลตารางออกกำลังกาย")
-            return redirect(url_for('user_bp.dashboard_page'))
+            return redirect(url_for('user.dashboard_page'))
             
     except Exception as e:
         print(f"Error loading start exercise: {e}")
-        return redirect(url_for('user_bp.dashboard_page'))
+        return redirect(url_for('user.dashboard_page'))
         
     finally:
         cur.close()
@@ -415,22 +391,26 @@ def active_exercise(day_id):
     cur = conn.cursor()
     
     try:
-        # ดึงชื่อท่าออกกำลังกายมาแสดงในหน้าจับเวลา
-        cur.execute("SELECT exercise_name FROM days_plan WHERE id = %s", (day_id,))
+        # ✅ 1. เพิ่มการดึง target_minutes จากฐานข้อมูล
+        cur.execute("SELECT exercise_name, target_minutes FROM days_plan WHERE id = %s", (day_id,))
         row = cur.fetchone()
         
         if row:
             exercise_name = row[0]
-            # ส่ง exercise_name และ day_id ไปยังหน้า active_exercise.html
+            # ✅ 2. ดึงเวลาออกมา (ถ้าไม่มีให้ตั้งเป็น 30 ไว้ก่อน)
+            target_minutes = row[1] if row[1] else 30
+            
+            # ✅ 3. ส่ง target_minutes ไปให้หน้า HTML
             return render_template('user/active_exercise.html', 
-                                   exercise_name=exercise_name, 
-                                   day_id=day_id)
+                                   day_id=day_id, 
+                                   exercise_name=exercise_name,
+                                   target_minutes=target_minutes)
         else:
-            return redirect(url_for('user_bp.dashboard_page'))
+            return redirect(url_for('user.dashboard_page'))
             
     except Exception as e:
         print(f"Error loading active exercise: {e}")
-        return redirect(url_for('user_bp.dashboard_page'))
+        return redirect(url_for('user.dashboard_page'))
         
     finally:
         cur.close()

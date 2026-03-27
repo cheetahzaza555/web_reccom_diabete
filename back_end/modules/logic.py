@@ -28,10 +28,9 @@ def process_patient_realtime(patient_id, input_data=None):
         target_specials = []
         target_favorites = [] 
 
-        if input_data:
+        if input_data: #มีข้อมูลส่งเข้ามาแบบตรงๆ 
             print(f"⚡ Processing {patient_id} (Direct)...")
             
-            # 🔥🔥 [จุดที่แก้] แปลง String เป็น Float ให้หมดตรงนี้ครับ 🔥🔥
             data = {
                 'type': input_data.get('type', 'T2DM'),
                 'weight': safe_float(input_data.get('weight')),
@@ -55,7 +54,7 @@ def process_patient_realtime(patient_id, input_data=None):
             
             target_favorites = input_data.get('favorites', [])
         
-        else:
+        else: # ดึงข้อมูลจาก DB ตามปกติ
             print(f"📥 Fetching {patient_id} from DB...")
             query = f"""
             PREFIX ex: <http://example.org/diabetes#>

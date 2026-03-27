@@ -15,8 +15,11 @@ from modules.ontology import onto, ex
 def process_patient_realtime(patient_id, input_data=None):
     if not validate_id(patient_id) or not onto: return [], [], [], []
 
+    # 👇 1. เพิ่มโค้ดบรรทัดนี้ เพื่อตัดคำว่า Patient ออกก่อน (กันเหนียว)
+    clean_id = str(patient_id).replace("Patient", "")
+    # 👇 2. แก้ pid_mem ให้ใช้ clean_id แทน
     unique_suffix = uuid.uuid4().hex[:8]
-    pid_mem = f"Patient_Mem_{patient_id}_{unique_suffix}"
+    pid_mem = f"Patient_Mem_{clean_id}_{unique_suffix}"
     p = None
 
     try:

@@ -1,35 +1,26 @@
 from flask import Flask
-import psycopg2
 import os
 from routes.user import user_bp
 from flask_cors import CORS
 from dotenv import load_dotenv
 from routes.auth import auth
 
+# โหลดตัวแปรจาก .env (ตอนนี้จะมีแค่ข้อมูลของ GraphDB)
 load_dotenv()
 
-print("DB_HOST =", os.getenv("DB_HOST"))
-print("DB_NAME =", os.getenv("DB_NAME"))
-print("DB_USER =", os.getenv("DB_USER"))
-print("DB_PASS =", os.getenv("DB_PASS"))
-print("DB_PORT =", os.getenv("DB_PORT"))
-
 app = Flask(__name__)
-app.secret_key = "secret1234"
-conn = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    database=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASS"),
-    port=os.getenv("DB_PORT")
-)
 
-cursor = conn.cursor()
+# Secret Key สำหรับการทำ Session ของ Flask (จำเป็นต้องมีเพื่อให้ Login ได้)
+app.secret_key = "secret1234" 
+
+# เปิดใช้งาน CORS (Cross-Origin Resource Sharing)
 CORS(app)
 
+# ลงทะเบียน Blueprint (เชื่อมโยง Route ต่างๆ เข้ากับตัวแอป)
 app.register_blueprint(auth)
-
 app.register_blueprint(user_bp, url_prefix='/user')
 
 if __name__ == '__main__':
+    # รันเซิร์ฟเวอร์
+    print("🚀 Starting Flask Server (Powered by GraphDB Semantic Web)...")
     app.run(debug=True, port=5000)

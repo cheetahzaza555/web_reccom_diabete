@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, render_template, request, jsonify, session
+from flask import Blueprint, redirect, render_template, request, jsonify, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash # เพิ่ม generate_password_hash
 from modules.auth_utils import generate_token
 
@@ -24,8 +24,7 @@ def index():
         )
     else:
         # สำหรับ User ทั่วไป ให้พาไปหน้า Dashboard (ซึ่งมันจะไปเรียกใช้ templates/user/index.html ให้เองอัตโนมัติครับ)
-        return redirect(url_for("user.dashboard_page")
-        )
+        return redirect(url_for("user.dashboard_page"))
     
 @auth.route("/login")
 def login_page():
@@ -103,7 +102,8 @@ def get_current_user():
     try:
         # ❌ ลบโค้ด SQL Connection ออกให้หมด
         # ✅ เรียกใช้ฟังก์ชัน SPARQL เพื่อดึง Profile แทน
-        user_data = get_user_by_id(user_id)
+        user_id = session["user_id"]
+        user_data = get_user_by_id(user_id) # ฟังก์ชันที่เราเพิ่งแก้ด้านบน
         
         if user_data:
             return jsonify(user_data)

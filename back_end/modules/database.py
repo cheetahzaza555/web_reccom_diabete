@@ -61,104 +61,94 @@ def safe_get_name(uri):
 def save_raw_patient_data(data):
     if not validate_id(data.get('id')): return
 
-    raw_id = str(data.get('id')).replace("Patient", "")  
-    pid = f"Patient{raw_id}"                             
+    # ตัด SUPA ออกป้องกันร่างโคลน
+    raw_id = str(data.get('id')).replace("Patient", "").replace("SUPA", "")  
+    pid = f"Patient{raw_id}"                                
     
-    pe_node = f"ex:PE1P00{raw_id}"   
-    le_node = f"ex:Lab1P00{raw_id}"   
+    # คืนค่ากลับไปใช้ UUID แบบดั้งเดิมของคุณ
+    pe_node = f"ex:PE_Node_{raw_id}_{uuid.uuid4().hex[:4]}" 
+    le_node = f"ex:LE_Node_{raw_id}_{uuid.uuid4().hex[:4]}" 
 
     try:
-        # 1. ลบข้อมูลเก่า (แก้ให้ลบทุกอย่างที่ต่อจากคนไข้ เพื่อไม่ให้ค่า NoGeneralComplication เดิมค้าง)
         delete_query = f"""
             PREFIX ex: <http://example.org/diabetes#>
             DELETE {{ 
-                ex:{pid} ?p ?o . 
-                ?pe ?pp ?oo . 
-                ?le ?lp ?lo 
+                ex:{pid} ex:hasPhysicalExam ?pe . ex:{pid} ex:hasLabExam ?le .
+                ex:{pid} ex:exerciseFrequency ?f . ex:{pid} ex:favoriteExercise ?fav .
+                ?pe ?pp ?po . ?le ?lp ?lo .
             }} 
             WHERE {{ 
-                ex:{pid} ?p ?o . 
-                FILTER (?p NOT IN (ex:username, ex:passwordHash, ex:email, ex:role, ex:createdAt))
-                OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?oo }} 
+                OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?po }} 
                 OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} 
+                OPTIONAL {{ ex:{pid} ex:exerciseFrequency ?f }}
+                OPTIONAL {{ ex:{pid} ex:favoriteExercise ?fav }}
             }}
         """
         sparql_write.setQuery(delete_query)
         sparql_write.query()
         
-        # 2. เตรียมข้อมูล
-        fname = escape_sparql(data.get('firstname', '-'))
-        lname = escape_sparql(data.get('lastname', '-'))
-        gender_val = escape_sparql(data.get('gender', '-')) 
         pe_date = escape_sparql(data.get('checkup_date', ''))
         le_date = escape_sparql(data.get('blood_test_date', ''))
-
-        insulin_val = escape_sparql(data.get('insulin_use') or "false")
-        ketone_val = escape_sparql(data.get('ketone') or "Negative")
-        micro_val = escape_sparql(data.get('micro') or "Negative")
         
-        def val(k): return safe_float(data.get(k)) or 0
+        def val(k, alt=None): 
+            v = data.get(k) or data.get(alt)
+            return safe_float(v) or 0
 
-        # --- แก้ไขส่วนจัดการ Special Complication (เอา NoOtherComplication ออก) ---
+        pe_date_line = f'ex:visitDate_Physical "{pe_date}"^^xsd:date ;' if pe_date else ""
+        le_date_line = f'ex:visitDate_Lab "{le_date}"^^xsd:date ;' if le_date else ""
+
         raw_special = data.get('special')
         special_triples = ""
-
-        if isinstance(raw_special, list) and len(raw_special) > 0:
+        if isinstance(raw_special, list):
             for sp in raw_special:
-                # บันทึกเฉพาะที่มีการเลือกจริง และไม่ใช่ค่า 'None' หรือค่าว่าง
                 if sp and sp not in ["None", "", "NoOtherComplication"]:
                     special_triples += f"{pe_node} ex:hasSpecialComplication ex:{escape_sparql(sp)} .\n"
-        elif isinstance(raw_special, str) and raw_special not in ["None", "", "NoOtherComplication"]:
-            special_triples = f"{pe_node} ex:hasSpecialComplication ex:{escape_sparql(raw_special)} ."
-        # --- ถ้าไม่มีการเลือก ปล่อยให้ special_triples ว่างไปเลย ไม่ต้องใส่ Default ---
-
-        # จัดการ Frequency
-        freq_val = data.get('frequency') 
-        freq_triple = ""
-        if freq_val:
-            freq_triple = f"ex:{pid} ex:exerciseFrequency ex:{escape_sparql(freq_val)} ."
-
-        # จัดการ Favorites
-        raw_favs = data.get('favorites')
+        
+        freq_val = data.get('frequency')
+        freq_triple = f"ex:{pid} ex:exerciseFrequency ex:{escape_sparql(freq_val)} ." if freq_val else ""
+        
+        raw_favs = data.get('favorites') or []
         fav_triples = ""
-        if isinstance(raw_favs, list):
-            for fav in raw_favs:
-                fav_triples += f"ex:{pid} ex:favoriteExercise ex:{escape_sparql(fav)} .\n"
+        for fav in raw_favs:
+            if fav: fav_triples += f"ex:{pid} ex:favoriteExercise ex:{escape_sparql(fav)} .\n"
 
-        # 3. สร้าง Triples 
+        # ป้องกัน Reasoner พังจากค่าอินซูลินที่เป็น None
+        raw_insulin = str(data.get('insulin_use')).lower()
+        safe_insulin = "true" if raw_insulin == "true" else "false"
+
+        # โค้ดสร้าง Triples แบบเดิมของคุณ (ใช้ตัว 'a' ไม่ใช่ 'rdf:type')
         triples = f"""
             ex:{pid} a ex:Patient ; 
-                     ex:diabetType ex:{escape_sparql(data['type'])} ; 
-                     ex:gender "{gender_val}" ;  
-                     ex:insulinTreatment "{insulin_val}"^^xsd:boolean ;
-                     ex:firstname "{fname}" ; ex:lastname "{lname}" ; 
+                     ex:diabetType ex:{escape_sparql(data.get('type', 'T2DM'))} ; 
+                     ex:gender "{escape_sparql(data.get('gender', '-'))}" ;  
+                     ex:insulinTreatment "{safe_insulin}"^^xsd:boolean ;
                      ex:hasPhysicalExam {pe_node} ; ex:hasLabExam {le_node} .
             
-            {freq_triple}
-            {fav_triples}
+            {freq_triple} {fav_triples}
             
             {pe_node} a ex:PhysicalExam ; 
-                        ex:visitDate_Physical "{pe_date}"^^xsd:date ;
+                        {pe_date_line}
                         ex:hasWeight "{val('weight')}"^^xsd:decimal ; 
                         ex:hasHeight "{val('height')}"^^xsd:decimal ; 
                         ex:hasBMI "{val('bmi')}"^^xsd:decimal ; 
-                        ex:hasSBP "{int(val('sbp'))}"^^xsd:decimal ; 
-                        ex:hasDBP "{int(val('dbp'))}"^^xsd:decimal .
+                        ex:hasSBP "{int(val('bp_high', 'sbp'))}"^^xsd:decimal ; 
+                        ex:hasDBP "{int(val('bp_low', 'dbp'))}"^^xsd:decimal .
             
             {special_triples} 
             
             {le_node} a ex:LabExam ; 
-                        ex:visitDate_Lab "{le_date}"^^xsd:date ;
-                        ex:hasTotalCholesterol "{val('chol')}"^^xsd:decimal ; 
+                        {le_date_line}
+                        ex:hasTotalCholesterol "{val('cholesterol', 'chol')}"^^xsd:decimal ; 
                         ex:hasLDL "{val('ldl')}"^^xsd:decimal ; ex:hasHDL "{val('hdl')}"^^xsd:decimal ; 
-                        ex:hasTriglyceride "{val('tri')}"^^xsd:decimal ;
+                        ex:hasTriglyceride "{val('triglyceride', 'tri')}"^^xsd:decimal ;
                         ex:hasFPG "{val('fpg')}"^^xsd:decimal ; 
-                        ex:hasKetone "{ketone_val}" ; ex:hasMicroalbuminurin "{micro_val}" . 
+                        ex:hasKetone "{data.get('ketone', 'Negative')}" ; 
+                        ex:hasMicroalbuminurin "{data.get('micro', 'Negative')}" . 
         """
         
         sparql_write.setQuery(f"PREFIX ex: <http://example.org/diabetes#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA {{ {triples} }}")
         sparql_write.query()
-        print(f"💾 Saved Raw Data for {pid} (Cleaned & Updated)")
+        print(f"💾 Saved Raw Data for {pid}")
         
     except Exception as e:
         print(f"❌ Error saving raw data: {e}")
@@ -401,7 +391,8 @@ def get_patient_latest_record(patient_id):
     ดึงข้อมูลดิบของผู้ป่วยเพื่อนำไป Auto-fill ในหน้าแบบฟอร์ม
     """
     if not validate_id(patient_id): return {"found": False}
-    pid = f"PatientSUPA{patient_id}"
+    clean_id = str(patient_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}" # ✅ แก้เป็นแบบนี้
 
     # ✅ เพิ่ม ?datePE และ ?dateLab ใน SELECT
     query = f"""
@@ -823,7 +814,7 @@ def get_user_for_login(username):
             
         r = bindings[0]
         full_uri = r["patient"]["value"]
-        pid = full_uri.split("#Patient")[-1] if "#Patient" in full_uri else safe_get_name(full_uri)
+        pid = full_uri.split("#Patient")[-1]
         
         return {
             "patient_id": pid,
@@ -838,7 +829,9 @@ def get_user_for_login(username):
         return None
     
 def get_user_by_id(user_id):
-    pid = f"Patient{user_id}"
+    clean_id = str(user_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
+
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     SELECT ?username ?role ?fname ?lname
@@ -852,30 +845,31 @@ def get_user_by_id(user_id):
     """
     try:
         sparql_read.setQuery(query)
-        bindings = sparql_read.query().convert()["results"]["bindings"]
+        res = sparql_read.query().convert()
+        bindings = res["results"]["bindings"]
         if not bindings: return None
         
         r = bindings[0]
+        # ✅ แก้ไขการดึงค่าให้ตรงกับชื่อตัวแปรใน SELECT (?fname, ?lname)
+        # และใช้ Key ที่ Frontend รอรับอยู่ (firstname, lastname)
         return {
             "id": user_id,
             "username": r.get("username", {}).get("value", ""),
             "role": r.get("role", {}).get("value", "user"),
-            "firstname": r.get("fname", {}).get("value", ""),
-            "lastname": r.get("lname", {}).get("value", "")
+            "firstname": r.get("fname", {}).get("value", ""), # ต้องใช้ fname จาก SPARQL
+            "lastname": r.get("lname", {}).get("value", "")   # ต้องใช้ lname จาก SPARQL
         }
-    except:
+    except Exception as e:
+        print(f"Error in get_user_by_id: {e}")
         return None
     
 # --- ฟังก์ชันจัดการตารางออกกำลังกาย (Plan Management) ---
 
 def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_target_minutes):
-    """
-    สร้างตารางออกกำลังกาย 30 วัน ลงใน GraphDB (เดือน -> สัปดาห์ -> วัน)
-    """
-    pid = f"Patient{patient_id}"
+    pid = f"Patient{patient_id}" # ใช้ ID ดั้งเดิม
     start_date = datetime.datetime.today().date()
     
-    # 1. สร้าง ID ประจำการสร้างตารางครั้งนี้ (เอาไว้ผูก MonthlyPlan)
+    # คืนค่ารหัส UUID ให้เหมือนเดิมที่คุณเขียนไว้
     run_id = str(uuid.uuid4())[:8]
     monthly_node = f"ex:MonthlyPlan_{pid}_{run_id}"
     
@@ -890,12 +884,10 @@ def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_targe
         ex:{pid} ex:hasMonthlyPlan {monthly_node} .
     """
     
-    # 2. วนลูป 30 วัน
     current_weekly_node = ""
     for i in range(30):
         current_date = start_date + datetime.timedelta(days=i)
         
-        # 2.1 สร้าง WeeklyPlan ทุกๆ 7 วัน
         if i % 7 == 0:
             week_num = (i // 7) + 1
             current_weekly_node = f"ex:WeeklyPlan_{pid}_{run_id}_W{week_num}"
@@ -905,11 +897,9 @@ def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_targe
                 {monthly_node} ex:hasWeeklyPlan {current_weekly_node} .
             """
             
-        # 2.2 สร้าง DailyPlan
         day_node = f"ex:DailyPlan_{pid}_{run_id}_Day{i+1}"
         date_str = current_date.isoformat()
         
-        # เช็คว่าวันนี้เป็นวันที่ผู้ใช้เลือกให้ออกกำลังกายหรือไม่
         is_exercise = current_date in exact_dates_list
         status = "Pending" if is_exercise else "Rest"
         target_mins = daily_target_minutes if is_exercise else 0
@@ -923,10 +913,8 @@ def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_targe
         """
         
         if is_exercise:
-            # ใช้ exercise_id (ที่เป็นชื่อท่า) โยงไปเลย
             triples += f"{day_node} ex:hasScheduledExercise ex:{escape_sparql(exercise_id)} .\n"
 
-    # 3. ยิง SPARQL INSERT
     insert_query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>

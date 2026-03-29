@@ -12,7 +12,7 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
         .header-section {
-            background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+            background: #6d8ee6;
             color: white;
             padding: 40px 0; margin-bottom: 30px;
             border-radius: 0 0 30px 30px;
@@ -24,8 +24,6 @@
             background: white; height: 100%;
             position: relative; overflow: hidden;
             display: flex; flex-direction: column;
-
-            height: 100%; 
             min-height: 320px;
         }
         .exercise-card .card-body {
@@ -33,14 +31,14 @@
             display: flex; 
             flex-direction: column; 
             align-items: center;
-            justify-content: space-between; /* จัดระยะห่าง บน-ล่าง ให้เท่ากัน */
-            padding: 1.5rem !important; /* เพิ่ม Padding ให้ไม่อึดอัด */
+            justify-content: space-between; 
+            padding: 1.5rem !important; 
         }
 
         .exercise-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-            border: 2px solid #198754;
+            border: 2px solid #6d8ee6;
         }
 
         .exercise-title {
@@ -48,33 +46,57 @@
             margin-bottom: 0.5rem;
             color: #212529;
             display: -webkit-box;
-            -webkit-line-clamp: 2; /* โชว์แค่ 2 บรรทัด */
+            -webkit-line-clamp: 2; 
             line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            min-height: 3rem; /* จองพื้นที่ไว้สำหรับ 2 บรรทัดเสมอ */
+            min-height: 3rem; 
+            text-align: center;
         }
 
         .icon-wrapper {
-            background-color: #e8f5e9; width: 70px; height: 70px;
+            background-color: #f0f4ff; 
+            width: 70px; height: 70px;
             border-radius: 50%; display: flex;
             align-items: center; justify-content: center;
-            margin: 0 auto 15px; color: #198754; font-size: 2rem;
+            margin: 0 auto 15px; color: #6d8ee6; font-size: 2rem;
         }
+        
         .badge-category {
-            background-color: #e8f5e9; color: #198754;
+            background-color: #f0f4ff; 
+            color: #6d8ee6;
             padding: 5px 12px; border-radius: 20px;
             font-size: 0.85rem; font-weight: 600;
             margin-bottom: 10px; display: inline-block;
         }
+        
         .met-badge {
-            background-color: #fff3cd; color: #856404;
-            padding: 4px 10px; border-radius: 8px;
+            background-color: #e2eafc; 
+            color: #4a6fdc; 
+            padding: 5px 12px; border-radius: 8px;
             font-size: 0.85rem; font-weight: bold;
         }
+        
+        /* ✅ สไตล์ปุ่มสีฟ้าทึบ ดูเป็นปุ่ม 100% ชัดเจน น่ากด */
+        .btn-solid-blue {
+            background-color: #6d8ee6;
+            color: white !important;
+            border: none;
+            box-shadow: 0 4px 8px rgba(109, 142, 230, 0.3);
+            transition: all 0.3s ease;
+            padding: 12px 0; /* เพิ่ม padding ให้ปุ่มอวบขึ้น ดูน่ากด */
+            font-size: 1.05rem;
+            letter-spacing: 0.5px;
+        }
+        .btn-solid-blue:hover {
+            background-color: #577add; /* สีเข้มขึ้นตอนเมาส์ชี้ */
+            box-shadow: 0 6px 15px rgba(109, 142, 230, 0.45);
+            transform: translateY(-2px);
+        }
+
         /* สไตล์สำหรับหัวข้อหมวดหมู่ */
         .category-separator {
-            border-left: 5px solid #198754;
+            border-left: 5px solid #6d8ee6;
             padding-left: 15px; margin-top: 30px; margin-bottom: 20px;
         }
         .category-title {
@@ -128,8 +150,8 @@
                                 </div>
                                 
                                 <div class="mt-auto w-100">
-                                    <button class="btn btn-outline-success w-100 rounded-pill fw-bold">
-                                        เลือกกิจกรรมนี้
+                                    <button class="btn btn-solid-blue w-100 rounded-pill fw-bold">
+                                        <i class="bi bi-check2-circle me-1"></i> เลือกกิจกรรมนี้
                                     </button>
                                 </div>
                             </div>
@@ -159,22 +181,20 @@
         function confirmSelection(exerciseID, exerciseName) {
             Swal.fire({
                 title: 'ยืนยันการเลือก?',
-                html: `คุณต้องการดูรายละเอียดแผนสำหรับ:<br><h3 class="text-success mt-2">${exerciseName}</h3>`,
+                html: `คุณต้องการดูรายละเอียดแผนสำหรับ:<br><h3 class="mt-2" style="color: #6d8ee6;">${exerciseName}</h3>`,
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#198754',
+                confirmButtonColor: '#6d8ee6', 
                 confirmButtonText: 'ไปต่อ',
                 cancelButtonText: 'ยกเลิก'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    goToNextPage(exerciseID); // เรียกฟังก์ชันเปลี่ยนหน้า
+                    goToNextPage(exerciseID); 
                 }
             });
         }
 
-        // ✅ ฟังก์ชันใหม่: แค่เปลี่ยน URL ไปหน้าถัดไป
         function goToNextPage(id) {
-            // ส่งทั้ง patientId และ exerciseId ไปใน URL
             window.location.href = `/user/select_plan2/${patientId}/${id}`;
         }
         

@@ -659,6 +659,7 @@ def get_all_exercises_for_library():
     
     
 def get_exercise_by_id(ex_id):
+    print(f"👉 เช็กค่า exercise_id ที่รับมา: '{ex_id}'")
     # 1. เพิ่ม ?youtube_id เข้าไปใน SELECT และ GROUP BY
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
@@ -866,6 +867,7 @@ def get_user_by_id(user_id):
 # --- ฟังก์ชันจัดการตารางออกกำลังกาย (Plan Management) ---
 
 def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_target_minutes):
+    print(f"👉 เช็กค่า exercise_id ที่รับมา: '{exercise_id}'")
     pid = f"Patient{patient_id}" # ใช้ ID ดั้งเดิม
     start_date = datetime.datetime.today().date()
     

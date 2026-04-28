@@ -11,8 +11,7 @@ auth = Blueprint("auth", __name__)
 def index():
     # 1. 🌟 ถ้า "ยังไม่ได้ล็อกอิน" ให้โชว์หน้า Landing Page ที่ดึงมาจาก Figma
     if "user_id" not in session:
-        return render_template("landing.html") # <--- ชี้ไปที่ไฟล์ใหม่ของเรา
-
+        return render_template("landing.html") 
     # 2. ถ้า "ล็อกอินอยู่แล้ว" ให้เช็คว่าเป็น Admin หรือ User
     role = session.get("role")
 
@@ -100,7 +99,6 @@ def get_current_user():
     user_id = session["user_id"]
     
     try:
-        # ❌ ลบโค้ด SQL Connection ออกให้หมด
         # ✅ เรียกใช้ฟังก์ชัน SPARQL เพื่อดึง Profile แทน
         user_id = session["user_id"]
         user_data = get_user_by_id(user_id) # ฟังก์ชันที่เราเพิ่งแก้ด้านบน

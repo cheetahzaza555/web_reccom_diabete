@@ -12,8 +12,9 @@
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; }
         
+        /* ✅ เปลี่ยนแบนเนอร์เป็นโทนสีฟ้า */
         .header-section {
-            background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+            background: #6d8ee6;
             color: white; padding: 40px 0; margin-bottom: 30px;
             border-radius: 0 0 30px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
@@ -22,12 +23,15 @@
         
         .info-label { color: #6c757d; font-size: 0.9rem; margin-bottom: 5px; }
         .info-value { font-weight: 600; color: #212529; font-size: 1.2rem; }
+        
+        /* ✅ เปลี่ยนกล่อง Highlight เป็นโทนสีฟ้า */
         .highlight-box {
-            background-color: #e8f5e9; border-left: 5px solid #198754;
+            background-color: #f0f4ff; border-left: 5px solid #6d8ee6;
             padding: 20px; border-radius: 8px; margin-bottom: 20px;
         }
+        /* ✅ เปลี่ยนพื้นหลังไอคอนเป็นสีฟ้า */
         .icon-box {
-            width: 50px; height: 50px; background-color: #e8f5e9; color: #198754;
+            width: 50px; height: 50px; background-color: #f0f4ff; color: #6d8ee6;
             border-radius: 12px; display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem; margin-bottom: 10px;
         }
@@ -49,18 +53,41 @@
             align-items: center; justify-content: center; cursor: pointer;
             transition: all 0.2s; position: relative;
         }
-        .day-card:hover:not(.disabled) { border-color: #20c997; background-color: #f8f9fa; }
-        .day-card.selected { border-color: #198754; background-color: #e8f5e9; }
+        /* ✅ เปลี่ยนสี Hover และ Selected ของปฏิทินเป็นโทนสีฟ้า */
+        .day-card:hover:not(.disabled) { border-color: #577add; background-color: #f8f9fa; }
+        .day-card.selected { border-color: #6d8ee6; background-color: #e2eafc; }
         .day-card.disabled { background-color: #f1f3f5; color: #adb5bd; cursor: not-allowed; opacity: 0.6; }
         
         .date-num { font-size: 1.2rem; font-weight: bold; }
-        .check-icon { display: none; font-size: 1.2rem; color: #198754; position: absolute; top: 2px; right: 5px; }
+        /* ✅ เปลี่ยนเครื่องหมายถูกเป็นสีฟ้า */
+        .check-icon { display: none; font-size: 1.2rem; color: #6d8ee6; position: absolute; top: 2px; right: 5px; }
         .day-card.selected .check-icon { display: block; }
 
         @media (max-width: 768px) {
             .day-card { min-height: 60px; padding: 5px; }
             .date-num { font-size: 1rem; }
             .weekday-header { font-size: 0.8rem; }
+        }
+        
+        /* ✅ สไตล์ปุ่มยืนยันสีฟ้าแบบ Custom */
+        .btn-confirm-blue {
+            background-color: #577add !important; /* สีน้ำเงินปกติที่ดูน่ากด */
+            color: white !important;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-confirm-blue:hover:not(:disabled) {
+            background-color: #004ba0 !important; /* สีน้ำเงินเข้มตอนเอาเมาส์ชี้ */
+            color: white !important;
+            box-shadow: 0 6px 12px rgba(0, 75, 160, 0.3) !important;
+            transform: translateY(-2px);
+        }
+        .btn-confirm-blue:disabled {
+            background-color: #aebce8 !important; /* สีฟ้าหม่นๆ ตอนที่ยังไม่ได้เลือกวัน (Disabled) */
+            color: #ffffff !important;
+            cursor: not-allowed;
+            opacity: 0.8;
+            transform: none;
         }
     </style>
 </head>
@@ -80,7 +107,7 @@
         {% if plan %}
         <div class="card info-card mb-4">
             <div class="card-header bg-white border-bottom-0 pt-4 px-4">
-                <h4 class="fw-bold text-success mb-0">
+                <h4 class="fw-bold text-primary mb-0">
                     <i class="bi bi-check-circle-fill me-2"></i> กิจกรรมที่คุณเลือก
                 </h4>
             </div>
@@ -115,7 +142,7 @@
                         <div class="highlight-box">
                             <div class="row text-center">
                                 <div class="col-md-4 mb-3 mb-md-0 border-end">
-                                    <div class="info-label text-success">🎯 เป้าหมายรวม 30 วัน</div>
+                                    <div class="info-label text-primary">🎯 เป้าหมายรวม 30 วัน</div>
                                     <div class="info-value">600 นาที</div>
                                     <div class="small text-muted">(เฉลี่ย 150 นาที/สัปดาห์)</div>
                                 </div>
@@ -126,9 +153,9 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="info-label text-success">⏱️ เป้าหมายรายครั้ง</div>
+                                    <div class="info-label text-primary">⏱️ เป้าหมายรายครั้ง</div>
                                     <div class="info-value">
-                                        <span id="dailyTargetDisplay" class="text-success fs-3 fw-bold">0</span> นาที / ครั้ง
+                                        <span id="dailyTargetDisplay" class="text-primary fs-3 fw-bold">0</span> นาที / ครั้ง
                                     </div>
                                 </div>
                             </div>
@@ -147,7 +174,7 @@
                     <input type="hidden" name="daily_target_minutes" id="dailyTargetInput" value="0">
                     
                     <div class="mb-4">
-                        <h5 class="fw-bold mb-3 text-dark border-start border-5 border-success ps-3">
+                        <h5 class="fw-bold mb-3 text-dark border-start border-5 border-primary ps-3">
                             เลือกวันออกกำลังกายของคุณ
                         </h5>
                         <div class="alert alert-info py-2 small mb-3">
@@ -183,7 +210,7 @@
 
                     <div class="mt-4 text-end border-top pt-4">
                         <a href="/user/select_plan/{{ patient_id }}" class="btn btn-secondary me-2 px-4 py-2">ย้อนกลับ</a>
-                        <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm" id="submitBtn" disabled>
+                        <button type="submit" class="btn btn-confirm-blue px-4 py-2 fw-bold shadow-sm" id="submitBtn" disabled>
                             ยืนยันสร้างตาราง 30 วัน <i class="bi bi-check-circle-fill ms-1"></i>
                         </button>
                     </div>
@@ -195,7 +222,7 @@
         <div class="text-center py-5">
             <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
             <h3 class="mt-3">ไม่พบข้อมูล</h3>
-            <a href="/user/select_plan/{{ patient_id }}" class="btn btn-outline-success mt-2">กลับไปเลือกใหม่</a>
+            <a href="/user/select_plan/{{ patient_id }}" class="btn btn-outline-primary mt-2">กลับไปเลือกใหม่</a>
         </div>
         {% endif %}
 
@@ -332,7 +359,8 @@
                                     title: 'เตือน!',
                                     text: 'คุณสามารถเลือกออกกำลังกายได้สูงสุด 5 วันต่อสัปดาห์ เพื่อให้ร่างกายได้พักฟื้นครับ',
                                     icon: 'warning',
-                                    confirmButtonColor: '#198754'
+                                    // ✅ เปลี่ยนสีปุ่ม SweetAlert ให้เข้า Theme สีฟ้า
+                                    confirmButtonColor: '#6d8ee6' 
                                 });
                                 return;
                             }

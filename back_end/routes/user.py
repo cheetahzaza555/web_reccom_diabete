@@ -108,7 +108,7 @@ def save_schedule():
     if 'user_id' not in session: return redirect(url_for('auth.login_page'))
     
     user_id = session['user_id']
-    exercise_id = request.form.get('exercise_name') # แนะนำให้เปลี่ยนใน HTML ให้ส่ง id ท่ามาด้วย
+    exercise_id = request.form.get('exercise_id') # แนะนำให้เปลี่ยนใน HTML ให้ส่ง id ท่ามาด้วย
     
     exact_dates_str = request.form.getlist('exact_dates')
     if not exact_dates_str: return "Missing selected dates", 400

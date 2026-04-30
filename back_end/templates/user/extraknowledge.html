@@ -12,19 +12,20 @@
     <style>
         body {
             font-family: 'Prompt', sans-serif;
-            background-color: #f4f9f9; /* สีพื้นหลังเขียวอ่อนสบายตา */
+            background-color: #f4f8ff; /* ✅ เปลี่ยนสีพื้นหลังเป็นฟ้าอ่อนสบายตา */
             color: #333;
         }
 
         /* --- Hero Section --- */
         .hero-section {
-            background: linear-gradient(135deg, #00b09b, #96c93d);
+            /* ✅ เปลี่ยนเป็นโทนฟ้า-น้ำเงิน */
+            background: linear-gradient(135deg, #4A7AFA, #6d8ee6);
             color: white;
             padding: 80px 0;
             border-bottom-left-radius: 50px;
             border-bottom-right-radius: 50px;
             margin-bottom: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(109, 142, 230, 0.2);
         }
 
         /* --- Cards General --- */
@@ -39,7 +40,7 @@
         }
         .info-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 30px rgba(109, 142, 230, 0.15);
         }
         .icon-box {
             width: 70px;
@@ -61,11 +62,11 @@
             transition: 0.3s;
         }
         .symptom-item:hover {
-            background: #eefcfc;
+            background: #e2eafc; /* ✅ พื้นหลังเวลา Hover เป็นสีฟ้าอ่อน */
         }
         .symptom-icon {
             font-size: 40px;
-            color: #ff6b6b;
+            color: #6d8ee6; /* ✅ เปลี่ยนไอคอนเป็นสีฟ้า */
             margin-bottom: 10px;
         }
 
@@ -109,7 +110,8 @@
             border: 2px solid #eee;
         }
         .flip-card-back {
-            background: linear-gradient(135deg, #11998e, #38ef7d);
+            /* ✅ เปลี่ยนเป็นโทนฟ้า-น้ำเงิน */
+            background: linear-gradient(135deg, #4A7AFA, #6d8ee6);
             color: white;
             transform: rotateY(180deg);
         }
@@ -120,7 +122,20 @@
             border-radius: 20px;
             padding: 40px;
             text-align: center;
-            border: 2px dashed #00b09b;
+            border: 2px dashed #6d8ee6; /* ✅ ขอบประสีฟ้า */
+        }
+
+        /* ✅ ปุ่ม Custom สไตล์สีฟ้า */
+        .btn-blue {
+            background-color: #6d8ee6;
+            color: white;
+            transition: all 0.3s;
+        }
+        .btn-blue:hover {
+            background-color: #577add;
+            color: white;
+            box-shadow: 0 4px 10px rgba(109, 142, 230, 0.4);
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -132,7 +147,7 @@
         <div class="container">
             <h1 class="display-4 fw-bold mb-3">เข้าใจเบาหวาน ดูแลตัวเองได้ง่ายขึ้น</h1>
             <p class="lead mb-4">"เบาหวานไม่ใช่เรื่องน่ากลัว หากเรารู้วิธีรับมือ"</p>
-            <a href="#types" class="btn btn-light btn-lg rounded-pill px-5 fw-bold text-success shadow-sm">
+            <a href="#types" class="btn btn-light btn-lg rounded-pill px-5 fw-bold text-primary shadow-sm">
                 เริ่มเรียนรู้ <i class="fas fa-arrow-down ms-2"></i>
             </a>
         </div>
@@ -142,7 +157,7 @@
         
         <div id="types" class="row g-4 mb-5">
             <div class="col-12 text-center mb-3">
-                <h2 class="fw-bold text-success"><i class="fas fa-dna me-2"></i>ประเภทของเบาหวาน</h2>
+                <h2 class="fw-bold text-primary"><i class="fas fa-dna me-2"></i>ประเภทของเบาหวาน</h2>
                 <p class="text-muted">เบาหวานไม่ได้มีแค่แบบเดียว มารู้จักกันเถอะ</p>
             </div>
 
@@ -160,12 +175,13 @@
             </div>
 
             <div class="col-md-4">
-                <div class="info-card p-4 text-center border-2 border-success">
-                    <div class="icon-box bg-success bg-opacity-10 text-success mx-auto">
+                <!-- ✅ เน้นเป็นการ์ดสีฟ้า (Primary) -->
+                <div class="info-card p-4 text-center border-2 border-primary">
+                    <div class="icon-box bg-primary bg-opacity-10 text-primary mx-auto">
                         <i class="fas fa-hamburger"></i>
                     </div>
                     <h4>เบาหวานชนิดที่ 2</h4>
-                    <span class="badge bg-success mb-3">พบบ่อยที่สุด (95%)</span>
+                    <span class="badge bg-primary mb-3">พบบ่อยที่สุด (95%)</span>
                     <p class="text-muted small">
                         เกิดจากภาวะดื้ออินซูลิน มักเกิดจากความอ้วน พันธุกรรม และพฤติกรรมการกิน สามารถคุมได้ด้วยอาหารและการออกกำลังกาย
                     </p>
@@ -188,7 +204,7 @@
 
         <div class="row mb-5 justify-content-center">
             <div class="col-12 text-center mb-4">
-                <h2 class="fw-bold text-danger"><i class="fas fa-heartbeat me-2"></i>7 สัญญาณเตือน!</h2>
+                <h2 class="fw-bold text-primary"><i class="fas fa-heartbeat me-2"></i>7 สัญญาณเตือน!</h2>
                 <p class="text-muted">หากคุณมีอาการเหล่านี้ ควรปรึกษาแพทย์</p>
             </div>
             
@@ -280,7 +296,7 @@
                 <div class="flip-card">
                     <div class="flip-card-inner">
                         <div class="flip-card-front">
-                            <i class="fas fa-pills fa-3x text-success mb-3"></i>
+                            <i class="fas fa-pills fa-3x text-primary mb-3"></i> <!-- ✅ เปลี่ยนเป็นสี primary -->
                             <h5 class="fw-bold">"กินยารักษาเบาหวาน ทำให้ไตพัง?"</h5>
                             <p class="text-muted mt-2">(ความเชื่อผิดๆ)</p>
                         </div>
@@ -295,9 +311,10 @@
         </div>
 
         <div class="cta-box mt-5">
-            <h3 class="fw-bold mb-3">สุขภาพดี เริ่มต้นที่ตัวคุณ!</h3>
+            <h3 class="fw-bold mb-3 text-primary">สุขภาพดี เริ่มต้นที่ตัวคุณ!</h3>
             <p class="mb-4">อยากรู้ว่าต้องออกกำลังกายแบบไหนถึงจะเหมาะกับคุณ?</p>
-            <a href="/" class="btn btn-success btn-lg rounded-pill px-5 shadow">
+            <!-- ✅ เปลี่ยนเป็นปุ่มสีฟ้า -->
+            <a href="/" class="btn btn-blue btn-lg rounded-pill px-5 shadow">
                 <i class="fas fa-clipboard-check me-2"></i> ประเมินสุขภาพและรับแผนออกกำลังกาย
             </a>
         </div>

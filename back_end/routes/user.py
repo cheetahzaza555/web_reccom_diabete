@@ -167,3 +167,7 @@ def active_exercise(day_node_id):
                                exercise_name=info["exercise_name"],
                                target_minutes=info["target_minutes"])
     return redirect(url_for('user.dashboard_page'))
+
+@user_bp.route('/settings')
+def setting():
+    return render_template('user/user_setting.html')

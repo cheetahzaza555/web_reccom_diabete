@@ -10,7 +10,7 @@ from modules.database import (
     generate_30_days_plan, get_dashboard_schedule, delete_user_schedule,
     update_daily_plan_status, get_daily_plan_info
 )
-
+from modules.ocr_service import process_ocr_image
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/dashboard')
@@ -167,3 +167,20 @@ def active_exercise(day_node_id):
                                exercise_name=info["exercise_name"],
                                target_minutes=info["target_minutes"])
     return redirect(url_for('user.dashboard_page'))
+
+@user_bp.route('/api/ocr', methods=['POST'])
+def handle_ocr():
+    if 'file' not in request.files:
+        return jsonify({"success": False, "message": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    try:
+        # เรียกใช้ฟังก์ชันจากไฟล์ที่เราแยกไว้
+        extracted_data = process_ocr_image(file)
+        
+        return jsonify({
+            "success": True, 
+            "data": extracted_data
+        })
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500

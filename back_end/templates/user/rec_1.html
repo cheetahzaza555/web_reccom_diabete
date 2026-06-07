@@ -659,7 +659,8 @@ function renderResults(json) {
         exEl.innerHTML = ""; 
 
         if (!json.exercises || json.exercises.length === 0) {
-            exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+            exEl.innerHTML = `<li class="text-muted">- เนื่องจากสภาวะร่างกายหรือความเสี่ยงร่วมของท่านในปัจจุบัน ไม่สอดคล้องกับเกณฑ์ความเข้มข้นของประเภทกิจกรรมที่เลือก <br>
+                    เพื่อป้องกันการบาดเจ็บหรืออันตรายต่อระบบหัวใจและหลอดเลือด ระบบจึงของดแนะนำกิจกรรมดังกล่าวชั่วคราว -</li>`;
             return;
         }
 

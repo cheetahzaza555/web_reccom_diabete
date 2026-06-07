@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, json, render_template, jsonify, request, session, redirect, url_for
 import calendar
+from werkzeug.security import check_password_hash, generate_password_hash 
 
 # ✅ เปลี่ยนมา Import ฟังก์ชันจาก database.py แทน
 from modules.logic import process_patient_realtime
@@ -8,9 +9,10 @@ from modules.database import (
     save_raw_patient_data, get_all_recommendations, get_patient_latest_record, 
     get_all_exercises_for_library, get_exercise_details_by_id, get_exercise_by_id,
     generate_30_days_plan, get_dashboard_schedule, delete_user_schedule,
-    update_daily_plan_status, get_daily_plan_info
+    update_daily_plan_status, get_daily_plan_info ,
+    get_password_hash_by_id, update_user_profile_db
 )
-
+from modules.ocr_service import process_ocr_image
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/dashboard')
@@ -171,3 +173,62 @@ def active_exercise(day_node_id):
 @user_bp.route('/settings')
 def setting():
     return render_template('user/user_setting.html')
+
+@user_bp.route('/api/update_settings', methods=['POST'])
+def update_settings():
+    if 'user_id' not in session:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    
+    user_id = session['user_id']
+    data = request.json
+
+    # ----------------------------------------------------
+    # ✅ 1. เพิ่มการตรวจเช็ก OTP ตรงนี้ (ก่อนทำอย่างอื่น)
+    # ----------------------------------------------------
+    user_otp = data.get('otp')
+    saved_otp = session.get('register_otp') # ดึง OTP ที่สร้างไว้ตอน request_otp ออกมาเทียบ
+
+    if not saved_otp or user_otp != saved_otp:
+        return jsonify({"status": "error", "message": "รหัส OTP ไม่ถูกต้อง หรือหมดเวลา"}), 400
+    # ----------------------------------------------------
+    
+    firstname = data.get('firstname', '').strip()
+    lastname = data.get('lastname', '').strip()
+    email = data.get('email', '').strip() # ดึง email มาด้วยเผื่อใช้งาน
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+    
+    new_hash = None
+
+    # 2. ถ้ามีการพิมพ์รหัสผ่านใหม่มา แปลว่าต้องการเปลี่ยนรหัสผ่าน
+    if new_password:
+        if not old_password:
+            return jsonify({"status": "error", "message": "กรุณากรอกรหัสผ่านเดิมเพื่อยืนยัน"}), 400
+            
+        current_hash = get_password_hash_by_id(user_id)
+        # ตรวจสอบว่ารหัสเดิมพิมพ์ถูกไหม
+        if not current_hash or not check_password_hash(current_hash, old_password):
+            return jsonify({"status": "error", "message": "รหัสผ่านเดิมไม่ถูกต้อง"}), 400
+            
+        # เข้ารหัสผ่านใหม่
+        new_hash = generate_password_hash(new_password)
+        
+    # 3. สั่งอัปเดตลง GraphDB (ถ้ามีการอัปเดตอีเมลใน DB ด้วย อย่าลืมไปแก้ฟังก์ชันนี้ให้รับค่า email ด้วยนะครับ)
+    success = update_user_profile_db(user_id, firstname, lastname, new_hash)
+    
+    if success:
+        # ✅ ลบ OTP ทิ้งหลังจากการใช้งานสำเร็จ เพื่อความปลอดภัย
+        session.pop('register_otp', None)
+        session.pop('register_email', None)
+
+        # อัปเดต Session ให้ข้อมูลหน้าเว็บเปลี่ยนตาม
+        session['firstname'] = firstname
+        session['lastname'] = lastname
+        if email:
+            session['email'] = email
+            
+        return jsonify({"status": "success", "message": "อัปเดตข้อมูลสำเร็จ"})
+    else:
+        return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500
+    
+    

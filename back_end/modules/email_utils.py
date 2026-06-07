@@ -1,0 +1,23 @@
+# modules/email_utils.py
+import smtplib
+from email.mime.text import MIMEText
+
+def send_otp_email(receiver_email, otp_code):
+    sender_email = "diagito1156@gmail.com" 
+    app_password = "pzmb sqgj zrxw wfhf"
+
+    msg = MIMEText(f"รหัส OTP สำหรับยืนยันการสมัครสมาชิก DiaBalance คือ: {otp_code}\n\nกรุณานำรหัสนี้ไปกรอกในหน้าเว็บเพื่อยืนยันตัวตน (รหัสมีอายุการใช้งาน 10 นาที)")
+    msg['Subject'] = 'รหัส OTP ยืนยันการสมัครสมาชิก - DiaBalance'
+    msg['From'] = f"DiaBalance <{sender_email}>"
+    msg['To'] = receiver_email
+
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, app_password)
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"❌ Email Error: {e}")
+        return False

@@ -3,166 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ลงทะเบียน | Diabetes Expert System</title>
-    
+    <title>ลงทะเบียน - DiaBalance</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
-        /* Theme เดียวกับหน้า Login */
-        body { font-family: 'Prompt', sans-serif; }
-        .bg-theme-dark { background-color: #345b95; }
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #eef1f6; /* สีพื้นหลังรอบนอก */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* กล่องสีน้ำเงินเข้ม */
+        .auth-card {
+            background-color: #375b97; /* อิงจากสีในภาพ Login */
+            border-radius: 15px;
+            padding: 3rem 2.5rem;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 650px;
+        }
+
+        .auth-icon {
+            font-size: 4rem;
+            line-height: 1;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* ช่องกรอกข้อมูลแบบเม็ดยา (Pill) */
+        .input-pill {
+            background-color: white;
+            border-radius: 50rem;
+            display: flex;
+            align-items: center;
+            padding: 4px 20px;
+            margin-bottom: 1rem;
+        }
+
+        .input-pill i {
+            color: #375b97;
+            font-size: 1.2rem;
+            margin-right: 12px;
+        }
+
+        .input-pill input {
+            border: none;
+            background: transparent;
+            padding: 10px 0;
+            width: 100%;
+            color: #333;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .input-pill input::placeholder {
+            color: #6c757d;
+        }
+
+        /* ปุ่มกดสีฟ้าอ่อน */
+        .btn-auth {
+            background-color: #8ca7f9;
+            color: white;
+            border-radius: 50rem;
+            padding: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: none;
+            width: 100%;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+
+        .btn-auth:hover:not(:disabled) {
+            background-color: #7694f5;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* ลิงก์ด้านล่าง */
+        .auth-footer {
+            margin-top: 2rem;
+            font-size: 0.95rem;
+            color: #d1dcf5;
+        }
+
+        .auth-link {
+            color: white;
+            text-decoration: underline;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .auth-link:hover {
+            color: #8ca7f9;
+        }
         
-        .btn-theme-light { 
-            background-color: #8aa6f8; 
-            color: white; 
-        }
-        .btn-theme-light:hover { 
-            background-color: #6d8ee6; 
-            color: white; 
-        }
-        
-        /* ปรับ Input Group */
-        .input-group-text {
-            color: #345b95;
-            border-color: #ced4da;
-        }
-        .form-control:focus, .input-group-text {
-            box-shadow: none;
-            border-color: #ced4da;
+        .form-label-custom {
+            font-size: 0.85rem;
+            color: #d1dcf5;
+            margin-bottom: 5px;
+            padding-left: 15px;
+            display: block;
+            text-align: left;
         }
     </style>
 </head>
-<body class="bg-white d-flex align-items-center justify-content-center vh-100 position-relative">
+<body>
 
-    <div class="card border-0 shadow-lg bg-theme-dark text-white rounded-4" style="width: 100%; max-width: 700px; min-height: 750px;">
-        <div class="card-body p-5 text-center d-flex flex-column justify-content-center">
+    <div class="auth-card text-center">
+        <i class="bi bi-person-vcard auth-icon"></i>
+        <h2 class="fw-bold mb-4">ลงทะเบียน</h2>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
             
-            <h2 class="fw-bold mb-4">ลงทะเบียน</h2>
-
-            <form id="registerForm">
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
-                                <i class="fa-solid fa-id-card fa-xl"></i>
-                            </span>
-                            <input type="text" id="firstname" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="ชื่อจริง" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
-                                <i class="fa-solid fa-id-card fa-xl"></i>
-                            </span>
-                            <input type="text" id="lastname" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="นามสกุล" required>
-                        </div>
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <label class="form-label-custom">ชื่อจริง</label>
+                    <div class="input-pill">
+                        <i class="bi bi-person"></i>
+                        <input type="text" id="firstname" placeholder="ชื่อจริง" required>
                     </div>
                 </div>
-
-                <div class="input-group mb-3">
-                    <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
-                        <i class="fa-solid fa-user fa-xl"></i>
-                    </span>
-                    <input type="text" id="username" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="ชื่อบัญชีผู้ใช้ (Username)" required>
+                <div class="col-md-6">
+                    <label class="form-label-custom">นามสกุล</label>
+                    <div class="input-pill">
+                        <i class="bi bi-person"></i>
+                        <input type="text" id="lastname" placeholder="นามสกุล" required>
+                    </div>
                 </div>
-
-                <div class="input-group mb-3">
-                    <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
-                        <i class="fa-solid fa-envelope fa-xl"></i>
-                    </span>
-                    <input type="email" id="email" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="อีเมล" required>
-                </div>
-
-                <div class="input-group mb-3">
-                    <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
-                        <i class="fa-solid fa-lock fa-xl"></i>
-                    </span>
-                    <input type="password" id="password" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="รหัสผ่าน" required>
-                </div>
-
-                <div class="input-group mb-4">
-                    <span class="input-group-text rounded-start-pill ps-3 bg-white border-end-0">
-                        <i class="fa-solid fa-lock fa-xl"></i>
-                    </span>
-                    <input type="password" id="confirm_password" class="form-control form-control-lg rounded-end-pill border-start-0 py-2" placeholder="ยืนยันรหัสผ่าน" required>
-                </div>
-
-                <button type="submit" class="btn btn-theme-light w-100 rounded-pill py-3 fw-bold fs-5 shadow-sm">
-                    ลงทะเบียน
-                </button>
-            </form>
-
-            <div class="mt-4 text-white-50">
-                มีบัญชีผู้ใช้แล้ว? 
-                <a href="/login" class="text-white fw-bold text-decoration-underline">เข้าสู่ระบบ</a>
             </div>
 
-            <div id="msg" class="text-warning mt-3 small fw-bold"></div>
-        </div>
+            <label class="form-label-custom mt-2">ชื่อบัญชีผู้ใช้ (Username)</label>
+            <div class="input-pill">
+                <i class="bi bi-person-badge"></i>
+                <input type="text" id="username" placeholder="ตั้งชื่อบัญชีผู้ใช้" required>
+            </div>
+
+            <label class="form-label-custom mt-2">อีเมล (Email)</label>
+            <div class="input-pill">
+                <i class="bi bi-envelope"></i>
+                <input type="email" id="email" placeholder="อีเมลของคุณ" required>
+            </div>
+
+            <div class="row g-2 mt-2">
+                <div class="col-md-6">
+                    <label class="form-label-custom">รหัสผ่าน</label>
+                    <div class="input-pill">
+                        <i class="bi bi-lock"></i>
+                        <input type="password" id="password" placeholder="รหัสผ่าน" required minlength="6">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label-custom">ยืนยันรหัสผ่าน</label>
+                    <div class="input-pill">
+                        <i class="bi bi-lock-fill"></i>
+                        <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required minlength="6">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-auth" id="registerBtn">
+                ลงทะเบียน
+            </button>
+
+            <div class="auth-footer">
+                มีบัญชีผู้ใช้แล้ว? <a href="/login" class="auth-link">เข้าสู่ระบบ</a>
+            </div>
+        </form>
     </div>
 
-    <script>
-        document.getElementById("registerForm").addEventListener("submit", async function(e) {
-            e.preventDefault();
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-            // 1. ดึงค่าจาก Input ใหม่
-            const firstname = document.getElementById("firstname").value;
-            const lastname = document.getElementById("lastname").value;
-            const username = document.getElementById("username").value;
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            const confirmPassword = document.getElementById("confirm_password").value;
-            
-            const msgDiv = document.getElementById("msg");
-            const btn = document.querySelector("button[type='submit']");
-            const originalBtnText = btn.innerHTML;
+    <script>
+        async function handleRegister(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const firstname = document.getElementById('firstname').value.trim();
+            const lastname = document.getElementById('lastname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
 
             if (password !== confirmPassword) {
-                msgDiv.innerText = "❌ รหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง";
-                return;
+                return Swal.fire('ข้อผิดพลาด', 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน', 'error');
             }
 
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
+            const btn = document.getElementById('registerBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังส่ง OTP...';
             btn.disabled = true;
-            msgDiv.innerText = "";
 
             try {
-                const res = await fetch("/api/register", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    // 2. ส่งค่า firstname และ lastname ไปใน JSON
-                    body: JSON.stringify({ 
-                        firstname: firstname,
-                        lastname: lastname,
-                        username: username, 
-                        email: email,
-                        password: password 
-                    })
+                // 1. ขอ OTP
+                const otpRes = await fetch('/api/request_otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
                 });
+                const otpData = await otpRes.json();
 
-                const data = await res.json();
+                if (otpRes.ok) {
+                    // 2. แสดง Popup รับ OTP (ปรับสีให้เข้ากับ Theme)
+                    const { value: enteredOTP } = await Swal.fire({
+                        title: 'ยืนยันอีเมลของคุณ',
+                        html: `เราได้ส่งรหัส OTP 6 หลัก ไปที่ <b>${email}</b> แล้ว`,
+                        input: 'text',
+                        inputPlaceholder: 'กรอกรหัส 6 หลักที่นี่',
+                        inputAttributes: { maxlength: 6, autocapitalize: 'off', autocorrect: 'off' },
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'ยืนยัน',
+                        cancelButtonText: 'ยกเลิก',
+                        confirmButtonColor: '#8ca7f9', // สีปุ่ม Popup ให้เหมือนสีปุ่มลงทะเบียน
+                        inputValidator: (value) => {
+                            if (!value || value.length !== 6) return 'กรุณากรอกรหัส OTP ให้ครบ 6 หลัก';
+                        }
+                    });
 
-                if (res.ok) {
-                    msgDiv.className = "text-white mt-3 small fw-bold";
-                    msgDiv.innerText = "✅ ลงทะเบียนสำเร็จ! กำลังไปหน้าเข้าสู่ระบบ...";
-                    setTimeout(() => {
-                        window.location.href = "/login";
-                    }, 1500);
+                    // 3. ส่งข้อมูลไปสมัคร
+                    if (enteredOTP) {
+                        Swal.fire({ title: 'กำลังสร้างบัญชี...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                        const regRes = await fetch('/api/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: username,
+                                firstname: firstname,
+                                lastname: lastname,
+                                email: email,
+                                password: password,
+                                otp: enteredOTP
+                            })
+                        });
+
+                        const regData = await regRes.json();
+
+                        if (regRes.ok) {
+                            Swal.fire({
+                                title: 'สมัครสมาชิกสำเร็จ!',
+                                text: 'คุณสามารถเข้าสู่ระบบได้ทันที',
+                                icon: 'success',
+                                confirmButtonColor: '#8ca7f9'
+                            }).then(() => {
+                                window.location.href = '/login';
+                            });
+                        } else {
+                            Swal.fire('ข้อผิดพลาด', regData.error || 'รหัส OTP ไม่ถูกต้อง', 'error');
+                        }
+                    }
                 } else {
-                    msgDiv.className = "text-warning mt-3 small fw-bold";
-                    msgDiv.innerText = data.error || "❌ ลงทะเบียนไม่สำเร็จ";
-                    btn.innerHTML = originalBtnText;
-                    btn.disabled = false;
+                    Swal.fire('เกิดข้อผิดพลาด', otpData.error || 'ไม่สามารถส่งอีเมลได้', 'error');
                 }
-            } catch (err) {
-                msgDiv.innerText = "❌ ติดต่อ server ไม่ได้";
-                btn.innerHTML = originalBtnText;
+            } catch (error) {
+                console.error("Error:", error);
+                Swal.fire('ระบบขัดข้อง', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+            } finally {
+                btn.innerHTML = originalText;
                 btn.disabled = false;
             }
-        });
+        }
     </script>
 </body>
 </html>

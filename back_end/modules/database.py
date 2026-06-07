@@ -806,6 +806,7 @@ def get_user_for_login(username):
         OPTIONAL {{ ?patient ex:role ?role }}
         OPTIONAL {{ ?patient ex:firstname ?fname }}
         OPTIONAL {{ ?patient ex:lastname ?lname }}
+        OPTIONAL {{ ?patient ex:email ?email }}
     }} LIMIT 1
     """
     try:
@@ -857,8 +858,9 @@ def get_user_by_id(user_id):
             "id": user_id,
             "username": r.get("username", {}).get("value", ""),
             "role": r.get("role", {}).get("value", "user"),
-            "firstname": r.get("fname", {}).get("value", ""), # ต้องใช้ fname จาก SPARQL
-            "lastname": r.get("lname", {}).get("value", "")   # ต้องใช้ lname จาก SPARQL
+            "firstname": r.get("fname", {}).get("value", ""), 
+            "lastname": r.get("lname", {}).get("value", ""), 
+            "email": r.get("email", {}).get("value", "")
         }
     except Exception as e:
         print(f"Error in get_user_by_id: {e}")
@@ -1091,3 +1093,59 @@ def get_daily_plan_info(day_node_id):
         }
     except Exception as e:
         return None
+    
+
+def get_password_hash_by_id(user_id):
+    clean_id = str(user_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
+    
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    SELECT ?hash WHERE {{ ex:{pid} ex:passwordHash ?hash . }} LIMIT 1
+    """
+    try:
+        sparql_read.setQuery(query)
+        res = sparql_read.query().convert()
+        bindings = res["results"]["bindings"]
+        if bindings:
+            return bindings[0]["hash"]["value"]
+        return None
+    except Exception as e:
+        print(f"Error getting password hash: {e}")
+        return None
+
+def update_user_profile_db(user_id, firstname, lastname, new_hash=None):
+    clean_id = str(user_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
+
+    # ถ้ามีรหัสผ่านใหม่มา ให้เตรียมคำสั่งลบของเก่าและใส่ของใหม่
+    delete_pass = "ex:{pid} ex:passwordHash ?oldHash ." if new_hash else ""
+    insert_pass = f'ex:{pid} ex:passwordHash "{escape_sparql(new_hash)}" .' if new_hash else ""
+    where_pass = f"OPTIONAL {{ ex:{pid} ex:passwordHash ?oldHash }}" if new_hash else ""
+
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    DELETE {{
+        ex:{pid} ex:firstname ?oldF .
+        ex:{pid} ex:lastname ?oldL .
+        {delete_pass.replace('{pid}', pid)}
+    }}
+    INSERT {{
+        ex:{pid} ex:firstname "{escape_sparql(firstname)}" .
+        ex:{pid} ex:lastname "{escape_sparql(lastname)}" .
+        {insert_pass.replace('{pid}', pid)}
+    }}
+    WHERE {{
+        ex:{pid} a ex:Patient .
+        OPTIONAL {{ ex:{pid} ex:firstname ?oldF }}
+        OPTIONAL {{ ex:{pid} ex:lastname ?oldL }}
+        {where_pass.replace('{pid}', pid)}
+    }}
+    """
+    try:
+        sparql_write.setQuery(query)
+        sparql_write.query()
+        return True
+    except Exception as e:
+        print(f"❌ Error updating profile: {e}")
+        return False

@@ -305,54 +305,66 @@
             if (!input.files || !input.files[0]) return;
 
             const statusDiv = document.getElementById('ocrStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div><span class="ms-2 small text-primary">กำลังประมวลผลด้วย AI...</span>';
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div><span class="ms-2 small text-primary">กำลังประมวลผลด้วย AI...</span>';
+            }
 
             const formData = new FormData();
             formData.append('file', input.files[0]);
 
             try {
-                // แนะนำ: ระบุ URL ให้ชัดเจนในช่วงพัฒนา หรือใช้ /api/ocr ถ้า deploy ที่เดียวกัน
-                const response = await fetch('http://127.0.0.1:5000/api/ocr', { 
+                // ยิงไปที่ Route ของ Blueprint ที่เช็กแล้วว่าเจอชัวร์ๆ (สถานะ 200)
+                const response = await fetch('http://127.0.0.1:5000/user/api/ocr', { 
                     method: 'POST', 
                     body: formData 
                 });
                 
-                if (!response.ok) throw new Error('Server Error'); // เช็คว่า Server ปกติไหม
+                if (!response.ok) throw new Error('Server Error');
 
                 const result = await response.json();
+                
+                // 🔍 ส่องดูข้อมูลดิบในแท็บ Console (F12) ทุกครั้งที่มีการอัปโหลด
+                console.log("=== ผลลัพธ์ที่ส่งกลับมาจาก Python ===", result);
 
-                // backend ของเรา (จากที่คุยกันก่อนหน้า) มักจะส่ง data มาเลย หรือส่ง {success: true, data: {...}}
-                // ปรับให้ตรงตามโครงสร้าง Backend ของคุณ:
-                if (result) {
-                    const data = result; // หรือ result.data ตามที่ Backend ส่งมา
+                // แกะกล่องข้อมูลจากก้อนที่ Flask ส่งมา (ซ้อนอยู่ในคำว่า data)
+                if (result && result.success) {
+                    const data = result.data; 
                     
-                    // นำค่ามาใส่ใน Form (ใช้ || "" เผื่อค่าเป็น null)
+                    // นำค่ามาใส่ใน Form (ใช้ || "" เพื่อป้องกันค่า null)
                     document.querySelector('[name="hdl"]').value = data.hdl || "";
                     document.querySelector('[name="ldl"]').value = data.ldl || "";
                     document.querySelector('[name="cholesterol"]').value = data.cholesterol || "";
                     document.querySelector('[name="fpg"]').value = data.fpg || "";
 
-                    statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> <span class="ms-2 small text-success">ดึงข้อมูลสำเร็จ! กรุณาตรวจสอบอีกครั้ง</span>';
+                    if (statusDiv) {
+                        statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> <span class="ms-2 small text-success">ดึงข้อมูลสำเร็จ! กรุณาตรวจสอบอีกครั้ง</span>';
+                    }
                     
+                    // เรียกฟังก์ชันไฮไลท์
                     highlightFields(['hdl', 'ldl', 'cholesterol', 'fpg']);
+                } else {
+                    if (statusDiv) statusDiv.innerHTML = '<span class="small text-warning">AI ไม่พบข้อมูลสุขภาพในภาพนี้</span>';
                 }
+
             } catch (error) {
                 console.error("OCR Error:", error);
-                statusDiv.innerHTML = '<span class="small text-danger">ไม่สามารถเชื่อมต่อระบบ AI ได้</span>';
+                if (statusDiv) statusDiv.innerHTML = '<span class="small text-danger">ไม่สามารถเชื่อมต่อระบบ AI ได้</span>';
+            } finally {
+                // 🔍 บรรทัดสำคัญ: ล้างค่าไฟล์เก่าทิ้ง เพื่อให้กดอัปโหลดรูปเดิมซ้ำๆ ได้ทันที
+                input.value = ''; 
             }
         }
 
         function highlightFields(fields) {
             fields.forEach(f => {
                 const el = document.querySelector(`[name="${f}"]`);
-                // ปรับให้ไฮไลท์ทุกช่องที่พยายามเติมค่า แม้ค่าจะว่าง (เพื่อให้รู้ว่ามันผ่านกระบวนการแล้ว)
                 if(el) {
                     el.style.transition = 'background-color 0.8s ease';
-                    el.style.backgroundColor = '#d1e7dd'; // เขียวอ่อนสำเร็จ
+                    el.style.backgroundColor = '#d1e7dd'; // ไฮไลท์สีเขียวอ่อน
                     setTimeout(() => {
                         el.style.backgroundColor = ''; 
-                    }, 3000); // แสดงไว้นานหน่อย 3 วินาทีให้ผู้ใช้ตรวจทัน
+                    }, 3000); 
                 }
             });
         }
@@ -647,7 +659,8 @@ function renderResults(json) {
         exEl.innerHTML = ""; 
 
         if (!json.exercises || json.exercises.length === 0) {
-            exEl.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
+            exEl.innerHTML = `<li class="text-muted">- เนื่องจากสภาวะร่างกายหรือความเสี่ยงร่วมของท่านในปัจจุบัน ไม่สอดคล้องกับเกณฑ์ความเข้มข้นของประเภทกิจกรรมที่เลือก <br>
+                    เพื่อป้องกันการบาดเจ็บหรืออันตรายต่อระบบหัวใจและหลอดเลือด ระบบจึงของดแนะนำกิจกรรมดังกล่าวชั่วคราว -</li>`;
             return;
         }
 

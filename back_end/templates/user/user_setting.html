@@ -10,87 +10,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
-        body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #f4f8ff; /* สีพื้นหลังฟ้าอ่อน */
-            color: #333;
-        }
-
-        .header-section {
-            background-color: #8ca7f9;
-            color: white;
-            padding: 40px 0;
-            margin-bottom: 40px;
-        }
-
-        /* --- สไตล์ของ Card รวม --- */
-        .settings-card {
-            background: white;
-            border-radius: 20px;
-            border: none;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-            padding: 40px;
-            margin-bottom: 40px;
-        }
-
-        .settings-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        /* --- Forms --- */
-        .form-label {
-            font-weight: 500;
-            color: #495057;
-            margin-bottom: 8px;
-        }
-
-        .form-control {
-            border-radius: 10px;
-            padding: 10px 15px;
-            border: 1px solid #ced4da;
-            background-color: #fafbfc;
-            transition: all 0.2s;
-        }
-
-        .form-control:focus {
-            background-color: #fff;
-            border-color: #6d8ee6;
-            box-shadow: 0 0 0 0.2rem rgba(109, 142, 230, 0.25);
-        }
-        
-        .form-control:disabled {
-            background-color: #e9ecef;
-            cursor: not-allowed;
-            color: #6c757d;
-        }
-
-        /* เส้นคั่น */
-        .custom-divider {
-            border: 0;
-            border-top: 2px solid #e2eafc;
-            margin: 30px 0;
-        }
-
-        /* ปุ่มบันทึก */
-        .btn-save {
-            background-color: #6d8ee6;
-            color: white;
-            border: none;
-            padding: 10px 35px;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-save:hover:not(:disabled) {
-            background-color: #577add;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(109, 142, 230, 0.3);
-        }
+        body { font-family: 'Prompt', sans-serif; background-color: #f4f8ff; color: #333; }
+        .header-section { background-color: #8ca7f9; color: white; padding: 40px 0; margin-bottom: 40px; }
+        .settings-card { background: white; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); padding: 40px; margin-bottom: 40px; }
+        .form-label { font-weight: 500; color: #495057; margin-bottom: 8px; }
+        .form-control { border-radius: 10px; padding: 10px 15px; border: 1px solid #ced4da; background-color: #fafbfc; transition: all 0.3s ease;}
+        .form-control:focus { background-color: #fff; border-color: #6d8ee6; box-shadow: 0 0 0 0.2rem rgba(109, 142, 230, 0.25); }
+        .form-control:disabled, .form-control[readonly] { background-color: #e9ecef; color: #6c757d; border-color: #e9ecef; cursor: not-allowed; }
+        .btn-save { background-color: #6d8ee6; color: white; border: none; padding: 10px 35px; border-radius: 10px; font-weight: 500; transition: 0.3s; display: none; /* ซ่อนปุ่มบันทึกไว้ก่อน */ }
+        .btn-save:hover:not(:disabled) { background-color: #577add; transform: translateY(-2px); }
+        .btn-toggle { border-radius: 10px; padding: 8px 20px; font-weight: 500; transition: 0.3s; }
     </style>
 </head>
 <body>
@@ -99,63 +28,74 @@
 
     <div class="header-section">
         <div class="container-fluid px-4 px-md-5 text-start">
-            <h1 class="fw-bold mb-0" style="font-size: 2.5rem; letter-spacing: 0.5px;">
-                <i class="bi bi-gear-fill me-2"></i> การตั้งค่า
-            </h1>
+            <h1 class="fw-bold mb-0" style="font-size: 2.5rem;"><i class="bi bi-gear-fill me-2"></i> การตั้งค่า</h1>
         </div>
     </div>
 
     <div class="container" style="max-width: 800px;">
         <div class="settings-card">
+            
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold mb-0">ข้อมูลส่วนตัว</h3>
+                <button type="button" class="btn btn-outline-primary btn-toggle" id="toggleEditBtn" onclick="toggleEditMode()">
+                    <i class="bi bi-pencil-square me-1"></i> แก้ไขข้อมูล
+                </button>
+            </div>
+            
+            <hr style="border-top: 2px solid #333; opacity: 1; margin-bottom: 30px;">
+
             <form id="settingsForm" onsubmit="handleSaveSettings(event)">
                 
                 <div class="row mb-3">
                     <div class="col-12">
                         <label class="form-label">ชื่อผู้ใช้งาน</label>
-                        <input type="text" class="form-control fw-bold" id="username" value="{{ session.get('username', '') }}" disabled>
+                        <input type="text" class="form-control fw-bold" value="{{ session.get('username', '') }}" readonly disabled>
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6 mb-3 mb-md-0">
                         <label class="form-label">ชื่อจริง</label>
-                        <input type="text" class="form-control" id="firstname" value="{{ session.get('firstname', '') }}" required>
+                        <input type="text" class="form-control" id="firstname" value="{{ session.get('firstname', '') }}" disabled required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">นามสกุล</label>
-                        <input type="text" class="form-control" id="lastname" value="{{ session.get('lastname', '') }}" required>
+                        <input type="text" class="form-control" id="lastname" value="{{ session.get('lastname', '') }}" disabled required>
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-12">
-                        <label class="form-label">อีเมล</label>
-                        <input type="email" class="form-control" id="email" value="{{ session.get('email', '') }}">
+                        <label class="form-label">อีเมล <span class="text-muted small">(ไม่สามารถแก้ไขได้)</span></label>
+                        <input type="email" class="form-control fw-bold" value="{{ session.get('email', '') }}" readonly disabled>
                     </div>
                 </div>
 
-                <hr class="custom-divider">
+                <hr style="margin: 30px 0; border-top: 2px solid #e2eafc;">
+                <h5 class="fw-bold mb-3 text-secondary">เปลี่ยนรหัสผ่าน <span class="small fw-normal">(เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</span></h5>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">รหัสผ่านปัจจุบัน</label>
-                        <input type="password" class="form-control" id="oldPassword" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
+                        <input type="password" class="form-control" id="oldPassword" placeholder="รหัสผ่านปัจจุบัน" disabled>
                     </div>
                 </div>
 
                 <div class="row mb-4">
                     <div class="col-md-6 mb-3 mb-md-0">
                         <label class="form-label">รหัสผ่านใหม่</label>
-                        <input type="password" class="form-control" id="newPassword" placeholder="รหัสผ่านใหม่">
+                        <input type="password" class="form-control" id="newPassword" placeholder="รหัสผ่านใหม่" disabled>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">ยืนยันรหัสใหม่</label>
-                        <input type="password" class="form-control" id="confirmPassword" placeholder="ยืนยันรหัสผ่านใหม่">
+                        <input type="password" class="form-control" id="confirmPassword" placeholder="ยืนยันรหัสผ่านใหม่" disabled>
                     </div>
                 </div>
 
                 <div class="text-end">
-                    <button type="submit" class="btn btn-save" id="btnSave">บันทึก</button>
+                    <button type="submit" class="btn btn-save" id="btnSave">
+                        <i class="bi bi-save me-1"></i> บันทึกการเปลี่ยนแปลง
+                    </button>
                 </div>
 
             </form>
@@ -166,88 +106,102 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        async function handleSaveSettings(event) {
-            event.preventDefault(); // ป้องกันเว็บ Refresh
+        // --- ระบบเปิด-ปิด โหมดแก้ไขข้อมูล ---
+        let isEditMode = false;
 
-            // ดึงข้อมูลจากฟอร์ม
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            
+            // ปลดล็อค/ล็อค ช่องกรอกข้อมูล
+            document.getElementById('firstname').disabled = !isEditMode;
+            document.getElementById('lastname').disabled = !isEditMode;
+            document.getElementById('oldPassword').disabled = !isEditMode;
+            document.getElementById('newPassword').disabled = !isEditMode;
+            document.getElementById('confirmPassword').disabled = !isEditMode;
+
+            const btnSave = document.getElementById('btnSave');
+            const toggleBtn = document.getElementById('toggleEditBtn');
+
+            if (isEditMode) {
+                // โหมดแก้ไข
+                btnSave.style.display = 'inline-block';
+                toggleBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i> ยกเลิกการแก้ไข';
+                toggleBtn.classList.replace('btn-outline-primary', 'btn-outline-danger');
+            } else {
+                // โหมดดูข้อมูล
+                btnSave.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="bi bi-pencil-square me-1"></i> แก้ไขข้อมูล';
+                toggleBtn.classList.replace('btn-outline-danger', 'btn-outline-primary');
+                
+                // คืนค่าฟอร์มกลับเป็นเหมือนเดิม
+                document.getElementById('settingsForm').reset(); 
+            }
+        }
+
+        // --- ระบบบันทึกข้อมูล ---
+        async function handleSaveSettings(event) {
+            event.preventDefault(); 
+
             const firstname = document.getElementById('firstname').value.trim();
             const lastname = document.getElementById('lastname').value.trim();
-            const email = document.getElementById('email').value.trim();
             const oldPassword = document.getElementById('oldPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // ✅ แก้จุดนี้: ถ้าหน้าเว็บไม่มีค่าอีเมล ให้ดึงจาก Session ที่โหลดมาแต่แรก หรือส่งค่าว่างไปถ้าไม่อยากอัปเดตอีเมล
-            if (!email) {
-                // ถ้าค่าใน input ว่าง ให้ลองดึงค่าเดิมจากระบบ หรือจัดการตาม Logic ของคุณ
-                // กรณีนี้ผมแนะนำให้ส่งค่าอีเมลเดิมที่อยู่ใน session ไปด้วยครับ
-                email = "{{ session.get('email', '') }}"; 
-            }
+            // ❌ เอาการดักจับเช็กอีเมลออกไปแล้ว!
 
-            // ถ้ายังว่างอีก แปลว่ายูสเซอร์ไม่มีอีเมลในระบบจริงๆ ถึงค่อยแจ้งเตือน
-            if (!email) {
-                return Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลอีเมลในระบบ กรุณาติดต่อผู้ดูแล', 'error');
-            }
-
-            // 1. ตรวจสอบเงื่อนไขรหัสผ่าน (ถ้ามีการกรอกรหัสใหม่)
-
+            // ดักจับ Error รหัสผ่าน (ถ้ามีการกรอกรหัสใหม่)
             if (newPassword || confirmPassword || oldPassword) {
-                if (!oldPassword) {
-                    return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสผ่านปัจจุบัน เพื่อยืนยันการเปลี่ยนรหัสผ่านใหม่', 'warning');
-                }
-                if (newPassword !== confirmPassword) {
-                    return Swal.fire('ข้อผิดพลาด', 'รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน', 'error');
-                }
-                if (newPassword.length < 6) {
-                    return Swal.fire('แจ้งเตือน', 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร', 'warning');
-                }
+                if (!oldPassword) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสผ่านปัจจุบัน', 'warning');
+                if (newPassword !== confirmPassword) return Swal.fire('ข้อผิดพลาด', 'รหัสใหม่ไม่ตรงกัน', 'error');
+                if (newPassword.length < 6) return Swal.fire('แจ้งเตือน', 'รหัสใหม่ต้องมี 6 ตัวขึ้นไป', 'warning');
             }
 
             const btnSave = document.getElementById('btnSave');
             const originalText = btnSave.innerHTML;
             btnSave.disabled = true;
-            btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังส่ง OTP...';
+            
+            Swal.fire({
+                title: 'กำลังส่งรหัส OTP...',
+                text: 'กรุณารอสักครู่ ระบบกำลังจัดส่งอีเมล',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
 
             try {
-                // 2. ยิง API ขอ OTP (ใช้ Route เดียวกับตอน Register ได้เลย เพราะรับแค่ email ไปส่ง)
+                // ยิง API ขอ OTP (ไม่ต้องแนบ Email ไปแล้ว เพราะหลังบ้านจะดึงจาก Session เอง)
                 const otpRes = await fetch('/api/request_otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email })
+                    body: JSON.stringify({ action: 'update_settings' }) // <-- แจ้งหลังบ้านว่านี่คือการตั้งค่า ไม่ใช่สมัครใหม่
                 });
+                
                 const otpData = await otpRes.json();
 
+                Swal.close();
+
                 if (otpRes.ok) {
-                    // 3. แสดง Popup ให้กรอก OTP ด้วย SweetAlert2
+                    // แสดง Popup ให้กรอก OTP
                     const { value: enteredOTP } = await Swal.fire({
-                        title: 'ยืนยันการเปลี่ยนแปลง',
-                        html: `เราได้ส่งรหัส OTP 6 หลัก ไปที่ <b>${email}</b> แล้ว<br><small class="text-muted">กรุณากรอกเพื่อยืนยันการแก้ไขข้อมูล</small>`,
+                        title: 'ยืนยันด้วย OTP',
+                        html: `เราได้ส่งรหัส 6 หลัก ไปที่อีเมลของคุณแล้ว`,
                         input: 'text',
-                        inputPlaceholder: 'กรอกรหัส 6 หลักที่นี่',
-                        inputAttributes: {
-                            maxlength: 6,
-                            autocapitalize: 'off',
-                            autocorrect: 'off'
-                        },
+                        inputAttributes: { maxlength: 6 },
                         icon: 'info',
                         showCancelButton: true,
-                        confirmButtonText: 'ยืนยันบันทึก',
+                        confirmButtonText: 'ยืนยัน',
                         cancelButtonText: 'ยกเลิก',
                         confirmButtonColor: '#6d8ee6',
                         inputValidator: (value) => {
-                            if (!value || value.length !== 6) {
-                                return 'กรุณากรอกรหัส OTP ให้ครบ 6 หลัก';
-                            }
+                            if (!value || value.length !== 6) return 'กรุณากรอกรหัสให้ครบ 6 หลัก';
                         }
                     });
 
-                    // 4. ถ้ากรอก OTP และกดยืนยัน ส่งข้อมูลทั้งหมดไปเซฟ
+                    // ถ้ากรอก OTP และกดยืนยัน
                     if (enteredOTP) {
-                        Swal.fire({
-                            title: 'กำลังตรวจสอบและบันทึก...',
-                            allowOutsideClick: false,
-                            didOpen: () => Swal.showLoading()
-                        });
+                        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
                         const updateRes = await fetch('/user/api/update_settings', {
                             method: 'POST',
@@ -255,35 +209,29 @@
                             body: JSON.stringify({
                                 firstname: firstname,
                                 lastname: lastname,
-                                email: email,
                                 old_password: oldPassword,
                                 new_password: newPassword,
-                                otp: enteredOTP // ส่ง OTP แนบไปตรวจฝั่งหลังบ้านด้วย!
+                                otp: enteredOTP // ส่ง OTP ไปตรวจ
                             })
                         });
 
                         const updateData = await updateRes.json();
 
                         if (updateRes.ok && updateData.status === 'success') {
-                            Swal.fire({
-                                title: 'บันทึกสำเร็จ!',
-                                text: 'ข้อมูลโปรไฟล์ของคุณถูกอัปเดตเรียบร้อยแล้ว',
-                                icon: 'success',
-                                confirmButtonColor: '#6d8ee6'
-                            }).then(() => {
-                                window.location.reload(); // รีโหลดหน้าเพื่ออัปเดตชื่อบน Navbar
+                            Swal.fire('บันทึกสำเร็จ!', 'อัปเดตโปรไฟล์เรียบร้อยแล้ว', 'success').then(() => {
+                                window.location.reload(); 
                             });
                         } else {
-                            Swal.fire('เกิดข้อผิดพลาด', updateData.message || 'ไม่สามารถอัปเดตข้อมูลได้', 'error');
+                            Swal.fire('เกิดข้อผิดพลาด', updateData.message || 'ไม่สามารถอัปเดตได้', 'error');
                         }
                     }
                 } else {
-                    Swal.fire('ข้อผิดพลาด', otpData.error || 'ไม่สามารถส่งอีเมล OTP ได้', 'error');
+                    Swal.fire('เกิดข้อผิดพลาด', otpData.error || 'ไม่สามารถส่ง OTP ได้', 'error');
                 }
 
             } catch (error) {
                 console.error("Error:", error);
-                Swal.fire('ระบบขัดข้อง', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+                Swal.fire('ระบบขัดข้อง', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
             } finally {
                 btnSave.disabled = false;
                 btnSave.innerHTML = originalText;

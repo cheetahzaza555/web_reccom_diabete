@@ -86,7 +86,8 @@ def login():
         
         # 1. ไปค้นหา User จาก GraphDB
         user = get_user_for_login(data["username"])
-        print(f"DEBUG: ข้อมูล user ที่ได้จาก DB: {user}")
+
+        print(f"👉 ข้อมูล User จาก DB: {user}")
 
         if not user:
             return jsonify({"status": "error", "message": "User not found"}), 401
@@ -135,20 +136,29 @@ def get_current_user():
 @auth.route("/api/request_otp", methods=["POST"])
 def request_otp():
     try:
-        data = request.json
-        email = data.get("email")
-        if not email:
-            return jsonify({"error": "กรุณาระบุอีเมล"}), 400
+        data = request.json or {}
 
-        # สุ่มรหัส OTP 6 หลัก
+        # 1. เช็คก่อนว่ามาจากหน้าไหน (ถ้าหน้าตั้งค่าจะส่ง action = 'update_settings' มา)
+        action = data.get("action", "register")
+
+        # 2. ดึงอีเมลให้ถูกที่
+        if action == "update_settings":
+            email = session.get('email') # หน้าตั้งค่า ดึงจาก Session ป้องกันการแฮก
+        else:
+            email = data.get('email') # หน้าสมัครสมาชิก ดึงจากที่ผู้ใช้พิมพ์เข้ามา
+
+        if not email:
+            return jsonify({"error": "ไม่พบข้อมูลอีเมล กรุณาระบุอีเมล"}), 400
+
+        # 3. สุ่มรหัส OTP 6 หลัก
         otp_code = str(random.randint(100000, 999999))
         
-        # เก็บ OTP ไว้ใน Session ชั่วคราวเพื่อรอตรวจ
+        # 4. เก็บ OTP ไว้ใน Session ชั่วคราวเพื่อรอตรวจ
         session['register_otp'] = otp_code
         session['register_email'] = email 
 
-        # ส่งอีเมล
-        success = send_otp_email(email, otp_code)
+        # 5. ส่ง action พ่วงไปด้วย เพื่อให้ฟังก์ชันส่งเมลรู้ว่าต้องพิมพ์หัวข้อว่าอะไร!
+        success = send_otp_email(email, otp_code, action)
         
         if success:
             return jsonify({"status": "ok", "message": "ส่ง OTP สำเร็จ"})

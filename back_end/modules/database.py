@@ -798,7 +798,7 @@ def register_new_patient(username, password_hash, firstname, lastname, email, ro
 def get_user_for_login(username):
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
-    SELECT ?patient ?passwordHash ?role ?fname ?lname
+    SELECT ?patient ?passwordHash ?role ?fname ?lname ?email
     WHERE {{
         ?patient a ex:Patient .
         ?patient ex:username "{escape_sparql(username)}" .
@@ -824,7 +824,8 @@ def get_user_for_login(username):
             "password_hash": r["passwordHash"]["value"],
             "role": r.get("role", {}).get("value", "user"),
             "firstname": r.get("fname", {}).get("value", ""),
-            "lastname": r.get("lname", {}).get("value", "")
+            "lastname": r.get("lname", {}).get("value", ""),
+            "email": r.get("email", {}).get("value", "")
         }
     except Exception as e:
         print(f"Error login: {e}")

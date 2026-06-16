@@ -231,4 +231,29 @@ def update_settings():
     else:
         return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500
     
-    
+@user_bp.route('/api/ocr', methods=['POST'])
+def handle_ocr_api():
+    # 1. ตรวจสอบว่าฝั่ง JavaScript ส่งไฟล์ภาพมาจริงไหม
+    if 'file' not in request.files:
+        return jsonify({"success": False, "message": "No file part"}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "message": "No selected file"}), 400
+
+    try:
+        # 2. เรียกใช้งานฟังก์ชันแปลงรูปภาพที่คุณ Import มารันประมวลผล
+        # (ฟังก์ชัน process_ocr_image ควรจะแกะตัวอักษรแล้วส่งค่ากลับมาเป็น Dictionary)
+        ocr_result = process_ocr_image(file)
+        
+        # ตัวอย่างโครงสร้าง ocr_result ที่ควรได้กลับมา:
+        # {"hdl": 50.0, "ldl": 165.0, "cholesterol": 150.0, "fpg": 110.0}
+
+        return jsonify({
+            "success": True, 
+            "data": ocr_result
+        })
+
+    except Exception as e:
+        print(f"OCR Backend Error: {str(e)}")
+        return jsonify({"success": False, "message": "เกิดข้อผิดพลาดในการประมวลผลภาพถ่าย"}), 500

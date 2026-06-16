@@ -206,7 +206,7 @@
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="HeartDisease"><div><div class="selection-title">โรคหัวใจ (Heart Disease)</div><p class="selection-desc">แน่นหน้าอก เหนื่อยง่าย</p></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="PeripheralNeuropathy"><div><div class="selection-title">ปลายประสาทเสื่อม (Neuropathy)</div><p class="selection-desc">ชาปลายมือ ปลายเท้า</p></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="AutonomicNeuropathy"><div><div class="selection-title">ระบบประสาทอัตโนมัติ</div><p class="selection-desc">หน้ามืดง่าย หัวใจเต้นผิดจังหวะ</p></div></label></div>
-                                        <div class="col-12"><label class="selection-card border-success" style="background-color:#f0fff4;"><input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"><div><div class="selection-title text-success">ไม่มีภาวะแทรกซ้อน</div><p class="selection-desc">สุขภาพแข็งแรง ปกติดี</p></div></label></div>
+                                        <div class="col-12"><label class="selection-card border-success" style="background-color:#f0fff4;"><input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"><div><div class="selection-title text-success" checked>ไม่มีภาวะแทรกซ้อน</div><p class="selection-desc">สุขภาพแข็งแรง ปกติดี</p></div></label></div>
                                     </div>
                                 </div>
                             </div>
@@ -241,22 +241,110 @@
 
                         <div id="step4" style="display:none;">
                             <div class="row justify-content-center">
-                                <div class="col-lg-10">
-                                    <div class="result-header">
-                                        <h2 class="text-primary fw-bold"><i class="bi bi-clipboard-check"></i> ผลการวิเคราะห์เบื้องต้น</h2>
-                                        <p class="text-muted">ข้อมูลนี้เป็นเพียงการประมวลผลเบื้องต้น ยังไม่ได้บันทึกลงฐานข้อมูล</p>
+                                <div class="col-xl-9 col-lg-10">
+
+                                    <!-- 🎯 ส่วนหัวข้อรายงานสุขภาพ -->
+                                    <div class="text-center mb-5 animate__animated animate__fadeIn">
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small fw-semibold">
+                                                <i class="bi bi-shield-check me-1"></i> Medical Intelligence Report
+                                            </span>
+                                        </div>
+                                        <h2 class="fw-extrabold text-dark tracking-tight mb-2" style="font-size: 1.85rem; letter-spacing: -0.03em;">ผลการประเมินสภาวะร่างกายและกิจกรรม</h2>
+                                        <p class="text-muted small mb-0">
+                                            <i class="bi bi-info-circle-fill text-warning me-1"></i> การประมวลผลแบบจำลองเรียลไทม์ (ยังไม่ได้บันทึกลงระบบ)
+                                        </p>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-6"><div class="result-box box-warning"><div class="result-title text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill"></i> คำเตือน (Warnings)</div><ul class="result-list" id="warnList"></ul></div></div>
-                                        <div class="col-md-6"><div class="result-box box-danger"><div class="result-title text-danger"><i class="bi bi-virus"></i> ภาวะแทรกซ้อน</div><ul class="result-list" id="compliList"></ul></div></div>
-                                        <div class="col-12">
-                                            <div class="result-box box-success">
-                                                <div class="result-title text-success"><i class="bi bi-person-walking"></i> ท่าออกกำลังกายที่แนะนำ</div>
-                                                <ul class="result-list" id="exList" style="list-style: none;"></ul>
+
+                                    <div class="d-flex flex-column gap-4">
+
+                                        <!-- 🏥 [อันดับ 1 - บนสุด] การ์ดสรุปผลแล็บ สภาวะโรค และคำเตือนวิกฤตก่อนออกกำลังกาย -->
+                                        <div class="card border-0 shadow-sm rounded-4 bg-white animate__animated animate__fadeIn">
+                                            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-2.5 me-3">
+                                                        <i class="bi bi-exclamation-octagon-fill fs-4 d-block"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="fw-bold text-dark mb-0" style="font-size: 1.15rem;">ข้อจำกัดและสภาวะโรคร่วมที่ต้องพิจารณาก่อน</h5>
+                                                        <small class="text-muted">Clinical Conditions & Safety Warnings First</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="card-body p-4">
+                                                <hr class="opacity-10 mt-0 mb-4">
+                                                <div class="row g-4">
+                                                    
+                                                    <!-- คอลัมน์ย่อย 1: คำเตือนข้อควรระวังสำคัญ ( warnings ) -->
+                                                    <div class="col-md-4 border-end border-light">
+                                                        <div class="px-2">
+                                                            <div class="d-flex align-items-center mb-3">
+                                                                <span class="badge bg-warning bg-opacity-15 text-warning-emphasis p-2 rounded-2 me-2">
+                                                                    <i class="bi bi-exclamation-triangle-fill fs-6 d-block text-warning"></i>
+                                                                </span>
+                                                                <span class="fw-bold text-dark small">ข้อควรระวังสำคัญ (วิกฤต)</span>
+                                                            </div>
+                                                            <!-- ตัวหนังสือปรับช่องไฟให้อ่านง่ายขึ้น ป้องกันการมองข้ามภาวะน้ำตาลต่ำ -->
+                                                            <ul class="result-list ps-3 mb-0 text-secondary small fw-medium" id="warnList" style="line-height: 1.6; font-size: 0.85rem; text-align: justify;"></ul>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- คอลัมน์ย่อย 2: โรคร่วม ( comorbidities ) -->
+                                                    <div class="col-md-4 border-end border-light">
+                                                        <div class="px-2">
+                                                            <div class="d-flex align-items-center mb-3">
+                                                                <span class="badge bg-info bg-opacity-10 text-info-emphasis p-2 rounded-2 me-2">
+                                                                    <i class="bi bi-activity fs-6 d-block text-info"></i>
+                                                                </span>
+                                                                <span class="fw-bold text-dark small">โรคร่วมที่ตรวจพบ</span>
+                                                            </div>
+                                                            <ul class="result-list ps-3 mb-0 text-secondary small" id="comorbList" style="line-height: 1.6; font-size: 0.85rem;"></ul>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- คอลัมน์ย่อย 3: ภาวะแทรกซ้อน ( complications ) -->
+                                                    <div class="col-md-4">
+                                                        <div class="px-2">
+                                                            <div class="d-flex align-items-center mb-3">
+                                                                <span class="badge bg-danger bg-opacity-10 text-danger-emphasis p-2 rounded-2 me-2">
+                                                                    <i class="bi bi-virus fs-6 d-block text-danger"></i>
+                                                                </span>
+                                                                <span class="fw-bold text-dark small">ภาวะแทรกซ้อน</span>
+                                                            </div>
+                                                            <ul class="result-list ps-3 mb-0 text-secondary small" id="compliList" style="line-height: 1.6; font-size: 0.85rem;"></ul>
+                                                        </div>
+                                                    </div>
+
+                                                </div> <!-- /row -->
+                                            </div> <!-- /card-body -->
+                                        </div> <!-- /card -->
+
+
+                                        <!-- 🏃‍♂️ [อันดับ 2 - ด้านล่าง] การ์ดรายชื่อกิจกรรมและท่าออกกำลังกายที่แนะนำ -->
+                                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: linear-gradient(145deg, #ffffff, #fcfdfd);">
+                                            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="bg-success bg-opacity-10 text-success rounded-3 p-2.5 me-3">
+                                                            <i class="bi bi-person-walking fs-4 d-block"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h5 class="fw-bold text-dark mb-0" style="font-size: 1.15rem;">กิจกรรมและท่าออกกำลังกายเฉพาะบุคคลที่ปลอดภัย</h5>
+                                                            <small class="text-muted">Prescribed Safe Exercises & Activities</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="card-body px-4 pb-4 pt-2">
+                                                <hr class="opacity-10 my-3">
+                                                <!-- จุดพ่นรายชื่อท่าออกกำลังกาย หรือกล่องแจ้งเตือนความปลอดภัยนิรภัย -->
+                                                <ul class="result-list p-0 mb-0" id="exList" style="list-style: none;"></ul>
                                             </div>
                                         </div>
-                                        <div class="col-12"><div class="result-box box-info"><div class="result-title text-primary"><i class="bi bi-heart-pulse"></i> โรคร่วม (Comorbidities)</div><ul class="result-list" id="comorbList"></ul></div></div>
-                                    </div>
+
+                                    </div> <!-- /flex-column -->
+
                                 </div>
                             </div>
                         </div>

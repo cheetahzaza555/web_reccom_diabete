@@ -10,6 +10,9 @@ def send_otp_email(receiver_email, otp_code, action="register"):
     if action == "update_settings":
         subject = "รหัส OTP ยืนยันการเปลี่ยนแปลงข้อมูลส่วนตัว - DiaBalance"
         body_text = f"รหัส OTP สำหรับยืนยันการแก้ไขข้อมูลส่วนตัว DiaBalance คือ: {otp_code}\n\nกรุณานำรหัสนี้ไปกรอกในหน้าเว็บเพื่อยืนยันตัวตน (รหัสมีอายุการใช้งาน 10 นาที)"
+    elif action == "forgot_password":
+        subject = "รหัส OTP สำหรับรีเซ็ตรหัสผ่าน - DiaBalance"
+        body_text = f"รหัส OTP สำหรับตั้งรหัสผ่านใหม่ของคุณคือ: {otp_code}\n\nหากคุณไม่ได้ทำรายการนี้ โปรดเพิกเฉยต่ออีเมลฉบับนี้ (รหัสมีอายุการใช้งาน 10 นาที)"
     else:
         # ค่าเริ่มต้นจะเป็น Register เสมอ (เผื่อไม่ได้ส่ง action มา)
         subject = "รหัส OTP ยืนยันการสมัครสมาชิก - DiaBalance"

@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash # เ�
 from modules.auth_utils import generate_token
 import random
 from modules.email_utils import send_otp_email
-from modules.database import get_user_for_login, update_user_profile_db
+from modules.database import get_user_for_login, update_user_profile_db, update_password_db
 
 # เปลี่ยนมานำเข้าฟังก์ชันจาก database.py แทน (เพราะเราจะย้ายคำสั่ง SPARQL ไปรวมไว้ที่นั่น)
 from modules.database import register_new_patient, get_user_for_login, get_user_by_id
@@ -225,7 +225,7 @@ def forgot_password_reset():
         # เข้ารหัสผ่านใหม่
         new_hash = generate_password_hash(new_password)
         
-        success = update_user_profile_db(patient_id, "", "", new_hash) 
+        success = update_password_db(patient_id, new_hash)
         
         if success:
             session.pop('forgot_otp', None) # เคลียร์ OTP ทิ้ง

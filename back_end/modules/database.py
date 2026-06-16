@@ -1150,3 +1150,25 @@ def update_user_profile_db(user_id, firstname, lastname, new_hash=None):
     except Exception as e:
         print(f"❌ Error updating profile: {e}")
         return False
+    
+def update_password_db(patient_id, new_password_hash):
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    DELETE {{
+        ?patient ex:passwordHash ?oldHash .
+    }}
+    INSERT {{
+        ?patient ex:passwordHash "{new_password_hash}" .
+    }}
+    WHERE {{
+        BIND(ex:Patient{patient_id} AS ?patient)
+        OPTIONAL {{ ?patient ex:passwordHash ?oldHash . }}
+    }}
+    """
+    try:
+        sparql_write.setQuery(query)
+        sparql_write.query()
+        return True
+    except Exception as e:
+        print(f"❌ Error updating password: {e}")
+        return False

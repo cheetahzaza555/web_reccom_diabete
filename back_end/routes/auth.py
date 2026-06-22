@@ -109,7 +109,9 @@ def login():
         session['email'] = user.get('email', '')
 
         token = generate_token(user["patient_id"], user["username"], user["role"])
-        return jsonify({"token": token})
+        return jsonify({"token": token, 
+            "status": "success",
+            "role": session.get("role", "user")})
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500

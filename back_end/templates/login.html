@@ -116,7 +116,13 @@
                 }
 
                 localStorage.setItem("token", data.token);
-                window.location.href = "/user/dashboard"; // สำเร็จ! ไปหน้าแรก
+                const userRole = (data.role || "").toLowerCase(); 
+
+                if (userRole === "admin") {
+                    window.location.href = "/admin/dashboard"; // พาไปหลังบ้าน
+                } else {
+                    window.location.href = "/user/dashboard";  // พาไปหน้าผู้ใช้ปกติ
+                }
 
             } catch (err) {
                 errorDiv.innerText = err.message || "เชื่อมต่อ server ไม่ได้";

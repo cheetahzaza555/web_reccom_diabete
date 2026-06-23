@@ -3,139 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รู้จักเบาหวาน - Diabetes Knowledge</title>
+    <title>รู้จักเบาหวาน - DiaBalance</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        :root {
+            --primary-dark: #385A8C;
+            --primary-light: #8BA4EB;
+            --bg-color: #f4f6f9;
+            --card-border: #e9ecef;
+            --text-main: #2b3035;
+            --text-muted: #6c757d;
+        }
+
         body {
             font-family: 'Prompt', sans-serif;
-            background-color: #f4f8ff; /* ✅ เปลี่ยนสีพื้นหลังเป็นฟ้าอ่อนสบายตา */
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
         }
 
-        /* --- Hero Section --- */
-        .hero-section {
-            /* ✅ เปลี่ยนเป็นโทนฟ้า-น้ำเงิน */
-            background: linear-gradient(135deg, #4A7AFA, #6d8ee6);
+        /* --- Top Bar แบบหน้าอื่นๆ --- */
+        .page-header-bar {
+            background-color: var(--primary-light);
             color: white;
-            padding: 80px 0;
-            border-bottom-left-radius: 50px;
-            border-bottom-right-radius: 50px;
-            margin-bottom: 50px;
-            box-shadow: 0 10px 30px rgba(109, 142, 230, 0.2);
+            padding: 20px 30px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 40px;
         }
 
-        /* --- Cards General --- */
-        .info-card {
-            border: none;
-            border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        /* --- Minimal Cards (ไม่มี Animation) --- */
+        .minimal-card {
             background: white;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 30px 25px;
             height: 100%;
-            overflow: hidden;
         }
-        .info-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(109, 142, 230, 0.15);
-        }
-        .icon-box {
-            width: 70px;
-            height: 70px;
+        .icon-circle {
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
+            background-color: #f0f4fc;
+            color: var(--primary-dark);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
-            margin-bottom: 15px;
+            font-size: 24px;
+            margin: 0 auto 20px;
+        }
+        .badge-minimal {
+            background-color: #f0f4fc;
+            color: var(--primary-dark);
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
         }
 
-        /* --- Symptom Check --- */
-        .symptom-item {
-            text-align: center;
-            padding: 20px;
-            border-radius: 15px;
+        /* --- Symptoms Minimal (ไม่มี Animation) --- */
+        .symptom-box {
             background: white;
-            transition: 0.3s;
-        }
-        .symptom-item:hover {
-            background: #e2eafc; /* ✅ พื้นหลังเวลา Hover เป็นสีฟ้าอ่อน */
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px 15px;
+            text-align: center;
+            height: 100%;
         }
         .symptom-icon {
-            font-size: 40px;
-            color: #6d8ee6; /* ✅ เปลี่ยนไอคอนเป็นสีฟ้า */
+            font-size: 28px;
+            color: var(--primary-light);
             margin-bottom: 10px;
         }
 
-        /* --- Flip Card (Myth vs Fact) --- */
-        .flip-card {
-            background-color: transparent;
-            width: 100%;
-            height: 250px;
-            perspective: 1000px;
-            cursor: pointer;
-        }
-        .flip-card-inner {
-            position: relative;
-            width: 100%;
+        /* --- Myth vs Fact Static Card --- */
+        .myth-fact-card {
+            background: white;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 25px;
             height: 100%;
-            text-align: center;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            border-radius: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .flip-card:hover .flip-card-inner {
-            transform: rotateY(180deg);
+        .myth-section {
+            margin-bottom: 15px;
         }
-        .flip-card-front, .flip-card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            border-radius: 20px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .flip-card-front {
-            background-color: #fff;
-            color: black;
-            border: 2px solid #eee;
-        }
-        .flip-card-back {
-            /* ✅ เปลี่ยนเป็นโทนฟ้า-น้ำเงิน */
-            background: linear-gradient(135deg, #4A7AFA, #6d8ee6);
-            color: white;
-            transform: rotateY(180deg);
+        .fact-section {
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-light);
         }
 
-        /* --- Footer CTA --- */
+        /* --- Buttons & Text --- */
+        .btn-theme {
+            background-color: var(--primary-light);
+            color: white;
+            border-radius: 8px;
+            padding: 10px 30px;
+            font-weight: 500;
+            border: none;
+        }
+        .btn-theme:hover {
+            background-color: #7792e3;
+            color: white;
+        }
+        .section-header {
+            color: var(--primary-dark);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 1.25rem;
+        }
         .cta-box {
-            background: #fff;
-            border-radius: 20px;
-            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            padding: 40px 30px;
             text-align: center;
-            border: 2px dashed #6d8ee6; /* ✅ ขอบประสีฟ้า */
-        }
-
-        /* ✅ ปุ่ม Custom สไตล์สีฟ้า */
-        .btn-blue {
-            background-color: #6d8ee6;
-            color: white;
-            transition: all 0.3s;
-        }
-        .btn-blue:hover {
-            background-color: #577add;
-            color: white;
-            box-shadow: 0 4px 10px rgba(109, 142, 230, 0.4);
-            transform: translateY(-2px);
+            border: 1px solid var(--card-border);
         }
     </style>
 </head>
@@ -143,179 +130,152 @@
 
     {% include 'includes/navbar_user.html' %}
 
-    <section class="hero-section text-center">
-        <div class="container">
-            <h1 class="display-4 fw-bold mb-3">เข้าใจเบาหวาน ดูแลตัวเองได้ง่ายขึ้น</h1>
-            <p class="lead mb-4">"เบาหวานไม่ใช่เรื่องน่ากลัว หากเรารู้วิธีรับมือ"</p>
-            <a href="#types" class="btn btn-light btn-lg rounded-pill px-5 fw-bold text-primary shadow-sm">
-                เริ่มเรียนรู้ <i class="fas fa-arrow-down ms-2"></i>
-            </a>
-        </div>
-    </section>
+    <!-- ✅ Top Bar (แถบสีฟ้าด้านบน) -->
+    <div class="page-header-bar">
+        รู้จักเบาหวาน
+    </div>
 
     <div class="container mb-5">
         
-        <div id="types" class="row g-4 mb-5">
-            <div class="col-12 text-center mb-3">
-                <h2 class="fw-bold text-primary"><i class="fas fa-dna me-2"></i>ประเภทของเบาหวาน</h2>
-                <p class="text-muted">เบาหวานไม่ได้มีแค่แบบเดียว มารู้จักกันเถอะ</p>
+        <!-- ประเภทของเบาหวาน -->
+        <div class="row g-4 mb-5">
+            <div class="col-12 mb-2">
+                <h4 class="section-header"><i class="fas fa-dna me-2 opacity-75"></i>ประเภทของเบาหวาน</h4>
+                <p class="text-muted small">เบาหวานไม่ได้มีแค่แบบเดียว มารู้จักความแตกต่างกัน</p>
             </div>
 
             <div class="col-md-4">
-                <div class="info-card p-4 text-center">
-                    <div class="icon-box bg-danger bg-opacity-10 text-danger mx-auto">
-                        <i class="fas fa-syringe"></i>
-                    </div>
-                    <h4>เบาหวานชนิดที่ 1</h4>
-                    <span class="badge bg-danger mb-3">ร่างกายขาดอินซูลิน</span>
-                    <p class="text-muted small">
-                        เกิดจากภูมิคุ้มกันทำลายเซลล์สร้างอินซูลิน มักพบในเด็กหรือวัยรุ่น ผู้ป่วยต้องฉีดอินซูลินตลอดชีวิต
+                <div class="minimal-card text-center">
+                    <div class="icon-circle"><i class="fas fa-syringe"></i></div>
+                    <h6 class="fw-bold mb-3">เบาหวานชนิดที่ 1</h6>
+                    <div class="mb-3"><span class="badge-minimal">ร่างกายขาดอินซูลิน</span></div>
+                    <p class="text-muted small mb-0">
+                        เกิดจากภูมิคุ้มกันทำลายเซลล์สร้างอินซูลิน มักพบในเด็กหรือวัยรุ่น ผู้ป่วยต้องพึ่งพาการฉีดอินซูลิน
                     </p>
                 </div>
             </div>
 
             <div class="col-md-4">
-                <!-- ✅ เน้นเป็นการ์ดสีฟ้า (Primary) -->
-                <div class="info-card p-4 text-center border-2 border-primary">
-                    <div class="icon-box bg-primary bg-opacity-10 text-primary mx-auto">
-                        <i class="fas fa-hamburger"></i>
-                    </div>
-                    <h4>เบาหวานชนิดที่ 2</h4>
-                    <span class="badge bg-primary mb-3">พบบ่อยที่สุด (95%)</span>
-                    <p class="text-muted small">
-                        เกิดจากภาวะดื้ออินซูลิน มักเกิดจากความอ้วน พันธุกรรม และพฤติกรรมการกิน สามารถคุมได้ด้วยอาหารและการออกกำลังกาย
+                <div class="minimal-card text-center" style="border: 2px solid var(--primary-light);">
+                    <div class="icon-circle" style="background-color: var(--primary-light); color: white;"><i class="fas fa-hamburger"></i></div>
+                    <h6 class="fw-bold mb-3">เบาหวานชนิดที่ 2</h6>
+                    <div class="mb-3"><span class="badge-minimal" style="background-color: var(--primary-dark); color: white;">พบบ่อยที่สุด (95%)</span></div>
+                    <p class="text-muted small mb-0">
+                        เกิดจากภาวะดื้ออินซูลิน สัมพันธ์กับน้ำหนักตัวและพฤติกรรม สามารถควบคุมได้ด้วยการปรับเปลี่ยนไลฟ์สไตล์
                     </p>
                 </div>
             </div>
 
             <div class="col-md-4">
-                <div class="info-card p-4 text-center">
-                    <div class="icon-box bg-warning bg-opacity-10 text-warning mx-auto">
-                        <i class="fas fa-baby-carriage"></i>
-                    </div>
-                    <h4>เบาหวานขณะตั้งครรภ์</h4>
-                    <span class="badge bg-warning text-dark mb-3">เป็นชั่วคราว</span>
-                    <p class="text-muted small">
-                        เกิดจากการเปลี่ยนแปลงฮอร์โมนขณะตั้งครรภ์ มักหายไปหลังคลอด แต่มีความเสี่ยงเป็นเบาหวานชนิดที่ 2 ในอนาคต
+                <div class="minimal-card text-center">
+                    <div class="icon-circle"><i class="fas fa-baby-carriage"></i></div>
+                    <h6 class="fw-bold mb-3">ขณะตั้งครรภ์</h6>
+                    <div class="mb-3"><span class="badge-minimal">มักเป็นชั่วคราว</span></div>
+                    <p class="text-muted small mb-0">
+                        เกิดจากการเปลี่ยนแปลงฮอร์โมนขณะตั้งครรภ์ มักหายไปหลังคลอด แต่มีความเสี่ยงเป็นชนิดที่ 2 ในอนาคต
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="row mb-5 justify-content-center">
-            <div class="col-12 text-center mb-4">
-                <h2 class="fw-bold text-primary"><i class="fas fa-heartbeat me-2"></i>7 สัญญาณเตือน!</h2>
-                <p class="text-muted">หากคุณมีอาการเหล่านี้ ควรปรึกษาแพทย์</p>
+        <!-- 7 สัญญาณเตือน -->
+        <div class="row mb-5 pt-2">
+            <div class="col-12 mb-3">
+                <h4 class="section-header"><i class="fas fa-heartbeat me-2 opacity-75"></i>7 สัญญาณเตือน!</h4>
+                <p class="text-muted small">หากคุณมีอาการเหล่านี้บ่อยครั้ง ควรปรึกษาแพทย์เพื่อตรวจเช็ค</p>
             </div>
             
-            <div class="col-6 col-md-3 mb-3">
-                <div class="symptom-item shadow-sm">
+            <div class="col-6 col-md-2 mb-3">
+                <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-tint"></i></div>
-                    <h6>ปัสสาวะบ่อย</h6>
-                    <small class="text-muted">โดยเฉพาะตอนกลางคืน</small>
+                    <h6 class="fw-bold mb-1 fs-6">ปัสสาวะบ่อย</h6>
                 </div>
             </div>
-            <div class="col-6 col-md-3 mb-3">
-                <div class="symptom-item shadow-sm">
+            <div class="col-6 col-md-2 mb-3">
+                <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-glass-water"></i></div>
-                    <h6>กระหายน้ำมาก</h6>
-                    <small class="text-muted">คอแห้งตลอดเวลา</small>
+                    <h6 class="fw-bold mb-1 fs-6">กระหายน้ำมาก</h6>
                 </div>
             </div>
-            <div class="col-6 col-md-3 mb-3">
-                <div class="symptom-item shadow-sm">
+            <div class="col-6 col-md-2 mb-3">
+                <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-weight-scale"></i></div>
-                    <h6>น้ำหนักลด</h6>
-                    <small class="text-muted">โดยไม่ทราบสาเหตุ</small>
+                    <h6 class="fw-bold mb-1 fs-6">น้ำหนักลด</h6>
                 </div>
             </div>
-            <div class="col-6 col-md-3 mb-3">
-                <div class="symptom-item shadow-sm">
+            <div class="col-6 col-md-2 mb-3">
+                <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-eye-slash"></i></div>
-                    <h6>ตามัว</h6>
-                    <small class="text-muted">มองเห็นไม่ชัดเจน</small>
+                    <h6 class="fw-bold mb-1 fs-6">ตามัว</h6>
                 </div>
             </div>
-            <div class="col-6 col-md-3 mb-3">
-                <div class="symptom-item shadow-sm">
+            <div class="col-6 col-md-2 mb-3">
+                <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-battery-quarter"></i></div>
-                    <h6>อ่อนเพลีย</h6>
-                    <small class="text-muted">ไม่มีแรง เหนื่อยง่าย</small>
+                    <h6 class="fw-bold mb-1 fs-6">อ่อนเพลีย</h6>
                 </div>
             </div>
-            <div class="col-6 col-md-3 mb-3">
-                <div class="symptom-item shadow-sm">
+            <div class="col-6 col-md-2 mb-3">
+                <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-band-aid"></i></div>
-                    <h6>แผลหายช้า</h6>
-                    <small class="text-muted">ติดเชื้อง่าย</small>
+                    <h6 class="fw-bold mb-1 fs-6">แผลหายช้า</h6>
                 </div>
             </div>
         </div>
 
-        <div class="row mb-5">
-            <div class="col-12 text-center mb-4">
-                <h2 class="fw-bold text-primary"><i class="fas fa-question-circle me-2"></i>จริง หรือ หลอก?</h2>
-                <p class="text-muted">ลองเอาเมาส์ชี้ (หรือแตะ) ที่การ์ดเพื่อดูเฉลย</p>
+        <!-- ความเชื่อ vs ความจริง (แบบ Static ไม่ง้อ Animation) -->
+        <div class="row mb-5 pt-2">
+            <div class="col-12 mb-3">
+                <h4 class="section-header"><i class="fas fa-question-circle me-2 opacity-75"></i>จริง หรือ หลอก?</h4>
+                <p class="text-muted small">ความจริงที่คุณอาจเข้าใจผิดเกี่ยวกับโรคเบาหวาน</p>
             </div>
 
-            <div class="col-md-4 mb-3">
-                <div class="flip-card">
-                    <div class="flip-card-inner">
-                        <div class="flip-card-front">
-                            <i class="fas fa-cookie-bite fa-3x text-warning mb-3"></i>
-                            <h5 class="fw-bold">"คนเป็นเบาหวาน ห้ามกินของหวานเลย?"</h5>
-                            <p class="text-muted mt-2">(ความเชื่อผิดๆ)</p>
-                        </div>
-                        <div class="flip-card-back">
-                            <i class="fas fa-check-circle fa-3x mb-3"></i>
-                            <h5>ความจริงคือ...</h5>
-                            <p>กินได้บ้าง แต่ต้องจำกัดปริมาณและนับคาร์โบไฮเดรตให้เหมาะสม ไม่จำเป็นต้องงดถาวร</p>
-                        </div>
+            <div class="col-md-4 mb-4">
+                <div class="myth-fact-card">
+                    <div class="myth-section">
+                        <span class="text-danger fw-bold small"><i class="fas fa-times me-1"></i> ความเชื่อ</span>
+                        <h6 class="fw-bold mt-1">"คนเป็นเบาหวานห้ามกินของหวานเลย?"</h6>
+                    </div>
+                    <div class="fact-section">
+                        <span class="text-primary fw-bold small"><i class="fas fa-check me-1"></i> ความจริง</span>
+                        <p class="small mb-0 mt-1 text-muted">กินได้บ้าง แต่ต้องจำกัดปริมาณและนับคาร์โบไฮเดรตให้เหมาะสม ไม่จำเป็นต้องงดถาวรจนเครียดเกินไป</p>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4 mb-3">
-                <div class="flip-card">
-                    <div class="flip-card-inner">
-                        <div class="flip-card-front">
-                            <i class="fas fa-running fa-3x text-info mb-3"></i>
-                            <h5 class="fw-bold">"คนผอม ไม่มีทางเป็นเบาหวาน?"</h5>
-                            <p class="text-muted mt-2">(ความเชื่อผิดๆ)</p>
-                        </div>
-                        <div class="flip-card-back">
-                            <i class="fas fa-check-circle fa-3x mb-3"></i>
-                            <h5>ความจริงคือ...</h5>
-                            <p>คนผอมก็เป็นได้ (TOFI) หากมีไขมันสะสมในช่องท้องเยอะ หรือมีพันธุกรรม</p>
-                        </div>
+            <div class="col-md-4 mb-4">
+                <div class="myth-fact-card">
+                    <div class="myth-section">
+                        <span class="text-danger fw-bold small"><i class="fas fa-times me-1"></i> ความเชื่อ</span>
+                        <h6 class="fw-bold mt-1">"คนผอมไม่มีทางเป็นโรคเบาหวาน?"</h6>
+                    </div>
+                    <div class="fact-section">
+                        <span class="text-primary fw-bold small"><i class="fas fa-check me-1"></i> ความจริง</span>
+                        <p class="small mb-0 mt-1 text-muted">คนผอมก็เป็นได้ หากมีไขมันสะสมในช่องท้องเยอะ (TOFI) มีกรรมพันธุ์ หรือมีพฤติกรรมการกินที่ไม่ดี</p>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4 mb-3">
-                <div class="flip-card">
-                    <div class="flip-card-inner">
-                        <div class="flip-card-front">
-                            <i class="fas fa-pills fa-3x text-primary mb-3"></i> <!-- ✅ เปลี่ยนเป็นสี primary -->
-                            <h5 class="fw-bold">"กินยารักษาเบาหวาน ทำให้ไตพัง?"</h5>
-                            <p class="text-muted mt-2">(ความเชื่อผิดๆ)</p>
-                        </div>
-                        <div class="flip-card-back">
-                            <i class="fas fa-check-circle fa-3x mb-3"></i>
-                            <h5>ความจริงคือ...</h5>
-                            <p>การปล่อยให้น้ำตาลสูงต่างหากที่ทำลายไต ยาช่วยคุมน้ำตาลเพื่อปกป้องไตครับ</p>
-                        </div>
+            <div class="col-md-4 mb-4">
+                <div class="myth-fact-card">
+                    <div class="myth-section">
+                        <span class="text-danger fw-bold small"><i class="fas fa-times me-1"></i> ความเชื่อ</span>
+                        <h6 class="fw-bold mt-1">"กินยารักษาเบาหวานนานๆ ทำให้ไตพัง?"</h6>
+                    </div>
+                    <div class="fact-section">
+                        <span class="text-primary fw-bold small"><i class="fas fa-check me-1"></i> ความจริง</span>
+                        <p class="small mb-0 mt-1 text-muted">การปล่อยให้น้ำตาลสูงต่างหากที่ทำลายไต ยาที่แพทย์สั่งช่วยคุมน้ำตาลเพื่อปกป้องไตในระยะยาว</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="cta-box mt-5">
-            <h3 class="fw-bold mb-3 text-primary">สุขภาพดี เริ่มต้นที่ตัวคุณ!</h3>
-            <p class="mb-4">อยากรู้ว่าต้องออกกำลังกายแบบไหนถึงจะเหมาะกับคุณ?</p>
-            <!-- ✅ เปลี่ยนเป็นปุ่มสีฟ้า -->
-            <a href="/" class="btn btn-blue btn-lg rounded-pill px-5 shadow">
-                <i class="fas fa-clipboard-check me-2"></i> ประเมินสุขภาพและรับแผนออกกำลังกาย
+        <!-- Footer CTA -->
+        <div class="cta-box mt-2">
+            <h5 class="fw-bold mb-2" style="color: var(--primary-dark);">สุขภาพดี เริ่มต้นที่ตัวคุณ!</h5>
+            <p class="text-muted small mb-4">เรียนรู้วิธีการออกกำลังกายและดูแลตัวเองอย่างถูกต้องเพื่อควบคุมระดับน้ำตาล</p>
+            <a href="/" class="btn btn-theme px-4 py-2">
+                <i class="fas fa-clipboard-check me-2"></i> เริ่มประเมินสุขภาพของคุณ
             </a>
         </div>
 

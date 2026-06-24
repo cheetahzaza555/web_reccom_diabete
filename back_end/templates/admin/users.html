@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiaBalance Admin | จัดการข้อมูลผู้ใช้</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-blue: #2B5CB3;
+            --light-bg: #F4F7FC;
+            --text-dark: #333333;
+            --text-muted: #666666;
+            --white: #ffffff;
+            --border-color: #E2E8F0;
+            --danger: #E53E3E;
+            --success: #38A169;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Sarabun', sans-serif; }
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; }
+        
+        /* 1. บังคับโครงสร้าง layout ให้กางออกแนวนอนชิดขอบ */
+        .admin-layout { 
+            display: flex; 
+            width: 100%; 
+            min-height: 100vh;
+        }
+
+        /* 2. ดึงเนื้อหาหลักทั้งหมดให้เขยิบขยับชิดซ้าย */
+        .main-content { 
+            margin-left: 0; /* รีเซ็ตมาร์จินเริ่มต้น */
+            flex-grow: 1; 
+            padding: 40px; 
+            /* หาก Navbar ของคุณล็อกตำแหน่งตายตัว (fixed/absolute) ให้ใช้ padding-left ช่วยดันแทน */
+            padding-left: 40px; 
+            width: 100%;
+        }
+
+        /* 3. จัดสัดส่วนตารางให้ลื่นไหล */
+        .table-card {
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border-color);
+            width: 100%; 
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .header-section h1 { font-size: 28px; font-weight: 600; }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .user-table th {
+            background-color: #F8FAFC;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .user-table td {
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .user-table tr:hover { background-color: #F8FAFC; }
+
+        /* Badge สำหรับประเภทเบาหวาน */
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-type1 { background-color: #EBF8FF; color: #2B6CB0; }
+        .badge-type2 { background-color: #E6FFFA; color: #319795; }
+
+        /* Action Buttons */
+        .btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-view { background-color: #E2E8F0; color: var(--text-dark); }
+        .btn-view:hover { background-color: #CBD5E0; }
+        .btn-delete { background-color: #FED7D7; color: var(--danger); }
+        .btn-delete:hover { background-color: #FEB2B2; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        {% include 'includes/navbar_admin.html' %}
+
+        <div class="main-content">
+            <div class="header-section">
+                <div>
+                    <h1>จัดการข้อมูลผู้ใช้งาน</h1>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">ตรวจสอบ ดูโปรไฟล์ และจัดการบัญชีผู้ป่วยในระบบ</p>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>ไอดีคนไข้</th>
+                            <th>ชื่อ - นามสกุล</th>
+                            <th>ชื่อผู้ใช้ (Username)</th>
+                            <th>ประเภทเบาหวาน</th>
+                            <th>ค่า FPG (น้ำตาล)</th>
+                            <th>BMI</th>
+                            <th style="text-align: center;">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in patients %}
+                        <tr>
+                            <td><strong>#{{ user.id }}</strong></td>
+                            <td>คุณ {{ user.firstname }} {{ user.lastname }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>
+                                {% if "Type1" in user.type %}
+                                <span class="badge badge-type1">Type 1</span>
+                                {% else %}
+                                <span class="badge badge-type2">Type 2</span>
+                                {% endif %}
+                            </td>
+                            <td class="fpg-value {% if user.fpg != '-' and user.fpg|float > 126 %}text-danger{% endif %}">
+                                {{ user.fpg }} mg/dL
+                            </td>
+                            <td>{{ user.bmi }}</td>
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 8px; justify-content: center;">
+                                    <a href="/patient/profile/{{ user.id }}" class="btn btn-view" target="_blank">
+                                        <i class="fa-solid fa-eye"></i> ดูโปรไฟล์
+                                    </a>
+                                    <button class="btn btn-delete" onclick="deleteUser('{{ user.id }}')">
+                                        <i class="fa-solid fa-trash-can"></i> ลบ
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                ไม่พบข้อมูลผู้ใช้งานในระบบ
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function deleteUser(userId) {
+            if(confirm("คุณต้องการลบข้อมูลผู้ป่วย ไอดี #" + userId + " ออกจากระบบใช่หรือไม่? ข้อมูลนี้จะหายไปจากคลัง GraphDB")) {
+                // ส่วนนี้สามารถทำ API ยิงคำสั่ง SPARQL DELETE ต่อไปได้ในอนาคตครับ
+                alert("ส่งคำขอคำสั่งลบไอดี " + userId);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>รู้จักเบาหวาน - DiaBalance</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -26,14 +26,18 @@
             line-height: 1.6;
         }
 
-        /* --- Top Bar แบบหน้าอื่นๆ --- */
-        .page-header-bar {
-            background-color: var(--primary-light);
-            color: white;
-            padding: 20px 30px;
-            font-size: 1.5rem;
-            font-weight: 700;
+        /* --- Top Bar ให้เหมือนหน้าผลตรวจสุขภาพเป๊ะๆ (แก้เฉพาะหน้านี้) --- */
+        .header-banner {
+            background-color: #85A2FF;
+            color: #FFFFFF;
+            font-size: 40px;
+            font-family: 'Kanit', sans-serif;
+            font-weight: bold;
+            padding: 20px 16px;
             margin-bottom: 40px;
+            height: 100px;
+            display: flex;
+            align-items: center; /* จัดให้อยู่กึ่งกลางแนวตั้ง */
         }
 
         /* --- Minimal Cards (ไม่มี Animation) --- */
@@ -130,14 +134,12 @@
 
     {% include 'includes/navbar_user.html' %}
 
-    <!-- ✅ Top Bar (แถบสีฟ้าด้านบน) -->
-    <div class="page-header-bar">
+    <div class="header-banner">
         รู้จักเบาหวาน
     </div>
 
     <div class="container mb-5">
         
-        <!-- ประเภทของเบาหวาน -->
         <div class="row g-4 mb-5">
             <div class="col-12 mb-2">
                 <h4 class="section-header"><i class="fas fa-dna me-2 opacity-75"></i>ประเภทของเบาหวาน</h4>
@@ -156,10 +158,10 @@
             </div>
 
             <div class="col-md-4">
-                <div class="minimal-card text-center" style="border: 2px solid var(--primary-light);">
+                <div class="minimal-card text-center";">
                     <div class="icon-circle" style="background-color: var(--primary-light); color: white;"><i class="fas fa-hamburger"></i></div>
                     <h6 class="fw-bold mb-3">เบาหวานชนิดที่ 2</h6>
-                    <div class="mb-3"><span class="badge-minimal" style="background-color: var(--primary-dark); color: white;">พบบ่อยที่สุด (95%)</span></div>
+                    <div class="mb-3"><span class="badge-minimal">พบบ่อยที่สุด</span></div>
                     <p class="text-muted small mb-0">
                         เกิดจากภาวะดื้ออินซูลิน สัมพันธ์กับน้ำหนักตัวและพฤติกรรม สามารถควบคุมได้ด้วยการปรับเปลี่ยนไลฟ์สไตล์
                     </p>
@@ -178,7 +180,6 @@
             </div>
         </div>
 
-        <!-- 7 สัญญาณเตือน -->
         <div class="row mb-5 pt-2">
             <div class="col-12 mb-3">
                 <h4 class="section-header"><i class="fas fa-heartbeat me-2 opacity-75"></i>7 สัญญาณเตือน!</h4>
@@ -223,7 +224,6 @@
             </div>
         </div>
 
-        <!-- ความเชื่อ vs ความจริง (แบบ Static ไม่ง้อ Animation) -->
         <div class="row mb-5 pt-2">
             <div class="col-12 mb-3">
                 <h4 class="section-header"><i class="fas fa-question-circle me-2 opacity-75"></i>จริง หรือ หลอก?</h4>
@@ -270,7 +270,6 @@
             </div>
         </div>
 
-        <!-- Footer CTA -->
         <div class="cta-box mt-2">
             <h5 class="fw-bold mb-2" style="color: var(--primary-dark);">สุขภาพดี เริ่มต้นที่ตัวคุณ!</h5>
             <p class="text-muted small mb-4">เรียนรู้วิธีการออกกำลังกายและดูแลตัวเองอย่างถูกต้องเพื่อควบคุมระดับน้ำตาล</p>

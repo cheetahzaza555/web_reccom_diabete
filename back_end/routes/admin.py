@@ -1,7 +1,7 @@
-from flask import Blueprint, redirect, render_template, jsonify ,session, url_for
+from flask import Blueprint, redirect, render_template, jsonify, request ,session, url_for
 from utils.security import admin_required # เรียกยามมาใช้
 from modules.database import delete_patient, get_patient_profile # สมมติว่ามีฟังก์ชันนี้
-from modules.admin import get_admin_dashboard_stats, get_all_patients_management, get_recent_registered_users
+from modules.admin import get_admin_dashboard_stats, get_all_patients_management, get_recent_registered_users ,update_user_role_in_graphdb
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -63,3 +63,25 @@ def users_management_page():
         role=session.get("role"),
         patients=patients
     )
+    
+@admin_bp.route("/update-role", methods=["POST"])
+def update_user_role():
+    # 🛡️ 1. ตรวจสอบระดับการเข้าถึงของแอดมินก่อน
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+        
+    # 📦 2. แกะแกนข้อมูลที่หน้าบ้านส่งมาผ่าน JSON
+    data = request.get_json()
+    user_id = data.get("user_id")
+    new_role = data.get("new_role")
+    
+    if not user_id or not new_role:
+        return jsonify({"success": False, "message": "ข้อมูลที่ได้รับไม่ครบถ้วน"}), 400
+        
+    # 🔄 3. เรียกใช้งานฟังก์ชันแยกที่เราสร้างไว้เพื่อเปลี่ยนข้อมูลในคลังข้อมูล
+    success, message = update_user_role_in_graphdb(user_id, new_role)
+    
+    if success:
+        return jsonify({"success": True, "message": message})
+    else:
+        return jsonify({"success": False, "message": f"หลังบ้านขัดข้อง: {message}"}), 500

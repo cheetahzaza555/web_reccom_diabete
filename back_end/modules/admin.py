@@ -1,5 +1,5 @@
-from SPARQLWrapper import SPARQLWrapper, JSON
-from modules.config import GRAPHDB_READ
+from SPARQLWrapper import POST, SPARQLWrapper, JSON
+from modules.config import GRAPHDB_READ, GRAPHDB_WRITE
 
 def get_admin_dashboard_stats():
     """ ฟังก์ชันดึงตัวเลขสถิติแยกคิวรี เพื่อความแม่นยำ 100% ไม่เกิดการคูณซ้ำ """
@@ -129,3 +129,79 @@ def get_all_patients_management():
         print("❌ [Admin Module Error] ไม่สามารถดึงรายชื่อผู้ใช้ทั้งหมดได้:", e)
         
     return patient_list
+
+def get_all_patients_management():
+    """ ดึงรายชื่อผู้ใช้ทุกคนพร้อมตำแหน่งสิทธิ์ (Role) ปัจจุบันในระบบ """
+    sparql = SPARQLWrapper(GRAPHDB_READ)
+    user_list = []
+    
+    query = """
+    PREFIX ex: <http://example.org/diabetes#>
+    SELECT DISTINCT ?p ?username ?fname ?lname ?role WHERE {
+        ?p a ex:Patient .
+        OPTIONAL { ?p ex:username ?username . }
+        OPTIONAL { ?p ex:firstname ?fname . }
+        OPTIONAL { ?p ex:lastname ?lname . }
+        # ดึงสิทธิ์ใช้งานมาโชว์ (หากในคลังคุณใช้ property อื่น เช่น ex:userRole ให้เปลี่ยนให้ตรงนะครับ)
+        OPTIONAL { ?p ex:role ?role . } 
+    }
+    """
+    try:
+        sparql.setQuery(query)
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
+        
+        for row in results["results"]["bindings"]:
+            p_uri = row["p"]["value"]
+            p_id = p_uri.split("#")[-1].replace("Patient", "") if "#" in p_uri else p_uri
+            
+            user_list.append({
+                "id": p_id,
+                "username": row.get("username", {}).get("value", "-"),
+                "firstname": row.get("fname", {}).get("value", "-"),
+                "lastname": row.get("lname", {}).get("value", "-"),
+                "role": row.get("role", {}).get("value", "user") # ค่าเริ่มต้นถ้าไม่มีคือทั่วไป (user)
+            })
+    except Exception as e:
+        print("❌ [Admin Error] ดึงรายชื่อผู้ใช้ล้มเหลว:", e)
+        
+    return user_list
+
+# (โค้ดส่วนนี้อยู่ใน modules/admin.py)
+
+def update_user_role_in_graphdb(user_id, new_role):
+    """
+    ฟังก์ชันส่งคำสั่ง SPARQL UPDATE ไปแก้ไขสิทธิ์ (ex:role) ในคลังข้อมูล GraphDB
+    """
+    # 🛠️ ดีไซน์คำสั่งลบสิทธิ์ตัวเก่าทิ้ง แล้วเพิ่ม (Insert) สิทธิ์ใหม่เข้าไปในก้อน Data เดียวกัน
+    update_query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    
+    DELETE {{
+        ex:Patient{user_id} ex:role ?old_role .
+    }}
+    INSERT {{
+        ex:Patient{user_id} ex:role "{new_role}" .
+    }}
+    WHERE {{
+        ex:Patient{user_id} a ex:Patient .
+        OPTIONAL {{ ex:Patient{user_id} ex:role ?old_role . }}
+    }}
+    """
+    
+    try:
+        # 🚀 เรียกใช้ตัวแปร GRAPHDB_WRITE และ POST ที่คุณ Import มารอไว้
+        sparql = SPARQLWrapper(GRAPHDB_WRITE)
+        sparql.setMethod(POST)
+        sparql.setQuery(update_query)
+        
+        # ยิงคำสั่งประมวลผลไปยังคลังข้อมูล
+        sparql.query()
+        
+        print(f"✅ [GraphDB Sync] อัปเดตสิทธิ์ Patient{user_id} เป็น '{new_role}' ในเซิร์ฟเวอร์หลักแล้ว")
+        return True, "อัปเดตสิทธิ์ในฐานข้อมูลสำเร็จ"
+        
+    except Exception as e:
+        error_msg = str(e)
+        print(f"❌ [GraphDB Error] ไม่สามารถบันทึกค่าลงคลังข้อมูลได้: {error_msg}")
+        return False, error_msg

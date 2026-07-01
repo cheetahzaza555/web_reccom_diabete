@@ -132,14 +132,28 @@
                             <div class="card-body p-0 d-flex flex-column align-items-center">
                                 
                                 <div class="icon-wrapper mt-2">
-                                    {% if 'Run' in ex.category or 'Jog' in ex.name %} <i class="bi bi-person-running"></i>
-                                    {% elif 'Walk' in ex.category %} <i class="bi bi-person-walking"></i>
-                                    {% elif 'Bicy' in ex.category %} <i class="bi bi-bicycle"></i>
-                                    {% elif 'Water' in ex.category %} <i class="bi bi-water"></i>
-                                    {% elif 'Aerobic' in ex.category %} <i class="bi bi-heart-pulse"></i>
-                                    {% else %} <i class="bi bi-activity"></i>
-                                    {% endif %}
-                                </div>
+                <div class="icon-wrapper mt-2">
+                    {% if 'วิ่ง' in ex.category or 'Run' in ex.category or 'Jog' in ex.name %} 
+                        <i class="bi bi-speedometer2"></i> {% elif 'เดิน' in ex.category or 'Walk' in ex.category %} 
+                        <i class="bi bi-person-walking"></i>
+        
+                    {% elif 'จักรยาน' in ex.category or 'Bicy' in ex.category %} 
+                        <i class="bi bi-bicycle"></i>
+        
+                    {% elif 'เต้น' in ex.category or 'Dancing' in ex.category %} 
+                        <i class="bi bi-music-note-beamed"></i>
+        
+                    {% elif 'น้ำ' in ex.category or 'Water' in ex.category %} 
+                        <i class="bi bi-water"></i>
+        
+                    {% elif 'แอโรบิก' in ex.category or 'Aerobic' in ex.category %} 
+                        <i class="bi bi-heart-pulse"></i>
+        
+                    {% else %} 
+                        <i class="bi bi-activity"></i>
+                {% endif %}
+</div>
+</div>
                                 
                                 <h4 class="exercise-title">{{ ex.name }}</h4>
                                 

@@ -12,20 +12,20 @@ auth = Blueprint("auth", __name__)
 
 @auth.route("/")
 def index():
-    # 1. 🌟 ถ้า "ยังไม่ได้ล็อกอิน" ให้โชว์หน้า Landing Page ที่ดึงมาจาก Figma
+    # 1. 🌟 ถ้า "ยังไม่ได้ล็อกอิน" ให้โชว์หน้า Landing Page ที่ดึงมาจาก Figma ตามปกติ
     if "user_id" not in session:
         return render_template("landing.html") 
-    # 2. ถ้า "ล็อกอินอยู่แล้ว" ให้เช็คว่าเป็น Admin หรือ User
+        
+    # 2. ถ้า "ล็อกอินอยู่แล้ว" ให้เช็คตำแหน่งกลุ่มผู้ใช้ (Role)
     role = session.get("role")
 
     if role == "admin":
-        return render_template(
-            "admin/index.html", 
-            username=session.get("username"),
-            role=role
-        )
+        # 🛡️ วิธีป้องกันหน้าพังที่ดีที่สุด: โยนแอดมินไปที่พาร์ทแดชบอร์ดของแอดมินโดยตรง
+        # เพื่อให้ฟังก์ชันใน routes/admin.py ทำหน้าที่ดึงข้อมูลสรุปสถิติจริงมาแสดงผลได้อย่างถูกต้อง
+        return redirect(url_for("admin.dashboard_page"))
+        
     else:
-        # สำหรับ User ทั่วไป ให้พาไปหน้า Dashboard (ซึ่งมันจะไปเรียกใช้ templates/user/index.html ให้เองอัตโนมัติครับ)
+        # สำหรับ User ทั่วไป ให้พาไปหน้า Dashboard ของฝั่งคนไข้ตามปกติครับ
         return redirect(url_for("user.dashboard_page"))
     
 @auth.route("/login")

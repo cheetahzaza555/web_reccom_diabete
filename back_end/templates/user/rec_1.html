@@ -760,7 +760,8 @@ function renderResults(json) {
             "🚴 การปั่นจักรยาน (Bicycling)": [],
             "💃 การเต้น (Dancing)": [],
             "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
-            "🏅 กีฬาและนันทนาการ (Aerobic Sports)": [],
+            "🏅 กีฬาแอโรบิกลงน้ำหนัก": [],
+            "🏅 กีฬาแอโรบิกไม่ลงน้ำหนัก": [],
             "💪 การฝึกแรงต้าน (Resistance)": [],
             "🧘 การยืดเหยียด (Stretching)": [],
             "✨ กิจกรรมอื่นๆ (Others)": []
@@ -785,8 +786,11 @@ function renderResults(json) {
             else if (exerciseType.includes('WaterActivity')) {
                 categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(exerciseName);
             }
-            else if (exerciseType.includes('AerobicSport')) {
-                categories["🏅 กีฬาและนันทนาการ (Aerobic Sports)"].push(exerciseName);
+            else if (exerciseType.includes('WeightBearingAerobicSport') && !exerciseType.includes('NonWeightBearingAerobicSport')) {
+                categories["🏅 กีฬาแอโรบิกลงน้ำหนัก"].push(exerciseName);
+            }
+            else if (exerciseType.includes('NonWeightBearingAerobicSport')) {
+                categories["🏅 กีฬาแอโรบิกไม่ลงน้ำหนัก"].push(exerciseName);
             }
             else if (exerciseType.includes('Resistance')) {
                 categories["💪 การฝึกแรงต้าน (Resistance)"].push(exerciseName);

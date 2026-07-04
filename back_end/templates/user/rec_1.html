@@ -392,17 +392,21 @@
         async function handleOCR(input) {
             if (!input.files || !input.files[0]) return;
 
+            // การจัดการเปิด-ปิด UI สถานะ DropZone ของคุณ
+            const placeholderDiv = document.getElementById('ocrPlaceholder');
             const statusDiv = document.getElementById('ocrStatus');
+            const successDiv = document.getElementById('ocrSuccess');
+
+            if (placeholderDiv) placeholderDiv.style.display = 'none';
+            if (successDiv) successDiv.style.display = 'none';
             if (statusDiv) {
                 statusDiv.style.display = 'block';
-                statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div><span class="ms-2 small text-primary">กำลังประมวลผลด้วย AI...</span>';
             }
 
             const formData = new FormData();
             formData.append('file', input.files[0]);
 
             try {
-                // ยิงไปที่ Route ของ Blueprint ที่เช็กแล้วว่าเจอชัวร์ๆ (สถานะ 200)
                 const response = await fetch('http://127.0.0.1:5000/user/api/ocr', { 
                     method: 'POST', 
                     body: formData 
@@ -411,36 +415,78 @@
                 if (!response.ok) throw new Error('Server Error');
 
                 const result = await response.json();
-                
-                // 🔍 ส่องดูข้อมูลดิบในแท็บ Console (F12) ทุกครั้งที่มีการอัปโหลด
                 console.log("=== ผลลัพธ์ที่ส่งกลับมาจาก Python ===", result);
 
-                // แกะกล่องข้อมูลจากก้อนที่ Flask ส่งมา (ซ้อนอยู่ในคำว่า data)
                 if (result && result.success) {
                     const data = result.data; 
-                    
-                    // นำค่ามาใส่ใน Form (ใช้ || "" เพื่อป้องกันค่า null)
+
+                    // --- 🧪 1. หยอดข้อมูลผลแล็บเคมีคลินิก (ตามฟอร์มของคุณเดิม) ---
                     document.querySelector('[name="hdl"]').value = data.hdl || "";
                     document.querySelector('[name="ldl"]').value = data.ldl || "";
                     document.querySelector('[name="cholesterol"]').value = data.cholesterol || "";
                     document.querySelector('[name="fpg"]').value = data.fpg || "";
 
-                    if (statusDiv) {
-                        statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> <span class="ms-2 small text-success">ดึงข้อมูลสำเร็จ! กรุณาตรวจสอบอีกครั้ง</span>';
+                    // --- 🏃‍♂️ 2. หยอดข้อมูลสัดส่วนร่างกายตามฟอร์มใหม่ ---
+                    if (data.weight) document.querySelector('[name="weight"]').value = data.weight;
+                    if (data.height) document.querySelector('[name="height"]').value = data.height;
+                    
+                    // จัดการช่อง BMI (ในฟอร์มของคุณใช้ id="bmi_result")
+                    if (data.bmi && document.getElementById('bmi_result')) {
+                        document.getElementById('bmi_result').value = data.bmi;
+                    }
+
+                    // --- 🩸 3. แยกความดันโลหิตตัวบน (SBP) และตัวล่าง (DBP) ---
+                    // แปลงจาก "113/51" ให้แยกไปอยู่ช่อง bp_high และ bp_low
+                    if (data.bp && data.bp.includes('/')) {
+                        const bpParts = data.bp.split('/');
+                        if (document.querySelector('[name="bp_high"]')) document.querySelector('[name="bp_high"]').value = bpParts[0] || "";
+                        if (document.querySelector('[name="bp_low"]')) document.querySelector('[name="bp_low"]').value = bpParts[1] || "";
+                    }
+                    if (data.triglyceride) {
+                            document.querySelector('[name="triglyceride"]').value = data.triglyceride;
+                    }
+
+                    // --- 📅 4. จัดการฟอร์แมตวันที่เจาะเลือด (Blood Test Date) ---
+                    // แท็ก <input type="date"> บังคับรับฟอร์แมตมาตรฐานสากลเป็น YYYY-MM-DD เท่านั้น
+                    if (data.date && document.querySelector('[name="blood_test_date"]')) {
+                        const dateParts = data.date.split('/'); // แยก วัน/เดือน/ปี
+                        if (dateParts.length === 3) {
+                            let day = dateParts[0].padStart(2, '0');
+                            let month = dateParts[1].padStart(2, '0');
+                            let year = dateParts[2];
+                            
+                            // ป้องกันกรณีแสกนได้เป็นปี พ.ศ. (เช่น เกิน 2500) ให้ลบออก 543 เพื่อเปลี่ยนเป็น ค.ศ. ให้เบราว์เซอร์เข้าใจ
+                            if (parseInt(year) > 2400) {
+                                year = (parseInt(year) - 543).toString();
+                            }
+                            
+                            // จัดรูปแบบเข้าช่องอินพุตประเภท date
+                            document.querySelector('[name="blood_test_date"]').value = `${year}-${month}-${day}`;
+                        }
+                    }
+
+                    // สลับการแสดงผลหน้ากากสถานะเมื่อสำเร็จ
+                    if (statusDiv) statusDiv.style.display = 'none';
+                    if (successDiv) successDiv.style.display = 'block';
+                    
+                    // เรียกฟังก์ชันไฮไลท์ช่องข้อมูลที่ AI กรอกให้ผู้ใช้ตรวจทาน
+                    if (typeof highlightFields === 'function') {
+                        highlightFields(['hdl', 'ldl', 'cholesterol', 'fpg', 'weight', 'height', 'bp_high', 'bp_low', 'blood_test_date','triglyceride']);
                     }
                     
-                    // เรียกฟังก์ชันไฮไลท์
-                    highlightFields(['hdl', 'ldl', 'cholesterol', 'fpg']);
                 } else {
-                    if (statusDiv) statusDiv.innerHTML = '<span class="small text-warning">AI ไม่พบข้อมูลสุขภาพในภาพนี้</span>';
+                    if (statusDiv) statusDiv.style.display = 'none';
+                    if (placeholderDiv) placeholderDiv.style.display = 'block';
+                    alert("AI ไม่พบข้อมูลสุขภาพในภาพนี้ กรุณาอัปโหลดใหม่อีกครั้ง");
                 }
 
             } catch (error) {
                 console.error("OCR Error:", error);
-                if (statusDiv) statusDiv.innerHTML = '<span class="small text-danger">ไม่สามารถเชื่อมต่อระบบ AI ได้</span>';
+                if (statusDiv) statusDiv.style.display = 'none';
+                if (placeholderDiv) placeholderDiv.style.display = 'block';
+                alert("ไม่สามารถเชื่อมต่อระบบ AI ได้");
             } finally {
-                // 🔍 บรรทัดสำคัญ: ล้างค่าไฟล์เก่าทิ้ง เพื่อให้กดอัปโหลดรูปเดิมซ้ำๆ ได้ทันที
-                input.value = ''; 
+                input.value = ''; // ล้างค่าไฟล์เก่าทิ้งให้กดอัปโหลดซ้ำได้ทันที
             }
         }
 

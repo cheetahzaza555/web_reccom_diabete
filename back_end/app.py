@@ -5,7 +5,6 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from routes.auth import auth
 from routes.admin import admin_bp
-from routes.user import user_bp
 
 # โหลดตัวแปรจาก .env (ตอนนี้จะมีแค่ข้อมูลของ GraphDB)
 load_dotenv()
@@ -13,7 +12,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Secret Key สำหรับการทำ Session ของ Flask (จำเป็นต้องมีเพื่อให้ Login ได้)
-app.secret_key = "secret1234" 
+app.secret_key = os.getenv("SECRET_KEY")
 
 # เปิดใช้งาน CORS (Cross-Origin Resource Sharing)
 CORS(app)

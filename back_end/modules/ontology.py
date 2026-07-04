@@ -61,3 +61,6 @@ if onto:
         
         class intensityOfExercise(ObjectProperty): namespace = ex
         class exerciseFrequency(ObjectProperty): namespace = ex
+else:
+    print("⚠️ Ontology failed to load. 'ex' namespace set to None — recommendation features will be disabled.")
+    ex = None

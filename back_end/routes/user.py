@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # ✅ เปลี่ยนมา Import ฟังก์ชันจาก database.py แทน
 from modules.logic import process_patient_realtime
-from modules.database import (
+from modules.db import (
     save_raw_patient_data, get_all_recommendations, get_patient_latest_record, 
     get_all_exercises_for_library, get_exercise_details_by_id, get_exercise_by_id,
     generate_30_days_plan, get_dashboard_schedule, delete_user_schedule,
@@ -182,9 +182,7 @@ def update_settings():
     user_id = session['user_id']
     data = request.json
 
-    # ----------------------------------------------------
-    # ✅ 1. เพิ่มการตรวจเช็ก OTP ตรงนี้ (ก่อนทำอย่างอื่น)
-    # ----------------------------------------------------
+    # ✅ 1. เพิ่มการตรวจเช็ก OTP ตรงนี้
     user_otp = data.get('otp')
     saved_otp = session.get('register_otp') # ดึง OTP ที่สร้างไว้ตอน request_otp ออกมาเทียบ
 

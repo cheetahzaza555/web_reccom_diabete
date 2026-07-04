@@ -33,7 +33,6 @@ def process_ocr_image(image_file):
         print(text if text.strip() else "(...ภาพว่างเปล่า ไม่มีตัวอักษร...)")
         print("===============================================\n")
 
-        # 4. ใช้ RegEx ดึงข้อมูล (เขียนแบบนี้ถูกต้องและปลอดภัยแล้ว)
         data = {
             "hdl": re.search(r"HDL[:\s-]+(\d+\.?\d*)", text, re.I).group(1) if re.search(r"HDL[:\s-]+(\d+\.?\d*)", text, re.I) else "",
             "ldl": re.search(r"LDL[:\s-]+(\d+\.?\d*)", text, re.I).group(1) if re.search(r"LDL[:\s-]+(\d+\.?\d*)", text, re.I) else "",

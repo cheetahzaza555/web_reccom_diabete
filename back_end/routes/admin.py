@@ -1,10 +1,12 @@
 from flask import Blueprint, redirect, render_template, jsonify, request, session, url_for
 from utils.security import admin_required  # 🛡️ เปิดใช้งานยามเฝ้าประตู
-from modules.database import delete_patient, get_patient_profile 
-from modules.admin import (
-    get_admin_dashboard_stats, 
-    get_all_patients_management, 
-    get_recent_registered_users, 
+from modules.db import (
+    delete_patient,
+    get_patient_profile,
+    get_admin_dashboard_stats,
+    get_all_users_with_roles,
+    get_patient_health_summary,
+    get_recent_registered_users,
     update_user_role_in_graphdb
 )
 
@@ -18,7 +20,7 @@ admin_bp = Blueprint('admin', __name__)
 @admin_required  # 🔒 ดักสิทธิ์: ถ้าไม่ล็อกอิน/ไม่ใช่แอดมิน จะโดนดีดออกทันที
 def get_patient(id):
     profile = get_patient_profile(id)
-    if profile: 
+    if profile:
         return jsonify({"status": "ok", **profile})
     return jsonify({"status": "error", "message": "ไม่พบข้อมูลผู้ป่วย"})
 
@@ -33,6 +35,17 @@ def delete_patient_route(id):
 
 
 # ==========================================
+# 🩺 API สำหรับ Admin ดูข้อมูลสุขภาพผู้ป่วย (bmi/fpg/type)
+# ==========================================
+
+@admin_bp.route('/api/patients/health-summary', methods=['GET'])
+@admin_required  # 🔒 เฉพาะแอดมินเท่านั้นที่ดูข้อมูลสุขภาพผู้ป่วยทั้งหมดได้
+def patients_health_summary():
+    patients = get_patient_health_summary()
+    return jsonify({"status": "ok", "patients": patients})
+
+
+# ==========================================
 # 📊 ฝั่งแสดงผลหน้ากากเว็บ (HTML Pages)
 # ==========================================
 
@@ -40,17 +53,17 @@ def delete_patient_route(id):
 @admin_required  # 🔒 ใช้ยามคุมแทนการเขียน if-else ซ้ำซ้อน
 def dashboard_page():
     print(f"👤 [Admin Route Log] Admin '{session.get('username')}' is accessing dashboard.")
-    
+
     # 📊 เรียกดึงข้อมูลจริงจากคลังฐานข้อมูล GraphDB
     stats_data = get_admin_dashboard_stats()
     recent_users = get_recent_registered_users()
-    
+
     # 🪵 PRINT LOG: ตรวจสอบข้อมูลก่อนโยนไป HTML
     print("====== 🪵 ADMIN DASHBOARD DEBUG LOG ====== ")
     print(f"📦 stats_data ที่ได้: {stats_data}")
     print(f"👥 recent_users ที่ได้: {recent_users}")
     print("===========================================")
-    
+
     return render_template(
         "admin/index.html",
         username=session.get("username"),
@@ -63,9 +76,9 @@ def dashboard_page():
 @admin_bp.route("/users")
 @admin_required  # 🔒 บล็อกถาวร พอล็อกเอาต์แล้วเปิดหน้านี้จะโดนเด้งกลับหน้าแรกทันที
 def users_management_page():
-    # ดึงรายชื่อคนไข้ทั้งหมด
-    patients = get_all_patients_management()
-    
+    # ดึงรายชื่อผู้ใช้ทั้งหมดพร้อมสิทธิ์ (role) สำหรับหน้าจัดการสิทธิ์
+    patients = get_all_users_with_roles()
+
     return render_template(
         "admin/users.html",
         username=session.get("username"),
@@ -81,13 +94,13 @@ def update_user_role():
     data = request.get_json()
     user_id = data.get("user_id")
     new_role = data.get("new_role")
-    
+
     if not user_id or not new_role:
         return jsonify({"success": False, "message": "ข้อมูลที่ได้รับไม่ครบถ้วน"}), 400
-        
+
     # 🔄 เรียกใช้งานฟังก์ชันแยกเพื่อเปลี่ยนข้อมูลในคลัง GraphDB
     success, message = update_user_role_in_graphdb(user_id, new_role)
-    
+
     if success:
         return jsonify({"success": True, "message": message})
     else:

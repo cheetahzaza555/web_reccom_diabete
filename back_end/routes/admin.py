@@ -92,3 +92,12 @@ def update_user_role():
         return jsonify({"success": True, "message": message})
     else:
         return jsonify({"success": False, "message": f"หลังบ้านขัดข้อง: {message}"}), 500
+    
+@admin_bp.route("/exercises", methods=["GET"])
+@admin_required  # 🔒 บล็อกถาวร พอล็อกเอาต์แล้วเปิดหน้านี้จะโดนเด้งกลับหน้าแรกทันที
+def exercises_management_page():
+    return render_template(
+        "admin/exercises.html",
+        username=session.get("username"),
+        role=session.get("role")
+    )       

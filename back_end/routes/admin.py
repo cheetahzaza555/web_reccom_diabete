@@ -1,4 +1,5 @@
 from flask import Blueprint, redirect, render_template, jsonify, request, session, url_for
+from modules.db.exercise_repository import get_all_exercises_for_library
 from utils.security import admin_required  # 🛡️ เปิดใช้งานยามเฝ้าประตู
 from modules.db import (
     delete_patient,
@@ -7,7 +8,8 @@ from modules.db import (
     get_all_users_with_roles,
     get_patient_health_summary,
     get_recent_registered_users,
-    update_user_role_in_graphdb
+    update_user_role_in_graphdb,
+    get_all_exercises_for_library
 )
 
 admin_bp = Blueprint('admin', __name__)
@@ -112,5 +114,6 @@ def exercises_management_page():
     return render_template(
         "admin/exercises.html",
         username=session.get("username"),
-        role=session.get("role")
+        role=session.get("role"),
+        exercises=get_all_exercises_for_library()
     )       

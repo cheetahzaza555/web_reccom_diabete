@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiaBalance Admin | จัดการคลังข้อมูลการออกกำลังกาย</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-blue: #2B5CB3;
+            --light-bg: #F4F7FC;
+            --text-dark: #333333;
+            --text-muted: #666666;
+            --white: #ffffff;
+            --border-color: #E2E8F0;
+            
+            /* 🌟 ปรับชุดสีสำหรับ Badge ประเภทกีฬาตาม DNA ของสิทธิ์ผู้ใช้ */
+            --aerobic-badge-bg: #e0f2fe;
+            --aerobic-badge-text: #0369a1;
+            --strength-badge-bg: #e0f5e7;
+            --strength-badge-text: #166534;
+            --flex-badge-bg: #f3e8ff;
+            --flex-badge-text: #6b21a8;
+            
+            /* ชุดสีสำหรับระดับความหนัก */
+            --intensity-low-bg: #f1f5f9;
+            --intensity-low-text: #475569;
+            --intensity-mid-bg: #fef3c7;
+            --intensity-mid-text: #d97706;
+            --intensity-high-bg: #fee2e2;
+            --intensity-high-text: #dc2626;
+
+            --danger: #E53E3E;
+            --warning: #d97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+
+        .admin-layout { display: flex; width: 100%; min-height: 100vh; }
+        .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .header-section h1 { font-size: 28px; font-weight: 600; }
+
+        /* 🛠️ แถบเครื่องมือ ค้นหา / ตัวกรอง / ปุ่มเพิ่ม */
+        .toolbar-section {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: center;
+            width: 100%;
+        }
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-family: 'Prompt', sans-serif;
+            font-size: 14px;
+            outline: none;
+        }
+        .filter-select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--white);
+            font-family: 'Prompt', sans-serif;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            min-width: 240px;
+        }
+        
+        /* ➕ ปุ่มเพิ่มท่าระดับพรีเมียม */
+        .btn-add-exercise {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+            font-family: 'Prompt', sans-serif;
+            white-space: nowrap;
+        }
+        .btn-add-exercise:hover { background-color: #1e458a; }
+
+        /* 📊 สไตล์ตารางครอบการ์ดไร้ขอบตามตัวเดิม */
+        .table-card {
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border-color);
+            width: 100%; 
+            overflow-x: auto;
+        }
+        .user-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .user-table th {
+            background-color: #F8FAFC;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .user-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .user-table tr:hover { background-color: #F8FAFC; }
+
+        /* 🏷️ ดีไซน์กลุ่ม Badge สะท้อนประเภทและระดับ */
+        .badge { 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            display: inline-flex; 
+            align-items: center;
+            gap: 6px;
+        }
+        .badge-aerobic { background-color: var(--aerobic-badge-bg); color: var(--aerobic-badge-text); }
+        .badge-strength { background-color: var(--strength-badge-bg); color: var(--strength-badge-text); }
+        .badge-flexibility { background-color: var(--flex-badge-bg); color: var(--flex-badge-text); }
+        
+        .badge-low { background-color: var(--intensity-low-bg); color: var(--intensity-low-text); }
+        .badge-medium { background-color: var(--intensity-mid-bg); color: var(--intensity-mid-text); }
+        .badge-high { background-color: var(--intensity-high-bg); color: var(--intensity-high-text); }
+
+        /* 🎛️ ปุ่มคำสั่ง จัดการแก้ไข และ ลบ */
+        .action-buttons { display: flex; gap: 10px; justify-content: center; }
+        .btn-edit {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #FFFDF5;
+            color: var(--warning);
+            cursor: pointer;
+            border: 1px solid #FEF3C7;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-edit:hover { background-color: var(--warning); color: var(--white); border-color: var(--warning); }
+
+        .btn-delete {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #FFF5F5;
+            color: var(--danger);
+            cursor: pointer;
+            border: 1px solid #FED7D7;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
+        
+        /* สไตล์กล่อง SweetAlert ใช้ Sarabun เหมือนหน้าจัดการสิทธิ์ */
+        .swal2-popup { font-family: 'Sarabun', sans-serif !important; border-radius: 16px !important; }
+        .swal2-input, .swal2-select, .swal2-textarea { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        {% include 'includes/navbar_admin.html' %}
+
+        <div class="main-content">
+            <div class="header-section">
+                <div>
+                    <h1>จัดการคลังข้อมูลการออกกำลังกาย</h1>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">เพิ่ม แก้ไข หรือลบข้อมูลท่าออกกำลังกายสำหรับนำไปประมวลผลระบบแนะนำผู้ป่วยเบาหวาน</p>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อท่าออกกำลังกาย...">
+                </div>
+                <select id="filterType" class="filter-select">
+                    <option value="">ประเภททั้งหมด</option>
+                    <option value="aerobic">คาร์ดิโอ / แอโรบิก (Aerobic)</option>
+                    <option value="strength">ฝึกกล้ามเนื้อ (Strength Training)</option>
+                    <option value="flexibility">ยืดเหยียดกล้ามเนื้อ (Flexibility)</option>
+                </select>
+                <button class="btn-add-exercise" onclick="openAddExerciseModal()">
+                    <i class="fa-solid fa-circle-plus"></i> เพิ่มท่าออกกำลังกายใหม่
+                </button>
+            </div>
+
+            <div class="table-card">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">ไอดีท่า</th>
+                            <th style="width: 25%;">ชื่อท่าออกกำลังกาย</th>
+                            <th style="width: 15%;">ประเภท</th>
+                            <th style="width: 15%;">ระดับความหนัก</th>
+                            <th style="width: 25%;">คำแนะนำ / ประโยชน์</th>
+                            <th style="width: 12%; text-align: center;">จัดการข้อมูล</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exerciseTableBody">
+                        {% for exercise in exercises %}
+                        <tr>
+                            <td><strong>#{{ exercise.id }}</strong></td>
+                            <td><strong>{{ exercise.name }}</strong></td>
+                            <td>
+                                {% if exercise.type == 'aerobic' %}
+                                <span class="badge badge-aerobic"><i class="fa-solid fa-heart-pulse"></i> Aerobic</span>
+                                {% elif exercise.type == 'strength' %}
+                                <span class="badge badge-strength"><i class="fa-solid fa-dumbbell"></i> Strength</span>
+                                {% else %}
+                                <span class="badge badge-flexibility"><i class="fa-solid fa-child-reaching"></i> Flexibility</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if exercise.intensity == 'high' %}
+                                <span class="badge badge-high">หนัก</span>
+                                {% elif exercise.intensity == 'medium' %}
+                                <span class="badge badge-medium">ปานกลาง</span>
+                                {% else %}
+                                <span class="badge badge-low">เบา</span>
+                                {% endif %}
+                            </td>
+                            <td style="color: var(--text-muted); font-size: 13px;">{{ exercise.description }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-edit" onclick="openEditExerciseModal('{{ exercise.id }}', '{{ exercise.name }}', '{{ exercise.type }}', '{{ exercise.intensity }}', '{{ exercise.description }}')">
+                                        <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                                    </button>
+                                    <button class="btn-delete" onclick="deleteExercise('{{ exercise.id }}')">
+                                        <i class="fa-solid fa-trash-can"></i> ลบ
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                ไม่พบข้อมูลท่าออกกำลังกายในคลังข้อมูล
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🟢 1. ฟังก์ชันเพิ่มข้อมูลด้วย SweetAlert2 (สร้าง Form ป๊อปอัปสไตล์หรูหราแบบไม่ต้องทำ Modal แยกให้หนา)
+        function openAddExerciseModal() {
+            Swal.fire({
+                title: 'เพิ่มท่าออกกำลังกายใหม่',
+                html: `
+                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
+                    <input id="swal-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น ปั่นจักรยานอยู่กับที่">
+                    
+                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ประเภทการออกกำลังกาย</label></div>
+                    <select id="swal-type" class="swal2-select" style="margin:0 0 16px 0; width:100%;">
+                        <option value="aerobic">คาร์ดิโอ / แอโรบิก (Aerobic)</option>
+                        <option value="strength">ฝึกกล้ามเนื้อ (Strength Training)</option>
+                        <option value="flexibility">ยืดเหยียดกล้ามเนื้อ (Flexibility)</option>
+                    </select>
+
+                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ระดับความหนัก</label></div>
+                    <select id="swal-intensity" class="swal2-select" style="margin:0 0 16px 0; width:100%;">
+                        <option value="low">เบา (Low)</option>
+                        <option value="medium" selected>ปานกลาง (Medium)</option>
+                        <option value="high">หนัก (High)</option>
+                    </select>
+
+                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">คำแนะนำ / ประโยชน์ต่อผู้ป่วยเบาหวาน</label></div>
+                    <textarea id="swal-desc" class="swal2-textarea" style="margin:0; width:100%; height:80px;" placeholder="คำอธิบายท่าทางและประโยชน์..."></textarea>
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#2B5CB3',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'บันทึกข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+                preConfirm: () => {
+                    const name = document.getElementById('swal-name').value.strip ? document.getElementById('swal-name').value.strip() : document.getElementById('swal-name').value;
+                    if (!name) {
+                        Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย');
+                    }
+                    return {
+                        name: name,
+                        type: document.getElementById('swal-type').value,
+                        intensity: document.getElementById('swal-intensity').value,
+                        description: document.getElementById('swal-desc').value
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                    
+                    // ยิง Fetch ส่งข้อมูลเพิ่มไปหลังบ้าน
+                    fetch("/admin/exercises/add", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(result.value)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire('สำเร็จ!', 'เพิ่มข้อมูลท่าออกกำลังกายเรียบร้อยแล้ว', 'success').then(() => location.reload());
+                        } else { throw new Error(data.message); }
+                    })
+                    .catch(err => Swal.fire('ล้มเหลว!', err.message, 'error'));
+                }
+            });
+        }
+
+        // 🟡 2. ฟังก์ชันแก้ไขข้อมูลด้วย SweetAlert2 (ดึงค่าเดิมมากางให้อัตโนมัติ)
+        function openEditExerciseModal(id, name, type, intensity, description) {
+            Swal.fire({
+                title: 'แก้ไขข้อมูลท่าออกกำลังกาย',
+                html: `
+                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
+                    <input id="swal-edit-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${name}">
+                    
+                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ประเภทการออกกำลังกาย</label></div>
+                    <select id="swal-edit-type" class="swal2-select" style="margin:0 0 16px 0; width:100%;">
+                        <option value="aerobic" ${type === 'aerobic' ? 'selected' : ''}>คาร์ดิโอ / แอโรบิก (Aerobic)</option>
+                        <option value="strength" ${type === 'strength' ? 'selected' : ''}>ฝึกกล้ามเนื้อ (Strength Training)</option>
+                        <option value="flexibility" ${type === 'flexibility' ? 'selected' : ''}>ยืดเหยียดกล้ามเนื้อ (Flexibility)</option>
+                    </select>
+
+                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ระดับความหนัก</label></div>
+                    <select id="swal-edit-intensity" class="swal2-select" style="margin:0 0 16px 0; width:100%;">
+                        <option value="low" ${intensity === 'low' ? 'selected' : ''}>เบา (Low)</option>
+                        <option value="medium" ${intensity === 'medium' ? 'selected' : ''}>ปานกลาง (Medium)</option>
+                        <option value="high" ${intensity === 'high' ? 'selected' : ''}>หนัก (High)</option>
+                    </select>
+
+                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">คำแนะนำ / ประโยชน์ต่อผู้ป่วยเบาหวาน</label></div>
+                    <textarea id="swal-edit-desc" class="swal2-textarea" style="margin:0; width:100%; height:80px;">${description}</textarea>
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#2B5CB3',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'อัปเดตข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+                preConfirm: () => {
+                    const editName = document.getElementById('swal-edit-name').value.strip ? document.getElementById('swal-edit-name').value.strip() : document.getElementById('swal-edit-name').value;
+                    if (!editName) { Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย'); }
+                    return {
+                        id: id,
+                        name: editName,
+                        type: document.getElementById('swal-edit-type').value,
+                        intensity: document.getElementById('swal-edit-intensity').value,
+                        description: document.getElementById('swal-edit-desc').value
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                    
+                    // ยิง Fetch อัปเดตข้อมูลไปหลังบ้าน
+                    fetch("/admin/exercises/update", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(result.value)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire('สำเร็จ!', 'อัปเดตข้อมูลท่าออกกำลังกายเรียบร้อย', 'success').then(() => location.reload());
+                        } else { throw new Error(data.message); }
+                    })
+                    .catch(err => Swal.fire('เกิดข้อผิดพลาด!', err.message, 'error'));
+                }
+            });
+        }
+
+        // 🔴 3. ฟังก์ชันลบข้อมูลเลียนแบบพฤติกรรมโครงสร้างเดิม (ลบจาก GraphDB)
+        function deleteExercise(exerciseId) {
+            Swal.fire({
+                title: 'คุณแน่ใจใช่ไหมที่จะลบ?',
+                text: `ข้อมูลท่าออกกำลังกายไอดี #${exerciseId} จะถูกลบออกจากคลังข้อมูลระบบแนะนำถาวรและไม่สามารถกู้คืนได้!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E53E3E',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'ใช่, ลบออกไปเลย!',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                    
+                    // ยิง Fetch คำสั่งลบไปยังเซิร์ฟเวอร์หลังบ้าน
+                    fetch("/admin/exercises/delete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ exercise_id: exerciseId })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire('ลบสำเร็จ!', 'ข้อมูลท่าออกกำลังกายถูกถอนออกจากระบบแล้ว', 'success').then(() => location.reload());
+                        } else { throw new Error(data.message); }
+                    })
+                    .catch(err => Swal.fire('ล้มเหลว!', 'ไม่สามารถลบข้อมูลได้: ' + err.message, 'error'));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -25,9 +25,9 @@ def login_required(f):
             # ถ้าเป็นการเรียกแบบ AJAX/API (Content-Type เป็น JSON) ให้ตอบ JSON แทนการ redirect
             if request.is_json or request.path.startswith('/user/api/'):
                 return jsonify({"status": "error", "message": "กรุณาล็อกอินก่อน"}), 401
-
+ 
             flash('กรุณาล็อกอินก่อน', 'error')
             return redirect(url_for('auth.login_page'))
-
+ 
         return f(*args, **kwargs)
     return decorated_function

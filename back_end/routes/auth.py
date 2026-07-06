@@ -3,10 +3,8 @@ from werkzeug.security import generate_password_hash, check_password_hash # เ�
 from modules.auth_utils import generate_token
 import random
 from modules.email_utils import send_otp_email
-from modules.database import get_user_for_login, update_user_profile_db, update_password_db
-
 # เปลี่ยนมานำเข้าฟังก์ชันจาก database.py แทน (เพราะเราจะย้ายคำสั่ง SPARQL ไปรวมไว้ที่นั่น)
-from modules.database import register_new_patient, get_user_for_login, get_user_by_id
+from modules.db import register_new_patient, get_user_for_login, get_user_by_id, get_user_for_login, update_user_profile_db, update_password_db
 
 auth = Blueprint("auth", __name__)
 

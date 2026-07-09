@@ -1,10 +1,11 @@
 # modules/email_utils.py
 import smtplib
 from email.mime.text import MIMEText
+import os
 
 def send_otp_email(receiver_email, otp_code, action="register"):
-    sender_email = "diagito1156@gmail.com" 
-    app_password = "cvke hgqu ktng ghxj" 
+    sender_email = os.getenv("diagito1156@gmail.com")
+    app_password = os.getenv("app_password ")
     
     # 🌟 1. เช็กว่า action คืออะไร เพื่อเปลี่ยนข้อความให้ตรงกับบริบท
     if action == "update_settings":

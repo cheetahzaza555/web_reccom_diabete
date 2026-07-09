@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 import os
 
 def send_otp_email(receiver_email, otp_code, action="register"):
-    sender_email = os.getenv("diagito1156@gmail.com")
+    sender_email = os.getenv("email_otp")
     app_password = os.getenv("app_password ")
     
     # 🌟 1. เช็กว่า action คืออะไร เพื่อเปลี่ยนข้อความให้ตรงกับบริบท

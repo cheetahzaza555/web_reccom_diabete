@@ -1,7 +1,8 @@
 import jwt
 import datetime
+import os
 
-SECRET_KEY = "supersecretkey"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
 def generate_token(user_id, username, role):
     payload = {

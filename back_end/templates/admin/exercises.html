@@ -19,24 +19,16 @@
             --white: #ffffff;
             --border-color: #E2E8F0;
             
-            /* 🌟 ปรับชุดสีสำหรับ Badge ประเภทกีฬาตาม DNA ของสิทธิ์ผู้ใช้ */
-            --aerobic-badge-bg: #e0f2fe;
-            --aerobic-badge-text: #0369a1;
-            --strength-badge-bg: #e0f5e7;
-            --strength-badge-text: #166534;
-            --flex-badge-bg: #f3e8ff;
-            --flex-badge-text: #6b21a8;
-            
-            /* ชุดสีสำหรับระดับความหนัก */
-            --intensity-low-bg: #f1f5f9;
-            --intensity-low-text: #475569;
-            --intensity-mid-bg: #fef3c7;
-            --intensity-mid-text: #d97706;
-            --intensity-high-bg: #fee2e2;
-            --intensity-high-text: #dc2626;
+            /* 🎨 ปรับสีป้ายประเภท (Badge) ให้อ่านง่าย ชัดเจน ไม่จาง */
+            --aerobic-bg: #0099ff;
+            --aerobic-text: #0369A1;
+            --strength-bg: #00ff59;
+            --strength-text: #15803D;
+            --flex-bg: #7b00ff;
+            --flex-text: #6B21A8;
 
             --danger: #E53E3E;
-            --warning: #d97706;
+            --warning: #D97706;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -53,7 +45,6 @@
         }
         .header-section h1 { font-size: 28px; font-weight: 600; }
 
-        /* 🛠️ แถบเครื่องมือ ค้นหา / ตัวกรอง / ปุ่มเพิ่ม */
         .toolbar-section {
             display: flex;
             gap: 16px;
@@ -93,7 +84,6 @@
             min-width: 240px;
         }
         
-        /* ➕ ปุ่มเพิ่มท่าระดับพรีเมียม */
         .btn-add-exercise {
             padding: 10px 20px;
             border-radius: 8px;
@@ -112,7 +102,6 @@
         }
         .btn-add-exercise:hover { background-color: #1e458a; }
 
-        /* 📊 สไตล์ตารางครอบการ์ดไร้ขอบตามตัวเดิม */
         .table-card {
             background-color: var(--white);
             border-radius: 16px;
@@ -122,8 +111,8 @@
             width: 100%; 
             overflow-x: auto;
         }
-        .user-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .user-table th {
+        .exercise-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .exercise-table th {
             background-color: #F8FAFC;
             color: var(--text-muted);
             font-weight: 600;
@@ -131,10 +120,10 @@
             font-size: 14px;
             border-bottom: 2px solid var(--border-color);
         }
-        .user-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-        .user-table tr:hover { background-color: #F8FAFC; }
+        .exercise-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .exercise-table tr:hover { background-color: #F8FAFC; }
 
-        /* 🏷️ ดีไซน์กลุ่ม Badge สะท้อนประเภทและระดับ */
+        /* 🏷️ ดีไซน์กลุ่ม Badge ให้อ่านออกชัดเจน ไม่จางเป็นสีขาวกลืนกับพื้นหลัง */
         .badge { 
             padding: 6px 14px; 
             border-radius: 20px; 
@@ -144,16 +133,12 @@
             align-items: center;
             gap: 6px;
         }
-        .badge-aerobic { background-color: var(--aerobic-badge-bg); color: var(--aerobic-badge-text); }
-        .badge-strength { background-color: var(--strength-badge-bg); color: var(--strength-badge-text); }
-        .badge-flexibility { background-color: var(--flex-badge-bg); color: var(--flex-badge-text); }
-        
-        .badge-low { background-color: var(--intensity-low-bg); color: var(--intensity-low-text); }
-        .badge-medium { background-color: var(--intensity-mid-bg); color: var(--intensity-mid-text); }
-        .badge-high { background-color: var(--intensity-high-bg); color: var(--intensity-high-text); }
+        .badge-aerobic { background-color: var(--aerobic-bg); color: var(--aerobic-text); }
+        .badge-strength { background-color: var(--strength-bg); color: var(--strength-text); }
+        .badge-flexibility { background-color: var(--flex-bg); color: var(--flex-text); }
 
-        /* 🎛️ ปุ่มคำสั่ง จัดการแก้ไข และ ลบ */
-        .action-buttons { display: flex; gap: 10px; justify-content: center; }
+        /* 🎛️ ปุ่มจัดการข้อมูลแก้ไข และ ลบ */
+        .action-buttons { display: flex; gap: 8px; justify-content: center; }
         .btn-edit {
             padding: 6px 12px;
             border-radius: 6px;
@@ -164,6 +149,9 @@
             border: 1px solid #FEF3C7;
             font-weight: 600;
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         .btn-edit:hover { background-color: var(--warning); color: var(--white); border-color: var(--warning); }
 
@@ -177,15 +165,21 @@
             border: 1px solid #FED7D7;
             font-weight: 600;
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
         
-        /* สไตล์กล่อง SweetAlert ใช้ Sarabun เหมือนหน้าจัดการสิทธิ์ */
         .swal2-popup { font-family: 'Sarabun', sans-serif !important; border-radius: 16px !important; }
-        .swal2-input, .swal2-select, .swal2-textarea { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
+        .swal2-input { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
     </style>
 </head>
 <body>
+
+    <div id="exercise-data-container" style="display: none;" 
+         data-json="{% if exercises %}{{ exercises | tojson | safe | forceescape }}{% else %}[]{% endif %}">
+    </div>
 
     <div class="admin-layout">
         {% include 'includes/navbar_admin.html' %}
@@ -194,20 +188,20 @@
             <div class="header-section">
                 <div>
                     <h1>จัดการคลังข้อมูลการออกกำลังกาย</h1>
-                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">เพิ่ม แก้ไข หรือลบข้อมูลท่าออกกำลังกายสำหรับนำไปประมวลผลระบบแนะนำผู้ป่วยเบาหวาน</p>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">เพิ่ม แก้ไข หรือลบข้อมูลท่าออกกำลังกายจริงในระบบคลังข้อมูลฐานความรู้เบาหวาน (Ontology Master Data)</p>
                 </div>
             </div>
 
             <div class="toolbar-section">
                 <div class="search-wrapper">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อท่าออกกำลังกาย...">
+                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อท่าหรือไอดี...">
                 </div>
                 <select id="filterType" class="filter-select">
                     <option value="">ประเภททั้งหมด</option>
-                    <option value="aerobic">คาร์ดิโอ / แอโรบิก (Aerobic)</option>
-                    <option value="strength">ฝึกกล้ามเนื้อ (Strength Training)</option>
-                    <option value="flexibility">ยืดเหยียดกล้ามเนื้อ (Flexibility)</option>
+                    <option value="Aerobic">แอโรบิก (Aerobic)</option>
+                    <option value="Resistance">ฝึกกล้ามเนื้อ (Resistance)</option>
+                    <option value="Flexibility">ยืดเหยียดกล้ามเนื้อ (Flexibility)</option>
                 </select>
                 <button class="btn-add-exercise" onclick="openAddExerciseModal()">
                     <i class="fa-solid fa-circle-plus"></i> เพิ่มท่าออกกำลังกายใหม่
@@ -215,90 +209,135 @@
             </div>
 
             <div class="table-card">
-                <table class="user-table">
+                <table class="exercise-table">
                     <thead>
                         <tr>
-                            <th style="width: 8%;">ไอดีท่า</th>
-                            <th style="width: 25%;">ชื่อท่าออกกำลังกาย</th>
-                            <th style="width: 15%;">ประเภท</th>
-                            <th style="width: 15%;">ระดับความหนัก</th>
-                            <th style="width: 25%;">คำแนะนำ / ประโยชน์</th>
-                            <th style="width: 12%; text-align: center;">จัดการข้อมูล</th>
+                            <th style="width: 10%;">ไอดีท่า</th>
+                            <th style="width: 35%;">ชื่อท่าออกกำลังกาย</th>
+                            <th style="width: 25%;">ประเภทจริงในคลัง (Class)</th>
+                            <th style="width: 15%;">ค่า METs</th>
+                            <th style="width: 15%; text-align: center;">จัดการข้อมูล</th>
                         </tr>
                     </thead>
                     <tbody id="exerciseTableBody">
-                        {% for exercise in exercises %}
-                        <tr>
-                            <td><strong>#{{ exercise.id }}</strong></td>
-                            <td><strong>{{ exercise.name }}</strong></td>
-                            <td>
-                                {% if exercise.type == 'aerobic' %}
-                                <span class="badge badge-aerobic"><i class="fa-solid fa-heart-pulse"></i> Aerobic</span>
-                                {% elif exercise.type == 'strength' %}
-                                <span class="badge badge-strength"><i class="fa-solid fa-dumbbell"></i> Strength</span>
-                                {% else %}
-                                <span class="badge badge-flexibility"><i class="fa-solid fa-child-reaching"></i> Flexibility</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if exercise.intensity == 'high' %}
-                                <span class="badge badge-high">หนัก</span>
-                                {% elif exercise.intensity == 'medium' %}
-                                <span class="badge badge-medium">ปานกลาง</span>
-                                {% else %}
-                                <span class="badge badge-low">เบา</span>
-                                {% endif %}
-                            </td>
-                            <td style="color: var(--text-muted); font-size: 13px;">{{ exercise.description }}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-edit" onclick="openEditExerciseModal('{{ exercise.id }}', '{{ exercise.name }}', '{{ exercise.type }}', '{{ exercise.intensity }}', '{{ exercise.description }}')">
-                                        <i class="fa-solid fa-pen-to-square"></i> แก้ไข
-                                    </button>
-                                    <button class="btn-delete" onclick="deleteExercise('{{ exercise.id }}')">
-                                        <i class="fa-solid fa-trash-can"></i> ลบ
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                                ไม่พบข้อมูลท่าออกกำลังกายในคลังข้อมูล
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // 🟢 1. ฟังก์ชันเพิ่มข้อมูลด้วย SweetAlert2 (สร้าง Form ป๊อปอัปสไตล์หรูหราแบบไม่ต้องทำ Modal แยกให้หนา)
+        // 📥 ดึงข้อมูล JSON ผ่าน data-attribute (เส้นแดงหยักใน VS Code หาย 100% แน่นอน!)
+        const container = document.getElementById('exercise-data-container');
+        const exercisesData = JSON.parse(container.getAttribute('data-json') || '[]');
+
+        // ฟังก์ชันเรนเดอร์ตาราง (แก้ไขสีป้ายและการจำแนกประเภท)
+        function renderTable(data) {
+            const tableBody = document.getElementById('exerciseTableBody');
+            
+            if (!data || !data.length) {
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลท่าออกกำลังกายที่ตรงกับเงื่อนไข</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            data.forEach(item => {
+                // ดึงชื่อคลาสหลัก
+                let actualClass = item.original_type || "Exercise";
+                const categories = item.all_categories || [];
+
+                // 🎨 ตัวแปรเก็บ Style ป้ายประเภท
+                let typeBadgeClass = "badge-flexibility"; 
+                let typeIcon = '<i class="fa-solid fa-child-reaching"></i>';
+                
+                // ตรวจสอบเงื่อนไขคลาส (เช่น ถ้าเป็น Walking หรือมีคำว่า Walking/Cycling ให้จับกลุ่มอยู่ทีมสีฟ้า Aerobic)
+                if (categories.includes("Aerobic") || actualClass.toLowerCase().includes("walking") || actualClass.toLowerCase().includes("cycling")) {
+                    typeBadgeClass = "badge-aerobic";
+                    typeIcon = '<i class="fa-solid fa-heart-pulse"></i>';
+                } else if (categories.includes("Resistance") || categories.includes("Strength") || categories.includes("WeightLifting")) {
+                    typeBadgeClass = "badge-strength";
+                    typeIcon = '<i class="fa-solid fa-dumbbell"></i>';
+                }
+
+                // การแสดงผล METs
+                let metsDisplay = parseFloat(item.mets) ? `${parseFloat(item.mets).toFixed(1)} METs` : "0.0 METs";
+                let ytBadge = item.youtube_id ? ` <small style="color: #ef4444;" title="มีลิงก์วิดีโอ"><i class="fa-brands fa-youtube"></i></small>` : '';
+
+                html += `
+                <tr>
+                    <td><strong>#${item.id}</strong></td>
+                    <td><strong>${item.name}</strong>${ytBadge}</td>
+                    <td>
+                        <span class="badge ${typeBadgeClass}">
+                            ${typeIcon} ${actualClass}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="color: var(--primary-blue); font-size: 15px;">${metsDisplay}</strong>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="openEditExerciseModal('${item.id}', '${item.name.replace(/'/g, "\\'")}', '${actualClass}', '${item.mets}', '${item.youtube_id || ''}')">
+                                <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                            </button>
+                            <button class="btn-delete" onclick="deleteExercise('${item.id}')">
+                                <i class="fa-solid fa-trash-can"></i> ลบ
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        // ฟังก์ชันระบบค้นหาและตัวกรองหน้าตาราง
+        function filterContent() {
+            const searchVal = document.getElementById('searchBar').value.toLowerCase();
+            const filterTypeVal = document.getElementById('filterType').value;
+
+            const filtered = exercisesData.filter(item => {
+                const nameMatch = item.name.toLowerCase().includes(searchVal) || item.id.toString().toLowerCase().includes(searchVal);
+                const itemCategories = item.all_categories || [];
+                const actualClass = item.original_type || "";
+                
+                let typeMatch = !filterTypeVal;
+                if (filterTypeVal === 'Aerobic') {
+                    typeMatch = itemCategories.includes('Aerobic') || actualClass.toLowerCase().includes('walking') || actualClass.toLowerCase().includes('cycling');
+                } else if (filterTypeVal === 'Resistance') {
+                    typeMatch = itemCategories.includes('Resistance') || itemCategories.includes('Strength');
+                } else if (filterTypeVal === 'Flexibility') {
+                    typeMatch = itemCategories.includes('Flexibility') || (!itemCategories.includes('Aerobic') && !itemCategories.includes('Resistance'));
+                }
+                                  
+                return nameMatch && typeMatch;
+            });
+            renderTable(filtered);
+        }
+
+        document.getElementById('searchBar').addEventListener('input', filterContent);
+        document.getElementById('filterType').addEventListener('change', filterContent);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTable(exercisesData);
+        });
+
+        // 🟢 ฟังก์ชันเพิ่มข้อมูลท่าออกกำลังกาย
         function openAddExerciseModal() {
             Swal.fire({
                 title: 'เพิ่มท่าออกกำลังกายใหม่',
                 html: `
-                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
-                    <input id="swal-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น ปั่นจักรยานอยู่กับที่">
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
+                    <input id="swal-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น เดินเร็วมาก">
                     
-                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ประเภทการออกกำลังกาย</label></div>
-                    <select id="swal-type" class="swal2-select" style="margin:0 0 16px 0; width:100%;">
-                        <option value="aerobic">คาร์ดิโอ / แอโรบิก (Aerobic)</option>
-                        <option value="strength">ฝึกกล้ามเนื้อ (Strength Training)</option>
-                        <option value="flexibility">ยืดเหยียดกล้ามเนื้อ (Flexibility)</option>
-                    </select>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อคลาสประเภทในระบบ Ontology (เช่น Walking, Cycling)</label></div>
+                    <input id="swal-type" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น BriskWalking">
 
-                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ระดับความหนัก</label></div>
-                    <select id="swal-intensity" class="swal2-select" style="margin:0 0 16px 0; width:100%;">
-                        <option value="low">เบา (Low)</option>
-                        <option value="medium" selected>ปานกลาง (Medium)</option>
-                        <option value="high">หนัก (High)</option>
-                    </select>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ค่า METs (ระดับความหนักทางคลินิก)</label></div>
+                    <input id="swal-mets" type="number" step="0.1" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น 4.3">
 
-                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">คำแนะนำ / ประโยชน์ต่อผู้ป่วยเบาหวาน</label></div>
-                    <textarea id="swal-desc" class="swal2-textarea" style="margin:0; width:100%; height:80px;" placeholder="คำอธิบายท่าทางและประโยชน์..."></textarea>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">YouTube Video ID (ถ้ามี)</label></div>
+                    <input id="swal-youtube" class="swal2-input" style="margin:0; width:100%;" placeholder="เช่น dQw4w9WgXcQ">
                 `,
                 showCancelButton: true,
                 confirmButtonColor: '#2B5CB3',
@@ -307,22 +346,24 @@
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true,
                 preConfirm: () => {
-                    const name = document.getElementById('swal-name').value.strip ? document.getElementById('swal-name').value.strip() : document.getElementById('swal-name').value;
-                    if (!name) {
-                        Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย');
-                    }
+                    const name = document.getElementById('swal-name').value.trim();
+                    const type = document.getElementById('swal-type').value.trim();
+                    const mets = document.getElementById('swal-mets').value.trim();
+                    if (!name) { Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย'); return false; }
+                    if (!type) { Swal.showValidationMessage('กรุณาระบุชื่อประเภทคลาสย่อยในคลัง'); return false; }
+                    if (!mets) { Swal.showValidationMessage('กรุณาระบุค่า METs'); return false; }
+                    
                     return {
                         name: name,
-                        type: document.getElementById('swal-type').value,
-                        intensity: document.getElementById('swal-intensity').value,
-                        description: document.getElementById('swal-desc').value
+                        type: type,
+                        mets: parseFloat(mets),
+                        youtube_id: document.getElementById('swal-youtube').value.trim()
                     }
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                     
-                    // ยิง Fetch ส่งข้อมูลเพิ่มไปหลังบ้าน
                     fetch("/admin/exercises/add", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -331,7 +372,7 @@
                     .then(res => res.json())
                     .then(data => {
                         if(data.success) {
-                            Swal.fire('สำเร็จ!', 'เพิ่มข้อมูลท่าออกกำลังกายเรียบร้อยแล้ว', 'success').then(() => location.reload());
+                            Swal.fire('สำเร็จ!', 'เพิ่มข้อมูลท่าลงระบบฐานความรู้เรียบร้อยแล้ว', 'success').then(() => location.reload());
                         } else { throw new Error(data.message); }
                     })
                     .catch(err => Swal.fire('ล้มเหลว!', err.message, 'error'));
@@ -339,30 +380,22 @@
             });
         }
 
-        // 🟡 2. ฟังก์ชันแก้ไขข้อมูลด้วย SweetAlert2 (ดึงค่าเดิมมากางให้อัตโนมัติ)
-        function openEditExerciseModal(id, name, type, intensity, description) {
+        // 🟡 ฟังก์ชันแก้ไขข้อมูลท่าออกกำลังกาย
+        function openEditExerciseModal(id, name, type, mets, youtubeId) {
             Swal.fire({
                 title: 'แก้ไขข้อมูลท่าออกกำลังกาย',
                 html: `
-                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
                     <input id="swal-edit-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${name}">
                     
-                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ประเภทการออกกำลังกาย</label></div>
-                    <select id="swal-edit-type" class="swal2-select" style="margin:0 0 16px 0; width:100%;">
-                        <option value="aerobic" ${type === 'aerobic' ? 'selected' : ''}>คาร์ดิโอ / แอโรบิก (Aerobic)</option>
-                        <option value="strength" ${type === 'strength' ? 'selected' : ''}>ฝึกกล้ามเนื้อ (Strength Training)</option>
-                        <option value="flexibility" ${type === 'flexibility' ? 'selected' : ''}>ยืดเหยียดกล้ามเนื้อ (Flexibility)</option>
-                    </select>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อคลาสประเภทในระบบ Ontology</label></div>
+                    <input id="swal-edit-type" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${type}">
 
-                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">ระดับความหนัก</label></div>
-                    <select id="swal-edit-intensity" class="swal2-select" style="margin:0 0 16px 0; width:100%;">
-                        <option value="low" ${intensity === 'low' ? 'selected' : ''}>เบา (Low)</option>
-                        <option value="medium" ${intensity === 'medium' ? 'selected' : ''}>ปานกลาง (Medium)</option>
-                        <option value="high" ${intensity === 'high' ? 'selected' : ''}>หนัก (High)</option>
-                    </select>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ค่า METs</label></div>
+                    <input id="swal-edit-mets" type="number" step="0.1" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${mets}">
 
-                    <div style="text-align:left; margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">คำแนะนำ / ประโยชน์ต่อผู้ป่วยเบาหวาน</label></div>
-                    <textarea id="swal-edit-desc" class="swal2-textarea" style="margin:0; width:100%; height:80px;">${description}</textarea>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">YouTube Video ID</label></div>
+                    <input id="swal-edit-youtube" class="swal2-input" style="margin:0; width:100%;" value="${youtubeId}">
                 `,
                 showCancelButton: true,
                 confirmButtonColor: '#2B5CB3',
@@ -371,21 +404,25 @@
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true,
                 preConfirm: () => {
-                    const editName = document.getElementById('swal-edit-name').value.strip ? document.getElementById('swal-edit-name').value.strip() : document.getElementById('swal-edit-name').value;
-                    if (!editName) { Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย'); }
+                    const editName = document.getElementById('swal-edit-name').value.trim();
+                    const editType = document.getElementById('swal-edit-type').value.trim();
+                    const editMets = document.getElementById('swal-edit-mets').value.trim();
+                    if (!editName) { Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย'); return false; }
+                    if (!editType) { Swal.showValidationMessage('กรุณากรอกคลาสของประเภทข้อมูล'); return false; }
+                    if (!editMets) { Swal.showValidationMessage('กรุณาระบุค่า METs'); return false; }
+                    
                     return {
                         id: id,
                         name: editName,
-                        type: document.getElementById('swal-edit-type').value,
-                        intensity: document.getElementById('swal-edit-intensity').value,
-                        description: document.getElementById('swal-edit-desc').value
+                        type: editType,
+                        mets: parseFloat(editMets),
+                        youtube_id: document.getElementById('swal-edit-youtube').value.trim()
                     }
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                     
-                    // ยิง Fetch อัปเดตข้อมูลไปหลังบ้าน
                     fetch("/admin/exercises/update", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -402,11 +439,11 @@
             });
         }
 
-        // 🔴 3. ฟังก์ชันลบข้อมูลเลียนแบบพฤติกรรมโครงสร้างเดิม (ลบจาก GraphDB)
+        // 🔴 ฟังก์ชันลบข้อมูลท่าออกกำลังกาย
         function deleteExercise(exerciseId) {
             Swal.fire({
                 title: 'คุณแน่ใจใช่ไหมที่จะลบ?',
-                text: `ข้อมูลท่าออกกำลังกายไอดี #${exerciseId} จะถูกลบออกจากคลังข้อมูลระบบแนะนำถาวรและไม่สามารถกู้คืนได้!`,
+                text: `ข้อมูลท่าออกกำลังกายไอดี #${exerciseId} จะถูกลบออกจากระบบอย่างถาวร!`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E53E3E',
@@ -418,7 +455,6 @@
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                     
-                    // ยิง Fetch คำสั่งลบไปยังเซิร์ฟเวอร์หลังบ้าน
                     fetch("/admin/exercises/delete", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },

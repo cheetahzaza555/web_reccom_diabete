@@ -211,3 +211,89 @@ def update_user_role_in_graphdb(user_id, new_role):
         error_msg = str(e)
         print(f"❌ [GraphDB Error] ไม่สามารถบันทึกค่าลงคลังข้อมูลได้: {error_msg}")
         return False, error_msg
+
+def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=None, mets=None, youtube_id=None):
+    """ฟังก์ชันอเนกประสงค์สำหรับเขียนข้อมูลท่าออกกำลังกายลง GraphDB (รองรับทั้งเพิ่มใหม่และแก้ไข)"""
+    try:
+        from SPARQLWrapper import SPARQLWrapper
+        from modules.config import GRAPHDB_WRITE 
+        import random
+        
+        sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
+        base_prefix = "http://example.org/diabetes#"
+        
+        # 🌟 ถ้าระบบส่ง ID เดิมมา (ขั้นตอนการแก้ไข) ให้ใช้ตัวเดิมเลย แต่ถ้าไม่มี (เพิ่มใหม่) ให้สุ่มไอดีขึ้นมาใหม่
+        final_id = existing_id if existing_id else f"17{random.randint(100, 999)}"
+        
+        subject_uri = f"<{base_prefix}{final_id}>"
+        type_uri = f"<{base_prefix}{exercise_type}>"
+        
+        # แยกจำแนกประเภทกลุ่มหลักตามเดิมเพื่อสร้างความสัมพันธ์ 8 แถว
+        parent_class = "ex:Flexibility"
+        if exercise_type in ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"]:
+            parent_class = "ex:Aerobic"
+        elif exercise_type in ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"]:
+            parent_class = "ex:Resistance"
+
+        insert_query = f"""
+        PREFIX ex: <{base_prefix}>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+        INSERT DATA {{
+            {subject_uri} rdf:type owl:NamedIndividual .
+            {subject_uri} rdf:type ex:Exercise .
+            {subject_uri} rdf:type {parent_class} .
+            {subject_uri} rdf:type {type_uri} .
+            {subject_uri} ex:hasKindOfExercise {type_uri} .
+            {subject_uri} rdfs:label "{name}" .
+            {subject_uri} ex:metValue "{float(mets)}"^^xsd:decimal .
+            {subject_uri} ex:hasYoutubeID "{youtube_id if youtube_id else ''}" .
+        }}
+        """
+
+        sparql_write_client.setQuery(insert_query)
+        sparql_write_client.setMethod('POST')
+        sparql_write_client.query()
+
+        print(f"💾 [GraphDB] ซิงค์ข้อมูล ID #{final_id} ครบถ้วนเสร็จสิ้น")
+        return {"success": True, "message": "ซิงค์สำเร็จ"}
+        
+    except Exception as e:
+        print(f"❌ Error sync ontology: {e}")
+        return {"success": False, "message": str(e)}
+
+# 💡 และอย่าลืมเปลี่ยนไส้ในของฟังก์ชันเพิ่มอันเก่า (insert_exercise_to_ontology) ให้เรียกใช้งานผ่านตัว v2 นี้ด้วยนะ ตัวอย่างเช่น:
+def insert_exercise_to_ontology(name, exercise_type, mets, youtube_id=None):
+    return insert_exercise_to_ontology_v2(None, name, exercise_type, mets, youtube_id)
+    
+def delete_exercise_from_ontology(exercise_id):
+    """ฟังก์ชันสำหรับลบความสัมพันธ์ทั้งหมดของท่าออกกำลังกายตาม ID ออกจาก GraphDB"""
+    try:
+        from SPARQLWrapper import SPARQLWrapper
+        from modules.config import GRAPHDB_WRITE
+        
+        sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
+        base_prefix = "http://example.org/diabetes#"
+        subject_uri = f"<{base_prefix}{exercise_id}>"
+        
+        # คำสั่งล้างไตรภาค (Triples) ทุกรูปแบบที่เกี่ยวข้องกับ ID ตัวนี้
+        delete_query = f"""
+        PREFIX ex: <{base_prefix}>
+        
+        DELETE WHERE {{
+            {subject_uri} ?p ?o .
+        }}
+        """
+        
+        sparql_write_client.setQuery(delete_query)
+        sparql_write_client.setMethod('POST')
+        sparql_write_client.query()
+        
+        print(f"🗑️ [GraphDB Success] ลบข้อมูลไอดี #{exercise_id} ออกจากระบบเรียบร้อย")
+        return {"success": True, "message": "ลบข้อมูลสำเร็จ"}
+    except Exception as e:
+        print(f"❌ Error deleting exercise: {e}")
+        return {"success": False, "message": str(e)}

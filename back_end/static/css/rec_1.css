@@ -1,0 +1,73 @@
+/* --- rec_1.css : สไตล์สำหรับหน้าผลตรวจสุขภาพ --- */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background-color: #ffffff; font-family: 'Prompt', sans-serif; overflow: hidden; }
+
+.main-content { display: flex; flex-direction: column; height: 100vh; }
+.header-banner { background-color: #85a2ff; color: white; padding: 1.25rem 1rem; font-size: 2.5rem; font-weight: 600; flex-shrink: 0; }
+.form-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.form-scroll-area { flex: 1; overflow-y: auto; padding: 40px 50px; padding-bottom: 20px; }
+.button-area { background-color: #ffffff; padding: 20px 50px; border-top: 1px solid #dee2e6; flex-shrink: 0; z-index: 10; }
+
+.form-label { font-weight: 500; color: #333; margin-bottom: 8px; font-size: 1.1rem; }
+.form-control, .form-select { border-radius: 10px; padding: 12px; border: 1px solid #dee2e6; font-size: 1.1rem; min-height: 50px; }
+.form-control:focus, .form-select:focus { border-color: #85a2ff; box-shadow: 0 0 0 0.2rem rgba(133, 162, 255, 0.25); }
+
+.btn-cancel { background-color: #b0b0b0; color: white; padding: 15px 0; border-radius: 10px; width: 100%; border: none; font-size: 1.2rem; font-weight: 500; transition: all 0.3s ease; }
+.btn-next { background-color: #85a2ff; color: white; padding: 15px 0; border-radius: 10px; width: 100%; border: none; font-size: 1.2rem; font-weight: 500; transition: all 0.3s ease; }
+.btn-next:hover { background-color: #6d8ee6; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(133, 162, 255, 0.3); }
+
+.form-section { background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; }
+
+.selection-card { background: white; border: 1px solid #dee2e6; border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: all 0.2s; display: flex; align-items: flex-start; gap: 15px; }
+.selection-card:hover { border-color: #85a2ff; background-color: #f4f8ff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+.form-check-input { width: 1.5em; height: 1.5em; margin-top: 0.2em; cursor: pointer; border-color: #adb5bd; }
+.form-check-input:checked { background-color: #85a2ff; border-color: #85a2ff; }
+.selection-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 5px; }
+.selection-desc { font-size: 0.9rem; color: #666; margin: 0; line-height: 1.4; }
+
+.result-header { text-align: center; margin-bottom: 30px; }
+.result-box { padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+.box-warning { background-color: #fff3cd; border: 1px solid #ffecb5; color: #664d03; }
+.box-danger { background-color: #f8d7da; border: 1px solid #f5c2c7; color: #842029; }
+.box-success { background-color: #d1e7dd; border: 1px solid #badbcc; color: #0f5132; }
+.box-info { background-color: #cff4fc; border: 1px solid #b6effb; color: #055160; }
+.result-list li { padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+
+/* สไตล์สำหรับหัวข้อหมวดหมู่ */
+.category-header {
+    font-weight: bold;
+    color: #0f5132;
+    background-color: #e8f5e9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+@media (max-width: 768px) {
+    .header-banner { font-size: 1.8rem; padding: 20px; }
+    .form-scroll-area { padding: 20px; }
+    .button-area { padding: 15px 20px; }
+}
+
+#ocrDropZone {
+    background-color: #f8fbff;
+    border: 2px dashed #85a2ff;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 25px;
+}
+#ocrDropZone:hover {
+    background-color: #eef4ff;
+    border-style: solid;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(133, 162, 255, 0.1);
+}
+.ocr-icon-magic { font-size: 3rem; color: #85a2ff; }
+.success-pulse { color: #28a745; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }

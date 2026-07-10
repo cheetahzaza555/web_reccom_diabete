@@ -4,83 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ผลตรวจสุขภาพ - DiaBalance</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    
-    <style>
-        /* --- CSS Styles --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #ffffff; font-family: 'Prompt', sans-serif; overflow: hidden; }
-        .main-content { display: flex; flex-direction: column; height: 100vh; }
-        .header-banner { background-color: #85a2ff; color: white; padding: 1.25rem 1rem; font-size: 2.5rem; font-weight: 600; flex-shrink: 0; }
-        .form-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .form-scroll-area { flex: 1; overflow-y: auto; padding: 40px 50px; padding-bottom: 20px; }
-        .button-area { background-color: #ffffff; padding: 20px 50px; border-top: 1px solid #dee2e6; flex-shrink: 0; z-index: 10; }
 
-        .form-label { font-weight: 500; color: #333; margin-bottom: 8px; font-size: 1.1rem; }
-        .form-control, .form-select { border-radius: 10px; padding: 12px; border: 1px solid #dee2e6; font-size: 1.1rem; min-height: 50px; }
-        .form-control:focus, .form-select:focus { border-color: #85a2ff; box-shadow: 0 0 0 0.2rem rgba(133, 162, 255, 0.25); }
-        .btn-cancel { background-color: #b0b0b0; color: white; padding: 15px 0; border-radius: 10px; width: 100%; border: none; font-size: 1.2rem; font-weight: 500; transition: all 0.3s ease; }
-        .btn-next { background-color: #85a2ff; color: white; padding: 15px 0; border-radius: 10px; width: 100%; border: none; font-size: 1.2rem; font-weight: 500; transition: all 0.3s ease; }
-        .btn-next:hover { background-color: #6d8ee6; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(133, 162, 255, 0.3); }
-        
-        .form-section { background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; }
-        
-        .selection-card { background: white; border: 1px solid #dee2e6; border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: all 0.2s; display: flex; align-items: flex-start; gap: 15px; }
-        .selection-card:hover { border-color: #85a2ff; background-color: #f4f8ff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .form-check-input { width: 1.5em; height: 1.5em; margin-top: 0.2em; cursor: pointer; border-color: #adb5bd; }
-        .form-check-input:checked { background-color: #85a2ff; border-color: #85a2ff; }
-        .selection-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 5px; }
-        .selection-desc { font-size: 0.9rem; color: #666; margin: 0; line-height: 1.4; }
-
-        .result-header { text-align: center; margin-bottom: 30px; }
-        .result-box { padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .box-warning { background-color: #fff3cd; border: 1px solid #ffecb5; color: #664d03; }
-        .box-danger { background-color: #f8d7da; border: 1px solid #f5c2c7; color: #842029; }
-        .box-success { background-color: #d1e7dd; border: 1px solid #badbcc; color: #0f5132; }
-        .box-info { background-color: #cff4fc; border: 1px solid #b6effb; color: #055160; }
-        .result-list li { padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        
-        /* สไตล์สำหรับหัวข้อหมวดหมู่ */
-        .category-header {
-            font-weight: bold;
-            color: #0f5132; /* สีเขียวเข้ม */
-            background-color: #e8f5e9;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-top: 10px;
-            margin-bottom: 5px;
-        }
-
-        @media (max-width: 768px) {
-            .header-banner { font-size: 1.8rem; padding: 20px; }
-            .form-scroll-area { padding: 20px; }
-            .button-area { padding: 15px 20px; }
-        }
-
-        #ocrDropZone {
-            background-color: #f8fbff;
-            border: 2px dashed #85a2ff;
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            margin-bottom: 25px;
-        }
-        #ocrDropZone:hover {
-            background-color: #eef4ff;
-            border-style: solid;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(133, 162, 255, 0.1);
-        }
-        .ocr-icon-magic { font-size: 3rem; color: #85a2ff; }
-        .success-pulse { color: #28a745; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-    </style>
+    <!-- CSS ที่แยกออกมา -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rec_1.css') }}">
 </head>
 <body>
 
@@ -90,11 +20,11 @@
         <div class="header-banner" id="pageTitle">ผลตรวจสุขภาพ (1/3)</div>
 
         <div class="form-wrapper">
-            <form id="healthForm" onsubmit="return false;" style="display: contents;"> 
-                
+            <form id="healthForm" onsubmit="return false;" style="display: contents;">
+
                 <div class="form-scroll-area">
                     <div class="form-content">
-                        
+
                         <div id="step1">
                             <div class="row gy-4">
                                 <div class="col-lg-6">
@@ -144,7 +74,7 @@
                                 <div class="col-lg-6">
                                     <div class="form-section">
                                         <h5 class="mb-3 text-primary fw-bold">ผลตรวจเลือด (Lab Results)</h5>
-                                        
+
                                         <div id="ocrDropZone">
                                             <div id="ocrPlaceholder">
                                                 <i class="bi bi-magic ocr-icon-magic mb-3 d-block"></i>
@@ -206,7 +136,7 @@
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="HeartDisease"><div><div class="selection-title">โรคหัวใจ (Heart Disease)</div><p class="selection-desc">แน่นหน้าอก เหนื่อยง่าย</p></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="PeripheralNeuropathy"><div><div class="selection-title">ปลายประสาทเสื่อม (Neuropathy)</div><p class="selection-desc">ชาปลายมือ ปลายเท้า</p></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="AutonomicNeuropathy"><div><div class="selection-title">ระบบประสาทอัตโนมัติ</div><p class="selection-desc">หน้ามืดง่าย หัวใจเต้นผิดจังหวะ</p></div></label></div>
-                                        <div class="col-12"><label class="selection-card border-success" style="background-color:#f0fff4;"><input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"><div><div class="selection-title text-success" checked>ไม่มีภาวะแทรกซ้อน</div><p class="selection-desc">สุขภาพแข็งแรง ปกติดี</p></div></label></div>
+                                        <div class="col-12"><label class="selection-card border-success" style="background-color:#f0fff4;"><input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"><div><div class="selection-title text-success">ไม่มีภาวะแทรกซ้อน</div><p class="selection-desc">สุขภาพแข็งแรง ปกติดี</p></div></label></div>
                                     </div>
                                 </div>
                             </div>
@@ -217,7 +147,7 @@
                                 <div class="col-lg-10">
                                     <h3 class="mb-2 fw-bold text-primary">กิจกรรมที่สนใจ</h3>
                                     <p class="text-muted mb-4">เลือกประเภทที่คุณชอบ (อ้างอิงจากฐานข้อมูล)</p>
-                                    
+
                                     <div class="row g-3">
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Running"><div><div class="selection-title">วิ่ง (Running)</div></div></label></div>
                                         <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Walking"><div><div class="selection-title">เดิน (Walking)</div></div></label></div>
@@ -243,7 +173,6 @@
                             <div class="row justify-content-center">
                                 <div class="col-xl-9 col-lg-10">
 
-                                    <!-- 🎯 ส่วนหัวข้อรายงานสุขภาพ -->
                                     <div class="text-center mb-5 animate__animated animate__fadeIn">
                                         <div class="mb-2">
                                             <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small fw-semibold">
@@ -258,7 +187,6 @@
 
                                     <div class="d-flex flex-column gap-4">
 
-                                        <!-- 🏥 [อันดับ 1 - บนสุด] การ์ดสรุปผลแล็บ สภาวะโรค และคำเตือนวิกฤตก่อนออกกำลังกาย -->
                                         <div class="card border-0 shadow-sm rounded-4 bg-white animate__animated animate__fadeIn">
                                             <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
                                                 <div class="d-flex align-items-center">
@@ -271,12 +199,11 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="card-body p-4">
                                                 <hr class="opacity-10 mt-0 mb-4">
                                                 <div class="row g-4">
-                                                    
-                                                    <!-- คอลัมน์ย่อย 1: คำเตือนข้อควรระวังสำคัญ ( warnings ) -->
+
                                                     <div class="col-md-4 border-end border-light">
                                                         <div class="px-2">
                                                             <div class="d-flex align-items-center mb-3">
@@ -285,12 +212,10 @@
                                                                 </span>
                                                                 <span class="fw-bold text-dark small">ข้อควรระวังสำคัญ (วิกฤต)</span>
                                                             </div>
-                                                            <!-- ตัวหนังสือปรับช่องไฟให้อ่านง่ายขึ้น ป้องกันการมองข้ามภาวะน้ำตาลต่ำ -->
                                                             <ul class="result-list ps-3 mb-0 text-secondary small fw-medium" id="warnList" style="line-height: 1.6; font-size: 0.85rem; text-align: justify;"></ul>
                                                         </div>
                                                     </div>
 
-                                                    <!-- คอลัมน์ย่อย 2: โรคร่วม ( comorbidities ) -->
                                                     <div class="col-md-4 border-end border-light">
                                                         <div class="px-2">
                                                             <div class="d-flex align-items-center mb-3">
@@ -303,7 +228,6 @@
                                                         </div>
                                                     </div>
 
-                                                    <!-- คอลัมน์ย่อย 3: ภาวะแทรกซ้อน ( complications ) -->
                                                     <div class="col-md-4">
                                                         <div class="px-2">
                                                             <div class="d-flex align-items-center mb-3">
@@ -316,12 +240,10 @@
                                                         </div>
                                                     </div>
 
-                                                </div> <!-- /row -->
-                                            </div> <!-- /card-body -->
-                                        </div> <!-- /card -->
+                                                </div>
+                                            </div>
+                                        </div>
 
-
-                                        <!-- 🏃‍♂️ [อันดับ 2 - ด้านล่าง] การ์ดรายชื่อกิจกรรมและท่าออกกำลังกายที่แนะนำ -->
                                         <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: linear-gradient(145deg, #ffffff, #fcfdfd);">
                                             <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
                                                 <div class="d-flex align-items-center justify-content-between">
@@ -338,12 +260,11 @@
                                             </div>
                                             <div class="card-body px-4 pb-4 pt-2">
                                                 <hr class="opacity-10 my-3">
-                                                <!-- จุดพ่นรายชื่อท่าออกกำลังกาย หรือกล่องแจ้งเตือนความปลอดภัยนิรภัย -->
                                                 <ul class="result-list p-0 mb-0" id="exList" style="list-style: none;"></ul>
                                             </div>
                                         </div>
 
-                                    </div> <!-- /flex-column -->
+                                    </div>
 
                                 </div>
                             </div>
@@ -363,501 +284,31 @@
     </div>
 
     <div class="modal fade" id="existingDataModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="bi bi-clock-history"></i> พบข้อมูลสุขภาพล่าสุด</h5>
-            </div>
-            <div class="modal-body">
-                <p>ระบบพบข้อมูลการตรวจล่าสุดของคุณเมื่อวันที่ <strong id="modalDate" class="text-primary">--/--/----</strong></p>
-                <p class="mb-0">ข้อมูลสุขภาพของคุณ (เช่น น้ำหนัก, ค่าน้ำตาล) มีการเปลี่ยนแปลงหรือไม่?</p>
-                <small class="text-muted">*หากข้อมูลไม่เปลี่ยน ผลการวิเคราะห์และแผนการออกกำลังกายจะเหมือนเดิม</small>
-            </div>
-            <div class="modal-footer justify-content-center gap-2">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-pencil"></i> ต้องการแก้ไขข้อมูล
-                </button>
-                
-                <button type="button" class="btn btn-primary" onclick="skipToPlan()">
-                    <i class="bi bi-arrow-right-circle"></i> ข้อมูลคงเดิม (ไปเลือกแผนเลย)
-                </button>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-clock-history"></i> พบข้อมูลสุขภาพล่าสุด</h5>
+                </div>
+                <div class="modal-body">
+                    <p>ระบบพบข้อมูลการตรวจล่าสุดของคุณเมื่อวันที่ <strong id="modalDate" class="text-primary">--/--/----</strong></p>
+                    <p class="mb-0">ข้อมูลสุขภาพของคุณ (เช่น น้ำหนัก, ค่าน้ำตาล) มีการเปลี่ยนแปลงหรือไม่?</p>
+                    <small class="text-muted">*หากข้อมูลไม่เปลี่ยน ผลการวิเคราะห์และแผนการออกกำลังกายจะเหมือนเดิม</small>
+                </div>
+                <div class="modal-footer justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-pencil"></i> ต้องการแก้ไขข้อมูล
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="skipToPlan()">
+                        <i class="bi bi-arrow-right-circle"></i> ข้อมูลคงเดิม (ไปเลือกแผนเลย)
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
 
-        async function handleOCR(input) {
-            if (!input.files || !input.files[0]) return;
-
-            // การจัดการเปิด-ปิด UI สถานะ DropZone ของคุณ
-            const placeholderDiv = document.getElementById('ocrPlaceholder');
-            const statusDiv = document.getElementById('ocrStatus');
-            const successDiv = document.getElementById('ocrSuccess');
-
-            if (placeholderDiv) placeholderDiv.style.display = 'none';
-            if (successDiv) successDiv.style.display = 'none';
-            if (statusDiv) {
-                statusDiv.style.display = 'block';
-            }
-
-            const formData = new FormData();
-            formData.append('file', input.files[0]);
-
-            try {
-                const response = await fetch('http://127.0.0.1:5000/user/api/ocr', { 
-                    method: 'POST', 
-                    body: formData 
-                });
-                
-                if (!response.ok) throw new Error('Server Error');
-
-                const result = await response.json();
-                console.log("=== ผลลัพธ์ที่ส่งกลับมาจาก Python ===", result);
-
-                if (result && result.success) {
-                    const data = result.data; 
-
-                    // --- 🧪 1. หยอดข้อมูลผลแล็บเคมีคลินิก (ตามฟอร์มของคุณเดิม) ---
-                    document.querySelector('[name="hdl"]').value = data.hdl || "";
-                    document.querySelector('[name="ldl"]').value = data.ldl || "";
-                    document.querySelector('[name="cholesterol"]').value = data.cholesterol || "";
-                    document.querySelector('[name="fpg"]').value = data.fpg || "";
-
-                    // --- 🏃‍♂️ 2. หยอดข้อมูลสัดส่วนร่างกายตามฟอร์มใหม่ ---
-                    if (data.weight) document.querySelector('[name="weight"]').value = data.weight;
-                    if (data.height) document.querySelector('[name="height"]').value = data.height;
-                    
-                    // จัดการช่อง BMI (ในฟอร์มของคุณใช้ id="bmi_result")
-                    if (data.bmi && document.getElementById('bmi_result')) {
-                        document.getElementById('bmi_result').value = data.bmi;
-                    }
-
-                    // --- 🩸 3. แยกความดันโลหิตตัวบน (SBP) และตัวล่าง (DBP) ---
-                    // แปลงจาก "113/51" ให้แยกไปอยู่ช่อง bp_high และ bp_low
-                    if (data.bp && data.bp.includes('/')) {
-                        const bpParts = data.bp.split('/');
-                        if (document.querySelector('[name="bp_high"]')) document.querySelector('[name="bp_high"]').value = bpParts[0] || "";
-                        if (document.querySelector('[name="bp_low"]')) document.querySelector('[name="bp_low"]').value = bpParts[1] || "";
-                    }
-                    if (data.triglyceride) {
-                            document.querySelector('[name="triglyceride"]').value = data.triglyceride;
-                    }
-
-                    // --- 📅 4. จัดการฟอร์แมตวันที่เจาะเลือด (Blood Test Date) ---
-                    // แท็ก <input type="date"> บังคับรับฟอร์แมตมาตรฐานสากลเป็น YYYY-MM-DD เท่านั้น
-                    if (data.date && document.querySelector('[name="blood_test_date"]')) {
-                        const dateParts = data.date.split('/'); // แยก วัน/เดือน/ปี
-                        if (dateParts.length === 3) {
-                            let day = dateParts[0].padStart(2, '0');
-                            let month = dateParts[1].padStart(2, '0');
-                            let year = dateParts[2];
-                            
-                            // ป้องกันกรณีแสกนได้เป็นปี พ.ศ. (เช่น เกิน 2500) ให้ลบออก 543 เพื่อเปลี่ยนเป็น ค.ศ. ให้เบราว์เซอร์เข้าใจ
-                            if (parseInt(year) > 2400) {
-                                year = (parseInt(year) - 543).toString();
-                            }
-                            
-                            // จัดรูปแบบเข้าช่องอินพุตประเภท date
-                            document.querySelector('[name="blood_test_date"]').value = `${year}-${month}-${day}`;
-                        }
-                    }
-
-                    // สลับการแสดงผลหน้ากากสถานะเมื่อสำเร็จ
-                    if (statusDiv) statusDiv.style.display = 'none';
-                    if (successDiv) successDiv.style.display = 'block';
-                    
-                    // เรียกฟังก์ชันไฮไลท์ช่องข้อมูลที่ AI กรอกให้ผู้ใช้ตรวจทาน
-                    if (typeof highlightFields === 'function') {
-                        highlightFields(['hdl', 'ldl', 'cholesterol', 'fpg', 'weight', 'height', 'bp_high', 'bp_low', 'blood_test_date','triglyceride']);
-                    }
-                    
-                } else {
-                    if (statusDiv) statusDiv.style.display = 'none';
-                    if (placeholderDiv) placeholderDiv.style.display = 'block';
-                    alert("AI ไม่พบข้อมูลสุขภาพในภาพนี้ กรุณาอัปโหลดใหม่อีกครั้ง");
-                }
-
-            } catch (error) {
-                console.error("OCR Error:", error);
-                if (statusDiv) statusDiv.style.display = 'none';
-                if (placeholderDiv) placeholderDiv.style.display = 'block';
-                alert("ไม่สามารถเชื่อมต่อระบบ AI ได้");
-            } finally {
-                input.value = ''; // ล้างค่าไฟล์เก่าทิ้งให้กดอัปโหลดซ้ำได้ทันที
-            }
-        }
-
-        function highlightFields(fields) {
-            fields.forEach(f => {
-                const el = document.querySelector(`[name="${f}"]`);
-                if(el) {
-                    el.style.transition = 'background-color 0.8s ease';
-                    el.style.backgroundColor = '#d1e7dd'; // ไฮไลท์สีเขียวอ่อน
-                    setTimeout(() => {
-                        el.style.backgroundColor = ''; 
-                    }, 3000); 
-                }
-            });
-        }
-    let currentUser = {}; 
-    let currentPatientID = ""; 
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        try {
-            const res = await fetch('/api/current_user');
-            if(res.ok) {
-                currentUser = await res.json();
-                const fullName = (currentUser.firstname && currentUser.lastname) 
-                               ? `${currentUser.firstname} ${currentUser.lastname}` 
-                               : currentUser.username;
-                document.getElementById('displayFullname').innerText = fullName;
-                
-                await fetchLastCheckup(); 
-            } 
-        } catch (e) {
-            console.error('Error fetching user:', e);
-        }
-    });
-
-    async function fetchLastCheckup() {
-        try {
-            const res = await fetch('/user/get_latest_checkup'); 
-            
-            if (res.ok) {
-                const data = await res.json();
-                
-                if (data && data.found) { 
-                    console.log("📥 Loaded Data:", data);
-
-                    const setVal = (name, val) => {
-                        if (!val) return; 
-
-                        const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`);
-                        if (radios.length > 0) {
-                            radios.forEach(r => {
-                                if (r.value.toLowerCase() === val.toString().toLowerCase()) {
-                                    r.checked = true;
-                                }
-                            });
-                            return;
-                        }
-
-                        const el = document.querySelector(`[name="${name}"]`);
-                        if (el) {
-                            el.value = val; 
-                            if (el.tagName === 'SELECT' && el.value !== val) {
-                                Array.from(el.options).forEach(opt => {
-                                    if (opt.value.toLowerCase() === val.toString().toLowerCase()) {
-                                        el.value = opt.value;
-                                    }
-                                });
-                            }
-                        }
-                    };
-
-                    setVal('gender', data.gender); 
-                    setVal('checkup_date', data.checkup_date);
-                    setVal('diabetes_type', data.diabetes_type);
-                    setVal('insulin_use', data.insulin_use);
-                    setVal('weight', data.weight);
-                    setVal('height', data.height);
-                    
-                    if (typeof calculateBMI === 'function') calculateBMI(); 
-
-                    setVal('bp_high', data.bp_high); 
-                    setVal('bp_low', data.bp_low);
-                    setVal('blood_test_date', data.blood_test_date);
-                    setVal('hdl', data.hdl);
-                    setVal('ldl', data.ldl);
-                    setVal('cholesterol', data.cholesterol);
-                    setVal('triglyceride', data.triglyceride);
-                    setVal('microalbumin', data.microalbumin);
-                    setVal('ketone', data.ketone);
-                    setVal('fpg', data.fpg);
-                    setVal('frequency', data.frequency); 
-
-                    const setCheckboxes = (inputName, savedList) => {
-                        if (savedList && Array.isArray(savedList)) {
-                            savedList.forEach(val => {
-                                let chk = document.querySelector(`input[name="${inputName}"][value="${val}"]`);
-                                
-                                if (!chk && val) {
-                                    chk = Array.from(document.querySelectorAll(`input[name="${inputName}"]`))
-                                               .find(el => el.value.toLowerCase() === val.toLowerCase());
-                                }
-
-                                if (chk) {
-                                    chk.checked = true;
-                                    chk.dispatchEvent(new Event('change')); 
-                                }
-                            });
-                        }
-                    };
-
-                    const diseaseList = data.special || data.special_diseases;
-                    setCheckboxes('special', diseaseList); 
-                    setCheckboxes('favorites', data.favorites); 
-
-                    if (currentUser && currentUser.id) {
-                        currentPatientID = currentUser.id;
-                    }
-
-                    const modalDateEl = document.getElementById('modalDate');
-                    if (modalDateEl && data.checkup_date) {
-                        const d = new Date(data.checkup_date);
-                        modalDateEl.innerText = d.toLocaleDateString('th-TH', {
-                            year: 'numeric', month: 'long', day: 'numeric'
-                        });
-                    }
-
-                    const modalEl = document.getElementById('existingDataModal');
-                    if (modalEl && data.found === true && data.checkup_date) {
-                        const myModal = new bootstrap.Modal(modalEl);
-                        myModal.show();
-                    }
-                }
-            }
-        } catch (err) {
-            console.error("Error fetching old health data:", err);
-        }
-    }
-
-    function skipToPlan() {
-        if (currentPatientID) {
-            window.location.href = "/user/select_plan/Patient" + currentPatientID;
-        } else {
-            alert("ไม่พบรหัสผู้ป่วย กรุณาตรวจสอบข้อมูลอีกครั้ง");
-            const modalEl = document.getElementById('existingDataModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            modal.hide();
-        }
-    }
-
-    const weightInput = document.getElementById('weight');
-    const heightInput = document.getElementById('height');
-    const bmiOutput = document.getElementById('bmi_result');
-    
-    function calculateBMI() {
-        const w = parseFloat(weightInput.value);
-        const h = parseFloat(heightInput.value) / 100;
-        if (w > 0 && h > 0) bmiOutput.value = (w / (h * h)).toFixed(2);
-        else bmiOutput.value = "";
-    }
-    weightInput.addEventListener('input', calculateBMI);
-    heightInput.addEventListener('input', calculateBMI);
-
-    let currentStep = 1;
-    function updateUI() {
-        for(let i=1; i<=4; i++) {
-            const stepEl = document.getElementById('step'+i);
-            if(stepEl) stepEl.style.display = 'none';
-        }
-        
-        const currentStepEl = document.getElementById('step' + currentStep);
-        if(currentStepEl) currentStepEl.style.display = 'block';
-
-        const btnBack = document.getElementById('btnBack');
-        const btnNext = document.getElementById('btnNext');
-        const title = document.getElementById('pageTitle');
-
-        if (currentStep === 1) {
-            btnBack.innerText = 'ยกเลิก'; btnNext.innerText = 'ถัดไป';
-            btnNext.onclick = handleNext; title.innerText = 'ผลตรวจสุขภาพ (1/3)';
-        } else if (currentStep === 2) {
-            btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'ถัดไป';
-            btnNext.onclick = handleNext; title.innerText = 'โรคแทรกซ้อน (2/3)';
-        } else if (currentStep === 3) {
-            btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'สร้างตารางออกกำลังกาย';
-            btnNext.onclick = analyzeData; title.innerText = 'กิจกรรมที่ชอบ (3/3)';
-        } else if (currentStep === 4) {
-            title.innerText = 'สรุปผลการวิเคราะห์';
-            btnBack.innerText = 'แก้ไขข้อมูล';
-            btnNext.innerText = 'ยืนยันและไปเลือกแผน'; 
-            btnNext.onclick = function() { 
-                if(currentPatientID) {
-                    window.location.href = "/user/select_plan/Patient" + currentPatientID;
-                } else {
-                    alert("ไม่พบ ID ผู้ป่วย กรุณากดประมวลผลใหม่อีกครั้ง");
-                }
-            };
-        } 
-        
-        const formScroll = document.querySelector('.form-scroll-area');
-        if(formScroll) formScroll.scrollTop = 0;
-    }
-
-    function handleNext() {
-        if (currentStep === 1) {
-            const inputs = document.getElementById('step1').querySelectorAll('input[required], select[required]');
-            let valid = true;
-            inputs.forEach(input => {
-                if (!input.value) { valid = false; input.style.borderColor = 'red'; }
-                else { input.style.borderColor = '#dee2e6'; }
-            });
-            if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-        }
-        if (currentStep < 4) { currentStep++; updateUI(); }
-    }
-
-    function handleBack() {
-        if (currentStep > 1) { currentStep--; updateUI(); } 
-        else { window.history.back(); }
-    }
-
-    function toggleNoOther(checkbox) {
-        if (checkbox.checked) {
-            document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => el.checked = false);
-        }
-    }
-    document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
-        el.addEventListener('change', () => { if(el.checked) document.getElementById('chkNoOther').checked = false; });
-    });
-
-    async function analyzeData() {
-        const getVal = (name) => { const el = document.querySelector(`[name="${name}"]`); return el ? el.value : ''; };
-        const getDateVal = (name) => {
-        const el = document.querySelector(`[name="${name}"]`);
-        if (el && el.value.trim() !== "") {
-            return el.value; 
-        }
-        return null; 
-    };
-        const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
-        const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
-
-        let generatedID = 'TEMP_GUEST';
-        if (currentUser.id) generatedID = currentUser.id;
-        
-        currentPatientID = generatedID; 
-
-        const data = {
-            id: generatedID,
-            save_mode: false,
-            firstname: currentUser.firstname, 
-            lastname: currentUser.lastname,   
-            gender: getVal('gender'),
-            checkup_date: getVal('checkup_date'),       
-            blood_test_date: getVal('blood_test_date'),
-            type: getVal('diabetes_type'),
-            insulin_use: getVal('insulin_use'),
-            frequency: getVal('frequency'),
-            weight: getVal('weight'),
-            height: getVal('height'),
-            bmi: getVal('bmi'),
-            sbp: getVal('bp_high'), dbp: getVal('bp_low'),   
-            chol: getVal('cholesterol'), ldl: getVal('ldl'), hdl: getVal('hdl'), tri: getVal('triglyceride'), 
-            fpg: getVal('fpg'), ketone: getVal('ketone'), micro: getVal('microalbumin'), 
-            special: selectedSpecials, favorites: selectedFavorites
-        };
-
-        const btn = document.getElementById('btnNext');
-        const originalText = btn.innerText;
-        btn.innerText = '⏳ กำลังประมวลผล...'; btn.disabled = true;
-
-        try {
-            const res = await fetch('/user/analyze', { 
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) 
-            });
-            const text = await res.text();
-            try {
-                const json = JSON.parse(text);
-                if(json.status === 'ok') {
-                    currentStep = 4; 
-                    updateUI(); 
-                    renderResults(json);
-                } else { alert("❌ ระบบแจ้งเตือน: " + json.message); }
-            } catch (err) {
-                console.error("Server Error HTML:", text);
-                alert("เกิดข้อผิดพลาดที่ Server");
-            }
-        } catch(e) { alert("เชื่อมต่อ Server ไม่ได้: " + e); } 
-        finally { btn.innerText = originalText; btn.disabled = false; }
-    }
-
-function renderResults(json) {
-        const updateList = (id, items) => {
-            const el = document.getElementById(id); 
-            el.innerHTML = "";
-            if(!items || items.length === 0) el.innerHTML = `<li class="text-muted">- ไม่พบข้อมูล -</li>`;
-            else items.forEach(x => { el.innerHTML += `<li>${x}</li>`; });
-        };
-
-        updateList('warnList', json.warnings);
-        updateList('compliList', json.complis);
-        updateList('comorbList', json.comorbs);
-
-        const exEl = document.getElementById('exList');
-        exEl.innerHTML = ""; 
-
-        if (!json.exercises || json.exercises.length === 0) {
-            exEl.innerHTML = `<li class="text-muted">- เนื่องจากสภาวะร่างกายหรือความเสี่ยงร่วมของท่านในปัจจุบัน ไม่สอดคล้องกับเกณฑ์ความเข้มข้นของประเภทกิจกรรมที่เลือก <br>
-                    เพื่อป้องกันการบาดเจ็บหรืออันตรายต่อระบบหัวใจและหลอดเลือด ระบบจึงของดแนะนำกิจกรรมดังกล่าวชั่วคราว -</li>`;
-            return;
-        }
-
-        console.log("ข้อมูลท่าออกกำลังกายที่ได้รับ:", json.exercises);
-
-        const categories = {
-            "🏃 การวิ่ง (Running)": [],
-            "🚶 การเดิน (Walking)": [],
-            "🚴 การปั่นจักรยาน (Bicycling)": [],
-            "💃 การเต้น (Dancing)": [],
-            "🏊 กิจกรรมทางน้ำ (Water Activity)": [],
-            "🏅 กีฬาแอโรบิกลงน้ำหนัก": [],
-            "🏅 กีฬาแอโรบิกไม่ลงน้ำหนัก": [],
-            "💪 การฝึกแรงต้าน (Resistance)": [],
-            "🧘 การยืดเหยียด (Stretching)": [],
-            "✨ กิจกรรมอื่นๆ (Others)": []
-        };
-
-        json.exercises.forEach(item => {
-            let exerciseName = (typeof item === 'object' && item.label) ? item.label : item.toString();
-            let exerciseType = (typeof item === 'object' && item.type) ? item.type.toString() : "";
-            
-            if (exerciseType.includes('Running')) {
-                categories["🏃 การวิ่ง (Running)"].push(exerciseName);
-            } 
-            else if (exerciseType.includes('Walking')) {
-                categories["🚶 การเดิน (Walking)"].push(exerciseName);
-            } 
-            else if (exerciseType.includes('Bicycling')) {
-                categories["🚴 การปั่นจักรยาน (Bicycling)"].push(exerciseName);
-            } 
-            else if (exerciseType.includes('Dancing')) {
-                categories["💃 การเต้น (Dancing)"].push(exerciseName);
-            }
-            else if (exerciseType.includes('WaterActivity')) {
-                categories["🏊 กิจกรรมทางน้ำ (Water Activity)"].push(exerciseName);
-            }
-            else if (exerciseType.includes('WeightBearingAerobicSport') && !exerciseType.includes('NonWeightBearingAerobicSport')) {
-                categories["🏅 กีฬาแอโรบิกลงน้ำหนัก"].push(exerciseName);
-            }
-            else if (exerciseType.includes('NonWeightBearingAerobicSport')) {
-                categories["🏅 กีฬาแอโรบิกไม่ลงน้ำหนัก"].push(exerciseName);
-            }
-            else if (exerciseType.includes('Resistance')) {
-                categories["💪 การฝึกแรงต้าน (Resistance)"].push(exerciseName);
-            } 
-            else if (exerciseType.includes('Stretching')) {
-                categories["🧘 การยืดเหยียด (Stretching)"].push(exerciseName);
-            }
-            else {
-                categories["✨ กิจกรรมอื่นๆ (Others)"].push(exerciseName);
-            }
-        });
-
-        for (const [catName, items] of Object.entries(categories)) {
-            if (items.length > 0) {
-                exEl.innerHTML += `<li class="category-header" style="font-weight:bold; color:#2c3e50; margin-top:10px; list-style:none;">${catName}</li>`;
-                items.forEach(ex => {
-                    exEl.innerHTML += `<li class="ms-3 py-1 border-bottom" style="list-style:none; border-color: rgba(0,0,0,0.05) !important;">• ${ex}</li>`;
-                });
-            }
-        }
-    }
-</script>
+    <!-- JS ที่แยกออกมา -->
+    <script src="{{ url_for('static', filename='js/rec_1.js') }}"></script>
 </body>
 </html>

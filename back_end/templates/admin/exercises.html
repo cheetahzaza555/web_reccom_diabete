@@ -171,7 +171,7 @@
         }
         .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
         
-        .swal2-popup { font-family: 'Sarabun', sans-serif !important; border-radius: 16px !important; }
+        .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
         .swal2-input { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
     </style>
 </head>
@@ -362,19 +362,38 @@
             renderTable(exercisesData); // เรนเดอร์ตารางข้อมูล
         });
 
-        // 🟢 ฟังก์ชันบันทึกท่าใหม่
+        // 🟢 ฟังก์ชันเพิ่มข้อมูลท่าออกกำลังกายใหม่ (เวอร์ชัน Dropdown ตามหมวดหมู่ Ontology)
         function openAddExerciseModal() {
+            // 1. สร้างโครงสร้างตัวเลือก <option> และ <optgroup> ดึงจากผังโครงสร้างระบบ
+            const structure = {
+                "Aerobic (แอโรบิก)": ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"],
+                "Resistance (แรงต้าน)": ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"],
+                "Stretching (ยืดเหยียด)": ["StretchingExercise"]
+            };
+
+            let dropdownHtml = `<option value="">-- กรุณาเลือกคลาสประเภทข้อมูล --</option>`;
+            for (const [parent, children] of Object.entries(structure)) {
+                dropdownHtml += `<optgroup label="─── ${parent} ───">`;
+                children.forEach(child => {
+                    dropdownHtml += `<option value="${child}">• ${translateType(child)} (${child})</option>`;
+                });
+                dropdownHtml += `</optgroup>`;
+            }
+
+            // 2. เรียกเปิด SweetAlert2 Modal
             Swal.fire({
                 title: 'เพิ่มท่าออกกำลังกายใหม่',
                 html: `
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
-                    <input id="swal-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น เดินเร็วในสวน">
+                    <input id="swal-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น เดินแกว่งแขนบนสายพาน">
                     
-                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อคลาสประเภทในคลังระบบ (เช่น Walking, Bicycling, StretchingExercise)</label></div>
-                    <input id="swal-type" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น Walking">
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ประเภทข้อมูล (Ontology Class)</label></div>
+                    <select id="swal-type" class="swal2-input" style="margin:0 0 16px 0; width:100%; height:42px; padding: 0 10px;">
+                        ${dropdownHtml}
+                    </select>
 
-                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ค่า METs (ระดับความหนักหน่วง)</label></div>
-                    <input id="swal-mets" type="number" step="0.1" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น 3.5">
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ค่า METs (ระดับความหนักหน่วงทางคลินิก)</label></div>
+                    <input id="swal-mets" type="number" step="0.1" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น 3.8">
 
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">YouTube Video ID (ถ้ามี)</label></div>
                     <input id="swal-youtube" class="swal2-input" style="margin:0; width:100%;" placeholder="เช่น dQw4w9WgXcQ">
@@ -387,11 +406,12 @@
                 reverseButtons: true,
                 preConfirm: () => {
                     const name = document.getElementById('swal-name').value.trim();
-                    const type = document.getElementById('swal-type').value.trim();
+                    const type = document.getElementById('swal-type').value;
                     const mets = document.getElementById('swal-mets').value.trim();
+                    
                     if (!name) { Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย'); return false; }
-                    if (!type) { Swal.showValidationMessage('กรุณาระบุคลาสในระบบสารสนเทศให้ถูกต้อง'); return false; }
-                    if (!mets) { Swal.showValidationMessage('กรุณากรอกค่า METs'); return false; }
+                    if (!type) { Swal.showValidationMessage('กรุณาเลือกคลาสประเภทข้อมูลใน Ontology'); return false; }
+                    if (!mets) { Swal.showValidationMessage('กรุณาระบุค่า METs ประจำท่า'); return false; }
                     
                     return {
                         name: name,
@@ -412,7 +432,7 @@
                     .then(res => res.json())
                     .then(data => {
                         if(data.success) {
-                            Swal.fire('สำเร็จ!', 'เพิ่มข้อมูลท่าลงระบบฐานความรู้เรียบร้อยแล้ว', 'success').then(() => location.reload());
+                            Swal.fire('สำเร็จ!', 'เพิ่มข้อมูลท่าลงระบบคลังความรู้เรียบร้อยแล้ว', 'success').then(() => location.reload());
                         } else { throw new Error(data.message); }
                     })
                     .catch(err => Swal.fire('ล้มเหลว!', err.message, 'error'));
@@ -420,16 +440,35 @@
             });
         }
 
-        // 🟡 ฟังก์ชันแก้ไขข้อมูลท่าออกกำลังกาย
-        function openEditExerciseModal(id, name, type, mets, youtubeId) {
+        // 🟡 ฟังก์ชันแก้ไขข้อมูลท่าออกกำลังกาย (เวอร์ชันเปลี่ยนเป็น Dropdown พร้อมเลือกค่าเดิมให้อัตโนมัติ)
+        function openEditExerciseModal(id, name, currentType, mets, youtubeId) {
+            const structure = {
+                "Aerobic (แอโรบิก)": ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"],
+                "Resistance (แรงต้าน)": ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"],
+                "Stretching (ยืดเหยียด)": ["StretchingExercise"]
+            };
+
+            let dropdownHtml = ``;
+            for (const [parent, children] of Object.entries(structure)) {
+                dropdownHtml += `<optgroup label="─── ${parent} ───">`;
+                children.forEach(child => {
+                    // เช็กว่าถ้าตรงกับค่าประเภทเดิม ให้กำหนดเป็น selected ทันที
+                    const isSelected = (child === currentType) ? 'selected' : '';
+                    dropdownHtml += `<option value="${child}" ${isSelected}>• ${translateType(child)} (${child})</option>`;
+                });
+                dropdownHtml += `</optgroup>`;
+            }
+
             Swal.fire({
                 title: 'แก้ไขข้อมูลท่าออกกำลังกาย',
                 html: `
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
                     <input id="swal-edit-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${name}">
                     
-                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อคลาสประเภทในคลังระบบ</label></div>
-                    <input id="swal-edit-type" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${type}">
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ประเภทข้อมูล (Ontology Class)</label></div>
+                    <select id="swal-edit-type" class="swal2-input" style="margin:0 0 16px 0; width:100%; height:42px; padding: 0 10px;">
+                        ${dropdownHtml}
+                    </select>
 
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ค่า METs</label></div>
                     <input id="swal-edit-mets" type="number" step="0.1" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${mets}">
@@ -445,10 +484,11 @@
                 reverseButtons: true,
                 preConfirm: () => {
                     const editName = document.getElementById('swal-edit-name').value.trim();
-                    const editType = document.getElementById('swal-edit-type').value.trim();
+                    const editType = document.getElementById('swal-edit-type').value;
                     const editMets = document.getElementById('swal-edit-mets').value.trim();
+                    
                     if (!editName) { Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย'); return false; }
-                    if (!editType) { Swal.showValidationMessage('กรุณากรอกคลาสประเภทข้อมูล'); return false; }
+                    if (!editType) { Swal.showValidationMessage('กรุณาเลือกคลาสประเภทข้อมูล'); return false; }
                     if (!editMets) { Swal.showValidationMessage('กรุณาระบุค่า METs'); return false; }
                     
                     return {
@@ -479,34 +519,44 @@
             });
         }
 
-        // 🔴 ฟังก์ชันลบข้อมูลท่าออกกำลังกาย
+        // 🔴 ฟังก์ชันลบข้อมูลท่าออกกำลังกาย (เวอร์ชันค้นหาชื่อท่าอัตโนมัติจาก ID)
         function deleteExercise(exerciseId) {
+            // 🔍 ค้นหาข้อมูลของท่าออกกำลังกายนี้จากก้อนข้อมูล exercisesData ที่โหลดมาจาก Backend เปล่าๆ
+            // โดยใช้ไอดี (exerciseId) เป็นตัวจับคู่
+            const exerciseItem = exercisesData.find(item => String(item.id) === String(exerciseId));
+            
+            // 🏷️ ดึงชื่อท่าออกมา ถ้าหาไม่เจอจริง ๆ ให้ใช้ ID แทน (กันเหนียวไว้)
+            const exerciseName = exerciseItem ? exerciseItem.name : exerciseId;
+
             Swal.fire({
-                title: 'คุณแน่ใจใช่ไหมที่จะลบ?',
-                text: `ข้อมูลท่าออกกำลังกายไอดี #${exerciseId} จะถูกลบออกจากคลังระบบอย่างถาวร!`,
+                title: 'ยืนยันการลบข้อมูล?',
+                text: `คุณกำลังต้องการลบข้อมูลท่า "${exerciseName}" ออกจากระบบคลังความรู้ใช่หรือไม่?`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#E53E3E',
-                cancelButtonColor: '#666666',
-                confirmButtonText: 'ใช่, ลบออกไปเลย!',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#666',
+                confirmButtonText: 'ใช่, ฉันต้องการลบ',
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                     
-                    fetch("/admin/exercises/delete", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ exercise_id: exerciseId })
+                    // ยิง Request ส่งไปที่เซิร์ฟเวอร์
+                    fetch(`/admin/exercises/delete/${exerciseId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
                     })
                     .then(res => res.json())
                     .then(data => {
                         if(data.success) {
-                            Swal.fire('ลบสำเร็จ!', 'ข้อมูลท่าออกกำลังกายถูกถอนออกจากระบบแล้ว', 'success').then(() => location.reload());
-                        } else { throw new Error(data.message); }
+                            Swal.fire('สำเร็จ!', 'ลบข้อมูลท่าออกกำลังกายออกจากคลังความรู้แล้ว', 'success')
+                            .then(() => location.reload());
+                        } else {
+                            throw new Error(data.message);
+                        }
                     })
-                    .catch(err => Swal.fire('ล้มเหลว!', 'ไม่สามารถลบข้อมูลได้: ' + err.message, 'error'));
+                    .catch(err => Swal.fire('เกิดข้อผิดพลาด!', err.message, 'error'));
                 }
             });
         }

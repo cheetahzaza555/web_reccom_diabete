@@ -113,7 +113,7 @@ def get_dashboard_schedule(patient_id):
             ex_name = r.get("exName", {}).get("value", None)
             ex_original_id = r.get("exId", {}).get("value", None)
 
-            is_exercise_day = status in ["Pending", "Completed"]
+            is_exercise_day = status in ["Pending", "Completed", "Missed"]
             is_completed = (status == "Completed")
 
             date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -126,7 +126,8 @@ def get_dashboard_schedule(patient_id):
                 "exercise_id": ex_original_id,  # เก็บ ID ท่าไว้ใช้ตอนกดเข้าไปดูวิดีโอ
                 "completed": is_completed,
                 "duration_minutes": duration,
-                "date_obj": date_obj
+                "date_obj": date_obj,
+                "status": status,
             })
         return schedule
     except Exception as e:

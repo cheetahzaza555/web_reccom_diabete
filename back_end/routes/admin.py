@@ -1,7 +1,10 @@
 from flask import Blueprint, redirect, render_template, jsonify, request, session, url_for
 from modules.db.admin_repository import delete_exercise_from_ontology, insert_exercise_to_ontology, insert_exercise_to_ontology_v2
+from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db
 from modules.db.exercise_repository import get_all_exercises_for_library
 from utils.security import admin_required  # 🛡️ เปิดใช้งานยามเฝ้าประตู
+from werkzeug.security import check_password_hash, generate_password_hash
+import random
 from modules.db import (
     delete_patient,
     get_patient_profile,
@@ -193,3 +196,38 @@ def update_exercise():
     except Exception as e:
         print(f"❌ Error updating exercise in route: {e}")
         return jsonify({"success": False, "message": f"เซิร์ฟเวอร์ขัดข้อง: {str(e)}"}), 500
+
+@admin_bp.route('/settings')
+@admin_required
+def setting():
+    return render_template('admin/admin_setting.html')
+
+@admin_bp.route('/api/update_settings', methods=['POST'])
+@admin_required
+def update_admin_settings():
+    admin_id = session.get('admin_id') or session.get('user_id')
+    data = request.json
+
+    firstname = data.get('firstname', '').strip()
+    lastname = data.get('lastname', '').strip()
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+
+    new_hash = None
+    if new_password:
+        if not old_password:
+            return jsonify({"status": "error", "message": "กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยัน"}), 400
+        current_hash = get_password_hash_by_id(admin_id) # ⚠️ ตรวจสอบว่าฟังก์ชันนี้ใช้ของแอดมินด้วยหรือไม่
+        if not current_hash or not check_password_hash(current_hash, old_password):
+            return jsonify({"status": "error", "message": "รหัสผ่านปัจจุบันไม่ถูกต้อง"}), 400
+        new_hash = generate_password_hash(new_password)
+
+    #  แก้ไขตรงนี้: เปลี่ยนเป็นฟังก์ชันอัปเดตโปรไฟล์ของแอดมิน
+    success = update_user_profile_db(admin_id, firstname, lastname, new_hash)
+
+    if success:
+        session['firstname'] = firstname
+        session['lastname'] = lastname
+        return jsonify({"status": "success", "message": "อัปเดตข้อมูลผู้ดูแลระบบสำเร็จ"})
+    else:
+        return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500

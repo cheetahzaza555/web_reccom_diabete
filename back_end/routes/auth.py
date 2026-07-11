@@ -138,6 +138,7 @@ def get_current_user():
     # --- 1. API สำหรับส่ง OTP ไปที่อีเมล ---
 @auth.route("/api/request_otp", methods=["POST"])
 def request_otp():
+    print("🔑 ข้อมูลใน Session แอดมินตอนนี้คือ:", dict(session))
     try:
         data = request.json or {}
 
@@ -145,7 +146,7 @@ def request_otp():
         action = data.get("action", "register")
 
         # 2. ดึงอีเมลให้ถูกที่
-        if action == "update_settings":
+        if action == "update_settings" or action == "update_admin_settings": 
             email = session.get('email') # หน้าตั้งค่า ดึงจาก Session ป้องกันการแฮก
         else:
             email = data.get('email') # หน้าสมัครสมาชิก ดึงจากที่ผู้ใช้พิมพ์เข้ามา

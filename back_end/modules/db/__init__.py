@@ -52,6 +52,12 @@ from .plan_repository import (
     get_daily_plan_info,
 )
 
+from .reschedule_repository import (
+    reschedule_missed_days,
+    run_daily_reschedule_job,
+    get_all_patients_with_active_plan,
+)
+
 from .admin_repository import (
     get_admin_dashboard_stats,
     get_recent_registered_users,
@@ -59,3 +65,4 @@ from .admin_repository import (
     get_all_users_with_roles,
     update_user_role_in_graphdb,
 )
+

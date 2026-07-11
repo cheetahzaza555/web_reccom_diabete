@@ -67,6 +67,13 @@
         /* ไม่ให้เคอร์เซอร์เป็นรูปนิ้วมือเวลาชี้ที่ติ๊กถูก */
         .check-btn { font-size: 1.5rem; color: #e9ecef; cursor: default; }
         .check-btn.completed { color: #198754; }
+
+        /* ✅สไตล์สำหรับวันที่พลาด*/
+        .day-missed {
+            background-color: #fff5f5 !important;
+            border-color: #f5c2c7 !important;
+        }
+        .missed-icon { font-size: 1.5rem; color: #dc3545; }
         
         .nav-arrow {
             background: white; border: 1px solid #dee2e6; color: #4f7cff; border-radius: 50%;
@@ -155,7 +162,8 @@
                      data-isexercise="{{ 'true' if day.is_exercise_day else 'false' }}"
                      data-exname="{{ day.exercise_name }}"
                      data-completed="{{ 'true' if day.completed else 'false' }}"
-                     data-duration="{{ day.duration_minutes }}"></div>
+                     data-duration="{{ day.duration_minutes }}"
+                    data-status="{{ day.status }}"></div>
                 {% endfor %}
             </div>
 
@@ -207,7 +215,8 @@
                     isExercise: item.dataset.isexercise === "true",
                     exName: item.dataset.exname,
                     completed: item.dataset.completed === "true",
-                    duration: parseInt(item.dataset.duration) || 0
+                    duration: parseInt(item.dataset.duration) || 0,
+                    status: item.dataset.status || ""
                 });
 
                 let monthKey = `${dYear}-${dMonth}`;
@@ -240,85 +249,93 @@
         });
 
         function renderCalendar(monthData) {
-            let year = monthData.year;
-            let mIndex = monthData.month;
-            
-            let yearTH = year > 2500 ? year : year + 543; 
-            document.getElementById('monthTitle').innerText = `${fullThaiMonths[mIndex]} ${yearTH}`;
+    let year = monthData.year;
+    let mIndex = monthData.month;
 
-            const grid = document.getElementById('calendarDays');
-            grid.innerHTML = "";
+    let yearTH = year > 2500 ? year : year + 543;
+    document.getElementById('monthTitle').innerText = `${fullThaiMonths[mIndex]} ${yearTH}`;
 
-            let plansInThisMonth = planData.filter(p => p.monthIndex === mIndex && p.year === year);
-            if (plansInThisMonth.length === 0) return;
+    const grid = document.getElementById('calendarDays');
+    grid.innerHTML = "";
 
-            let minDay = Math.min(...plansInThisMonth.map(p => p.day));
-            let maxDay = Math.max(...plansInThisMonth.map(p => p.day));
+    let plansInThisMonth = planData.filter(p => p.monthIndex === mIndex && p.year === year);
+    if (plansInThisMonth.length === 0) return;
 
-            let startViewDate = new Date(year, mIndex, minDay);
-            let firstDayOfWeek = startViewDate.getDay(); 
-            let offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; 
+    let minDay = Math.min(...plansInThisMonth.map(p => p.day));
+    let maxDay = Math.max(...plansInThisMonth.map(p => p.day));
 
-            for(let i=0; i<offset; i++) {
-                grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
-            }
+    let startViewDate = new Date(year, mIndex, minDay);
+    let firstDayOfWeek = startViewDate.getDay();
+    let offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
 
-            let todayObj = new Date();
-            
-            for(let d = minDay; d <= maxDay; d++) {
-                let plan = plansInThisMonth.find(p => p.day === d);
-                let isRealToday = (todayObj.getDate() === d && todayObj.getMonth() === mIndex && todayObj.getFullYear() === year);
+    for (let i = 0; i < offset; i++) {
+        grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
+    }
 
-                if (plan) {
-                    let todayClass = isRealToday ? 'today-card' : '';
-                    let badge = isRealToday ? '<div class="today-badge">วันนี้</div>' : '';
-                    
-                    let contentHtml = '';
-                    
-                    // ✅ 1. แยกหน้าตา วันออกกำลังกาย กับ วันพักผ่อน
-                    if (plan.isExercise) {
-                        if (plan.completed) {
-                            contentHtml = `
-                                <div class="text-center">
-                                    <i class="bi bi-activity exercise-icon text-success"></i>
-                                    <div class="ex-name mt-1 text-success">${plan.exName}</div>
-                                </div>
-                                <div class="mt-2" style="z-index: 20;">
-                                    <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
-                                </div>
-                            `;
-                        } else {
-                            contentHtml = `
-                                <div class="text-center">
-                                    <i class="bi bi-person-walking text-primary" style="font-size: 1.5rem;"></i>
-                                    <div class="ex-name mt-1 text-primary" style="font-size: 0.75rem;">ต้องออกกำลังกาย</div>
-                                </div>
-                                <div style="height: 24px;"></div>
-                            `;
-                        }
-                    } else {
-                        // หน้าตาวันพักผ่อน
-                        contentHtml = `
-                            <div class="text-center opacity-50">
-                                <i class="bi bi-cup-hot-fill text-secondary" style="font-size: 1.5rem;"></i>
-                                <div class="ex-name mt-1 text-secondary" style="font-size: 0.75rem;">วันพักผ่อน</div>
-                            </div>
-                            <div style="height: 24px;"></div>
-                        `;
-                    }
+    let todayObj = new Date();
 
-                    grid.innerHTML += `<div class="day-card ${todayClass}">${badge}<div class="date-number">${d}</div>${contentHtml}</div>`;
+    for (let d = minDay; d <= maxDay; d++) {
+        let plan = plansInThisMonth.find(p => p.day === d);
+        let isRealToday = (todayObj.getDate() === d && todayObj.getMonth() === mIndex && todayObj.getFullYear() === year);
+
+        if (plan) {
+            let todayClass = isRealToday ? 'today-card' : '';
+            let missedClass = (plan.status === 'Missed') ? 'day-missed' : '';
+            let badge = isRealToday ? '<div class="today-badge">วันนี้</div>' : '';
+
+            let contentHtml = '';
+
+            // ✅ แยกหน้าตา: พลาด (ระบบเลื่อนให้แล้ว) / ออกกำลังกาย (เสร็จ-ไม่เสร็จ) / วันพักผ่อน
+            if (plan.status === 'Missed') {
+                contentHtml = `
+                    <div class="text-center">
+                        <i class="bi bi-x-circle-fill missed-icon"></i>
+                        <div class="ex-name mt-1 text-danger" style="font-size: 0.75rem;">พลาด (เลื่อนให้แล้ว)</div>
+                    </div>
+                    <div style="height: 24px;"></div>
+                `;
+            } else if (plan.isExercise) {
+                if (plan.completed) {
+                    contentHtml = `
+                        <div class="text-center">
+                            <i class="bi bi-activity exercise-icon text-success"></i>
+                            <div class="ex-name mt-1 text-success">${plan.exName}</div>
+                        </div>
+                        <div class="mt-2" style="z-index: 20;">
+                            <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
+                        </div>
+                    `;
                 } else {
-                    grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
+                    contentHtml = `
+                        <div class="text-center">
+                            <i class="bi bi-person-walking text-primary" style="font-size: 1.5rem;"></i>
+                            <div class="ex-name mt-1 text-primary" style="font-size: 0.75rem;">ต้องออกกำลังกาย</div>
+                        </div>
+                        <div style="height: 24px;"></div>
+                    `;
                 }
+            } else {
+                contentHtml = `
+                    <div class="text-center opacity-50">
+                        <i class="bi bi-cup-hot-fill text-secondary" style="font-size: 1.5rem;"></i>
+                        <div class="ex-name mt-1 text-secondary" style="font-size: 0.75rem;">วันพักผ่อน</div>
+                    </div>
+                    <div style="height: 24px;"></div>
+                `;
             }
 
-            document.getElementById('prevMonthBtn').disabled = (currentIndex === 0);
-            document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
-            
-            updateStartButton();
-            updateWeeklyProgress(); 
+            grid.innerHTML += `<div class="day-card ${todayClass} ${missedClass}">${badge}<div class="date-number">${d}</div>${contentHtml}</div>`;
+        } else {
+            grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
         }
+    }
+
+    document.getElementById('prevMonthBtn').disabled = (currentIndex === 0);
+    document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
+
+    updateStartButton();
+    updateWeeklyProgress();
+}
 
         function changeMonth(step) {
             let newIndex = currentIndex + step;

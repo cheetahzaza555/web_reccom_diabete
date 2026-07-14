@@ -22,6 +22,7 @@ user_bp = Blueprint('user', __name__)
 @login_required
 def dashboard_page():
     user_id = session['user_id']
+    print("🔍 DEBUG user_id ที่ล็อกอินอยู่ตอนนี้คือ:", user_id)
 
     thai_months = [
         "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",

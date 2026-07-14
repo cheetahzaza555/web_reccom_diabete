@@ -213,7 +213,7 @@ def update_user_role_in_graphdb(user_id, new_role):
         return False, error_msg
 
 def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=None, mets=None, youtube_id=None):
-    """ฟังก์ชันอเนกประสงค์สำหรับเขียนข้อมูลท่าออกกำลังกายลง GraphDB (รองรับทั้งเพิ่มใหม่และแก้ไข)"""
+    """ฟังก์ชันอเนกประสงค์สำหรับเขียนข้อมูลท่าออกกำลังกายลง GraphDB ตรงตามโครงสร้างคู่มือโครงสร้างจริง"""
     try:
         from SPARQLWrapper import SPARQLWrapper
         from modules.config import GRAPHDB_WRITE 
@@ -222,18 +222,48 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
         sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
         base_prefix = "http://example.org/diabetes#"
         
-        # 🌟 ถ้าระบบส่ง ID เดิมมา (ขั้นตอนการแก้ไข) ให้ใช้ตัวเดิมเลย แต่ถ้าไม่มี (เพิ่มใหม่) ให้สุ่มไอดีขึ้นมาใหม่
         final_id = existing_id if existing_id else f"17{random.randint(100, 999)}"
         
         subject_uri = f"<{base_prefix}{final_id}>"
         type_uri = f"<{base_prefix}{exercise_type}>"
         
-        # แยกจำแนกประเภทกลุ่มหลักตามเดิมเพื่อสร้างความสัมพันธ์ 8 แถว
-        parent_class = "ex:Flexibility"
-        if exercise_type in ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"]:
+        # ตั้งค่าตัวแปรตามโครงสร้างภาพ
+        parent_class = None
+        middle_class = None
+
+        # 🌳 1. จำแนกกลุ่มตามภาพผังโครงสร้าง Ontology
+        # -------------------------------------------------------------
+        # [กลุ่มที่ 1]: ภายใต้ ex:Aerobic -> ex:WeightBearingAerobicExercise
+        if exercise_type in ["Walking", "Running", "Dancing", "WeightBearingAerobicSport"]:
             parent_class = "ex:Aerobic"
-        elif exercise_type in ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"]:
+            middle_class = "ex:WeightBearingAerobicExercise"
+
+        # [กลุ่มที่ 2]: ภายใต้ ex:Aerobic -> ex:NonWeightBearingAerobicExercise
+        elif exercise_type in ["Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"]:
+            parent_class = "ex:Aerobic"
+            middle_class = "ex:NonWeightBearingAerobicExercise"
+
+        # [กลุ่มที่ 3]: ภายใต้ ex:Resistance -> ex:WeightBearingResistanceExercise
+        elif exercise_type in ["WeightBearingResistanceExercise"]: # หรือชื่อประเภทรายย่อยในกลุ่มนี้ถ้ามี
             parent_class = "ex:Resistance"
+            middle_class = "ex:WeightBearingResistanceExercise"
+
+        # [กลุ่มที่ 4]: ภายใต้ ex:Resistance -> ex:NonWeightBearingResistanceExercise
+        elif exercise_type in ["NonWeightBearingResistanceExercise"]: # หรือชื่อประเภทรายย่อยในกลุ่มนี้ถ้ามี
+            parent_class = "ex:Resistance"
+            middle_class = "ex:NonWeightBearingResistanceExercise"
+
+        # [กลุ่มที่ 5]: ภายใต้ ex:Stretching (กลุ่มนี้ยิงตรงจาก ex:Exercise ไม่มี middle_class)
+        elif exercise_type in ["Stretching"]: 
+            parent_class = "ex:Stretching"
+            middle_class = None
+            
+        else:
+            # Fallback ป้องกันกรณีหลุดโผ
+            parent_class = "ex:Aerobic"
+
+        # 🌳 2. ตรวจสอบการเพิ่ม Triple แถวพิเศษระดับกลาง (ถ้ามี)
+        middle_class_triple = f"{subject_uri} rdf:type {middle_class} ." if middle_class else ""
 
         insert_query = f"""
         PREFIX ex: <{base_prefix}>
@@ -246,6 +276,9 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
             {subject_uri} rdf:type owl:NamedIndividual .
             {subject_uri} rdf:type ex:Exercise .
             {subject_uri} rdf:type {parent_class} .
+            
+            {middle_class_triple}  # แทรกคลาสย่อยชั้นกลางตามผังต้นไม้
+            
             {subject_uri} rdf:type {type_uri} .
             {subject_uri} ex:hasKindOfExercise {type_uri} .
             {subject_uri} rdfs:label "{name}" .
@@ -258,7 +291,7 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
         sparql_write_client.setMethod('POST')
         sparql_write_client.query()
 
-        print(f"💾 [GraphDB] ซิงค์ข้อมูล ID #{final_id} ครบถ้วนเสร็จสิ้น")
+        print(f"💾 [GraphDB] ซิงค์ข้อมูล ID #{final_id} ตามโครงสร้างใหม่เสร็จสิ้น")
         return {"success": True, "message": "ซิงค์สำเร็จ"}
         
     except Exception as e:

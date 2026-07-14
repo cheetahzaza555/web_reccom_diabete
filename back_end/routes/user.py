@@ -54,7 +54,8 @@ def dashboard_page():
             'month_index': actual_date.month - 1,
             'year': actual_date.year,
             'display_date': f"{actual_date.day} {short_month_name}",
-            'is_today': (actual_date == today)
+            'is_today': (actual_date == today),
+            'status': r["status"],
         })
 
     return render_template('user/index.html', schedule=schedule_data, info=current_date_info)

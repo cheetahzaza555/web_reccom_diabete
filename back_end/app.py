@@ -5,6 +5,8 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from routes.auth import auth
 from routes.admin import admin_bp
+from apscheduler.schedulers.background import BackgroundScheduler
+from modules.db import run_daily_reschedule_job
 
 # โหลดตัวแปรจาก .env (ตอนนี้จะมีแค่ข้อมูลของ GraphDB)
 load_dotenv()
@@ -13,6 +15,13 @@ app = Flask(__name__)
 
 # Secret Key สำหรับการทำ Session ของ Flask (จำเป็นต้องมีเพื่อให้ Login ได้)
 app.secret_key = os.getenv("SECRET_KEY")
+
+scheduler = BackgroundScheduler(timezone="Asia/Bangkok")
+scheduler.add_job(run_daily_reschedule_job, 'cron', hour=0, minute=5)
+
+if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+    scheduler.start()
+
 
 # เปิดใช้งาน CORS (Cross-Origin Resource Sharing)
 CORS(app)

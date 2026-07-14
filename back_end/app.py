@@ -22,6 +22,12 @@ scheduler.add_job(run_daily_reschedule_job, 'cron', hour=0, minute=5)
 if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
     scheduler.start()
 
+@app.route('/force-run-reschedule')
+def force_run_reschedule():
+    print("⏳ บังคับรันระบบเลื่อนตาราง (Manual Trigger)...")
+    run_daily_reschedule_job()
+    return "สั่งรันระบบเลื่อนตารางแล้ว! กรุณาเช็กข้อความใน Terminal/Console ครับ"
+
 
 # เปิดใช้งาน CORS (Cross-Origin Resource Sharing)
 CORS(app)

@@ -57,17 +57,10 @@ def patients_health_summary():
 @admin_bp.route("/dashboard")
 @admin_required  # 🔒 ใช้ยามคุมแทนการเขียน if-else ซ้ำซ้อน
 def dashboard_page():
-    print(f"👤 [Admin Route Log] Admin '{session.get('username')}' is accessing dashboard.")
 
     # 📊 เรียกดึงข้อมูลจริงจากคลังฐานข้อมูล GraphDB
     stats_data = get_admin_dashboard_stats()
     recent_users = get_recent_registered_users()
-
-    # 🪵 PRINT LOG: ตรวจสอบข้อมูลก่อนโยนไป HTML
-    print("====== 🪵 ADMIN DASHBOARD DEBUG LOG ====== ")
-    print(f"📦 stats_data ที่ได้: {stats_data}")
-    print(f"👥 recent_users ที่ได้: {recent_users}")
-    print("===========================================")
 
     return render_template(
         "admin/index.html",

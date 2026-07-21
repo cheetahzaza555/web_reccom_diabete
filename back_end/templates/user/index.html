@@ -84,6 +84,43 @@
         .nav-arrow:hover:not(:disabled) { background: #4f7cff; color: white; transform: scale(1.1); }
         .nav-arrow:disabled { color: #dee2e6; background: #f8f9fa; cursor: not-allowed; box-shadow: none; }
 
+        /* ✅ สไตล์สำหรับกล่องเปิดการแจ้งเตือน (ตามรูปวาด) */
+        .notify-toggle-wrapper {
+            border: 2px solid #335da1; /* สีน้ำเงินเข้มของเว็บ */
+            border-radius: 8px;
+            padding: 6px 16px 6px 12px;
+            display: inline-flex;
+            align-items: center;
+            background-color: white;
+            cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.1s;
+        }
+        .notify-toggle-wrapper:hover {
+            box-shadow: 0 4px 10px rgba(51, 93, 161, 0.15);
+        }
+        .notify-toggle-wrapper:active {
+            transform: scale(0.98); /* ลูกเล่นเวลากดให้บุ๋มลงนิดนึง */
+        }
+        .notify-toggle-wrapper .form-check {
+            margin-bottom: 0;
+            padding-left: 2.8em; /* ขยายพื้นที่สวิตช์ */
+        }
+        .notify-toggle-wrapper .form-check-input {
+            width: 2.5em; /* ทำให้สวิตช์ใหญ่ขึ้น */
+            height: 1.25em;
+            margin-left: -2.8em;
+            cursor: pointer;
+        }
+        .notify-toggle-wrapper .form-check-input:checked {
+            background-color: #335da1; /* เปลี่ยนสีตอนเปิดเป็นน้ำเงินเข้ม */
+            border-color: #335da1;
+        }
+        .notify-text {
+            font-weight: 600;
+            color: #335da1;
+            font-size: 1rem;
+        }
+
         @media (max-width: 768px) {
             .calendar-grid { grid-template-columns: 1fr; }
             .weekday-header { display: none; } 
@@ -100,16 +137,55 @@
     <div class="container py-4 px-3 px-md-4 d-flex flex-column">
 
         {% if schedule %}
-            <div class="d-flex justify-content-between align-items-end mb-3">
+            <!-- ส่วนหัว: ชื่อเดือน, วันที่ และ กลุ่มปุ่มจัดการ -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-3 gap-3">
+                
+                <!-- ฝั่งซ้าย: ชื่อเดือน และ วันที่ -->
                 <div>
                     <h2 class="fw-bold mb-0 text-dark" id="monthTitle">กำลังโหลด...</h2>
-                    <p class="text-muted mb-0">
+                    <p class="text-muted mb-0 mt-2">
                         <i class="bi bi-calendar-event me-1"></i> วันนี้: {{ info.day }} {{ info.month_name }}
                     </p>
                 </div>
-                <button type="button" class="btn btn-outline-danger" onclick="confirmClearPlan()">
-                    <i class="bi bi-trash"></i> ลบตาราง
-                </button>
+                
+                <!-- ฝั่งขวา: กลุ่มปุ่ม (เปิดการแจ้งเตือน + ลบตาราง) -->
+                <div class="d-flex align-items-center gap-2">
+                    
+                    <!-- สวิตช์เปิด-ปิดการแจ้งเตือน LINE (ดีไซน์ใหม่) -->
+                    <label class="notify-toggle-wrapper mb-0" for="lineNotifyToggle">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="lineNotifyToggle" onclick="toggleLineQR()">
+                        </div>
+                        <span class="notify-text">เปิดการแจ้งเตือน</span>
+                    </label>
+                    
+                    <!-- ปุ่มลบตาราง -->
+                    <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center" onclick="confirmClearPlan()" style="height: 40px; padding: 0 16px; border-radius: 8px;">
+                        <i class="bi bi-trash me-1"></i> ลบตาราง
+                    </button>
+                    
+                </div>
+            </div>
+
+            <!-- 🌟 กล่อง QR Code (ซ่อนไว้เป็นค่าเริ่มต้น) -->
+            <div id="lineQrSection" class="card border-0 shadow-sm mb-4" style="display: none; background-color: #f6fffa; border-left: 5px solid #06C755 !important;">
+                <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between p-3 p-md-4">
+                    <div class="text-center text-md-start mb-3 mb-md-0">
+                        <h5 class="fw-bold mb-2" style="color: #06C755;">
+                            <i class="bi bi-line"></i> เชื่อมต่อระบบแจ้งเตือนผ่าน LINE
+                        </h5>
+                        <p class="mb-1 text-dark">1. สแกน QR Code เพื่อเพิ่มเพื่อน DiaBalance</p>
+                        <p class="mb-2 text-dark">2. พิมพ์รหัสของคุณส่งไปในแชทเพื่อยืนยันตัวตน:</p>
+                        
+                        <!-- ⚠️ รหัสผู้ใช้ -->
+                        <h3 class="fw-bold text-dark bg-white px-3 py-2 rounded d-inline-block shadow-sm border mt-1">
+                            #{{ session['user_id'] }}
+                        </h3>
+                    </div>
+                    <div class="text-center bg-white p-2 rounded shadow-sm border">
+                        <img src="{{ url_for('static', filename='images/lineqr.png') }}" alt="LINE QR Code" style="width: 130px; height: 130px; object-fit: cover;">
+                    </div>
+                </div>
             </div>
 
             <div class="card border-0 shadow-sm mb-3 " style="background: white; border-radius: 16px;">
@@ -207,7 +283,7 @@
 
     </div>
     
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -276,93 +352,92 @@
         });
 
         function renderCalendar(monthData) {
-    let year = monthData.year;
-    let mIndex = monthData.month;
+            let year = monthData.year;
+            let mIndex = monthData.month;
 
-    let yearTH = year > 2500 ? year : year + 543;
-    document.getElementById('monthTitle').innerText = `${fullThaiMonths[mIndex]} ${yearTH}`;
+            let yearTH = year > 2500 ? year : year + 543;
+            document.getElementById('monthTitle').innerText = `${fullThaiMonths[mIndex]} ${yearTH}`;
 
-    const grid = document.getElementById('calendarDays');
-    grid.innerHTML = "";
+            const grid = document.getElementById('calendarDays');
+            grid.innerHTML = "";
 
-    let plansInThisMonth = planData.filter(p => p.monthIndex === mIndex && p.year === year);
-    if (plansInThisMonth.length === 0) return;
+            let plansInThisMonth = planData.filter(p => p.monthIndex === mIndex && p.year === year);
+            if (plansInThisMonth.length === 0) return;
 
-    let minDay = Math.min(...plansInThisMonth.map(p => p.day));
-    let maxDay = Math.max(...plansInThisMonth.map(p => p.day));
+            let minDay = Math.min(...plansInThisMonth.map(p => p.day));
+            let maxDay = Math.max(...plansInThisMonth.map(p => p.day));
 
-    let startViewDate = new Date(year, mIndex, minDay);
-    let firstDayOfWeek = startViewDate.getDay();
-    let offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+            let startViewDate = new Date(year, mIndex, minDay);
+            let firstDayOfWeek = startViewDate.getDay();
+            let offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
 
-    for (let i = 0; i < offset; i++) {
-        grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
-    }
-
-    let todayObj = new Date();
-
-    for (let d = minDay; d <= maxDay; d++) {
-        let plan = plansInThisMonth.find(p => p.day === d);
-        let isRealToday = (todayObj.getDate() === d && todayObj.getMonth() === mIndex && todayObj.getFullYear() === year);
-
-        if (plan) {
-            let todayClass = isRealToday ? 'today-card' : '';
-            let missedClass = (plan.status === 'Missed') ? 'day-missed' : '';
-            let badge = isRealToday ? '<div class="today-badge">วันนี้</div>' : '';
-
-            let contentHtml = '';
-
-            // ✅ แยกหน้าตา: พลาด (ระบบเลื่อนให้แล้ว) / ออกกำลังกาย (เสร็จ-ไม่เสร็จ) / วันพักผ่อน
-            if (plan.status === 'Missed') {
-                contentHtml = `
-                    <div class="text-center">
-                        <i class="bi bi-x-circle-fill missed-icon"></i>
-                        <div class="ex-name mt-1 text-danger" style="font-size: 0.75rem;"> ไม่ได้ออกกำลังกาย </div>
-                    </div>
-                    <div style="height: 24px;"></div>
-                `;
-            } else if (plan.isExercise) {
-                if (plan.completed) {
-                    contentHtml = `
-                        <div class="text-center">
-                            <i class="bi bi-activity exercise-icon text-success"></i>
-                            <div class="ex-name mt-1 text-success">${plan.exName}</div>
-                        </div>
-                        <div class="mt-2" style="z-index: 20;">
-                            <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
-                        </div>
-                    `;
-                } else {
-                    contentHtml = `
-                        <div class="text-center">
-                            <i class="bi bi-person-walking text-primary" style="font-size: 1.5rem;"></i>
-                            <div class="ex-name mt-1 text-primary" style="font-size: 0.75rem;">ต้องออกกำลังกาย</div>
-                        </div>
-                        <div style="height: 24px;"></div>
-                    `;
-                }
-            } else {
-                contentHtml = `
-                    <div class="text-center opacity-50">
-                        <i class="bi bi-cup-hot-fill text-secondary" style="font-size: 1.5rem;"></i>
-                        <div class="ex-name mt-1 text-secondary" style="font-size: 0.75rem;">วันพักผ่อน</div>
-                    </div>
-                    <div style="height: 24px;"></div>
-                `;
+            for (let i = 0; i < offset; i++) {
+                grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
             }
 
-            grid.innerHTML += `<div class="day-card ${todayClass} ${missedClass}">${badge}<div class="date-number">${d}</div>${contentHtml}</div>`;
-        } else {
-            grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
+            let todayObj = new Date();
+
+            for (let d = minDay; d <= maxDay; d++) {
+                let plan = plansInThisMonth.find(p => p.day === d);
+                let isRealToday = (todayObj.getDate() === d && todayObj.getMonth() === mIndex && todayObj.getFullYear() === year);
+
+                if (plan) {
+                    let todayClass = isRealToday ? 'today-card' : '';
+                    let missedClass = (plan.status === 'Missed') ? 'day-missed' : '';
+                    let badge = isRealToday ? '<div class="today-badge">วันนี้</div>' : '';
+
+                    let contentHtml = '';
+
+                    if (plan.status === 'Missed') {
+                        contentHtml = `
+                            <div class="text-center">
+                                <i class="bi bi-x-circle-fill missed-icon"></i>
+                                <div class="ex-name mt-1 text-danger" style="font-size: 0.75rem;"> ไม่ได้ออกกำลังกาย </div>
+                            </div>
+                            <div style="height: 24px;"></div>
+                        `;
+                    } else if (plan.isExercise) {
+                        if (plan.completed) {
+                            contentHtml = `
+                                <div class="text-center">
+                                    <i class="bi bi-activity exercise-icon text-success"></i>
+                                    <div class="ex-name mt-1 text-success">${plan.exName}</div>
+                                </div>
+                                <div class="mt-2" style="z-index: 20;">
+                                    <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
+                                </div>
+                            `;
+                        } else {
+                            contentHtml = `
+                                <div class="text-center">
+                                    <i class="bi bi-person-walking text-primary" style="font-size: 1.5rem;"></i>
+                                    <div class="ex-name mt-1 text-primary" style="font-size: 0.75rem;">ต้องออกกำลังกาย</div>
+                                </div>
+                                <div style="height: 24px;"></div>
+                            `;
+                        }
+                    } else {
+                        contentHtml = `
+                            <div class="text-center opacity-50">
+                                <i class="bi bi-cup-hot-fill text-secondary" style="font-size: 1.5rem;"></i>
+                                <div class="ex-name mt-1 text-secondary" style="font-size: 0.75rem;">วันพักผ่อน</div>
+                            </div>
+                            <div style="height: 24px;"></div>
+                        `;
+                    }
+
+                    grid.innerHTML += `<div class="day-card ${todayClass} ${missedClass}">${badge}<div class="date-number">${d}</div>${contentHtml}</div>`;
+                } else {
+                    grid.innerHTML += `<div class="day-card border-0 bg-transparent shadow-none d-none d-md-flex"></div>`;
+                }
+            }
+
+            document.getElementById('prevMonthBtn').disabled = (currentIndex === 0);
+            document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
+
+            updateStartButton();
+            updateWeeklyProgress();
         }
-    }
-
-    document.getElementById('prevMonthBtn').disabled = (currentIndex === 0);
-    document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
-
-    updateStartButton();
-    updateWeeklyProgress();
-}
 
         function changeMonth(step) {
             let newIndex = currentIndex + step;
@@ -381,7 +456,6 @@
             const tMonth = todayObj.getMonth();
             const tYear = todayObj.getFullYear();
 
-            // ✅ 2. หาว่าวันนี้มีแผนไหม (ไม่ว่าจะออกกำลังกายหรือพัก)
             const todayPlan = planData.find(p => p.day === tDay && p.monthIndex === tMonth && p.year === tYear);
 
             if (todayPlan) {
@@ -389,18 +463,17 @@
                     if (todayPlan.completed) {
                         container.innerHTML = `
                             <button class="btn btn-success w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem;">
-                                <i class="bi bi-check-circle-fill me-2"></i> วันนี้คุณออกกำลังกายแล้ว ยอดเยี่ยมมาก!
+                                <i class="bi bi-check-circle-fill me-2"></i> วันนี้คุณออกกำลังกายแล้ว
                             </button>
                         `;
                     } else {
                         container.innerHTML = `
                             <a href="/user/start_exercise/${todayPlan.id}" class="btn w-100 py-3 fw-bold shadow-sm text-white" style="background-color: #335da1; border-radius: 12px; font-size: 1.2rem;">
-                                เริ่มการออกกำลังกายวันนี้
+                                เริ่มการออกกำลังกาย
                             </a>
                         `;
                     }
                 } else {
-                    // ✅ 3. ถ้าเป็นวันพักผ่อน ให้ล็อคปุ่มเป็นสีเทา กดเริ่มไม่ได้
                     container.innerHTML = `
                         <button class="btn btn-secondary w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem; background-color: #6c757d;">
                             <i class="bi bi-cup-hot-fill me-2"></i> วันนี้เป็นวันพักผ่อน (ไม่ต้องออกกำลังกาย)
@@ -469,7 +542,6 @@
         function calculateStreak() {
             if (!planData || planData.length === 0) return;
 
-            // 1. เรียงลำดับข้อมูลวันตามวันที่จริง (อดีตไปอนาคต)
             let sortedPlans = [...planData].sort((a, b) => {
                 let dateA = new Date(a.year, a.monthIndex, a.day);
                 let dateB = new Date(b.year, b.monthIndex, b.day);
@@ -483,23 +555,16 @@
             let maxStreak = 0;
             let tempStreak = 0;
 
-            // 2. ลูปคำนวณ Streak ย้อนหลัง
             for (let plan of sortedPlans) {
                 let planDate = new Date(plan.year, plan.monthIndex, plan.day);
                 planDate.setHours(0, 0, 0, 0);
 
-                // คำนวณเฉพาะวันที่ผ่านมาแล้ว หรือ วันนี้
                 if (planDate <= todayObj) {
-                    
-                    // ✅ วันออกกำลังกายแล้วเสร็จ
                     if (plan.isExercise && plan.completed) {
                         tempStreak++;
                     } 
-                    // 🛡️ วันพักผ่อนตามแผน (Rest Day) -> รักษา Streak ไว้ ไม่นับเพิ่ม แต่วันไม่ขาด!
                     else if (!plan.isExercise && plan.status !== 'Missed') {
-                        // คง tempStreak เท่าเดิมไว้
                     } 
-                    // 💔 วันที่ไม่ได้ออกกำลังกาย หรือ พลาด (Missed) -> Streak ขาดเริ่มต้นใหม่
                     else if (plan.status === 'Missed' || (plan.isExercise && !plan.completed && planDate < todayObj)) {
                         tempStreak = 0; 
                     }
@@ -512,7 +577,6 @@
 
             currentStreak = tempStreak;
 
-            // 3. อัปเดต UI หน้าจอ
             document.getElementById('streakCount').innerText = currentStreak;
             document.getElementById('maxStreakCount').innerText = maxStreak;
 
@@ -525,6 +589,25 @@
                 msgEl.innerText = "ไฟกำลังลุกโชน! ออกกำลังกายต่อเนื่องยอดเยี่ยมมาก 💪";
             } else {
                 msgEl.innerText = "สุดยอดไปเลย! คุณคือต้นแบบการดูแลสุขภาพขั้นเทพ 🏆";
+            }
+        }
+
+        // 🌟 ฟังก์ชันสำหรับเปิด/ปิดกล่อง QR Code
+        function toggleLineQR() {
+            const checkBox = document.getElementById("lineNotifyToggle");
+            const qrSection = document.getElementById("lineQrSection");
+            
+            if (checkBox.checked) {
+                qrSection.style.opacity = 0;
+                qrSection.style.display = "block";
+                let opacity = 0;
+                let timer = setInterval(function() {
+                    if (opacity >= 1) { clearInterval(timer); }
+                    qrSection.style.opacity = opacity;
+                    opacity += 0.1;
+                }, 20);
+            } else {
+                qrSection.style.display = "none";
             }
         }
     </script>

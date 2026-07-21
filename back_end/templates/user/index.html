@@ -465,6 +465,68 @@
                 document.querySelector('.text-primary').classList.replace('text-primary', 'text-success');
             }
         }
+
+        function calculateStreak() {
+            if (!planData || planData.length === 0) return;
+
+            // 1. เรียงลำดับข้อมูลวันตามวันที่จริง (อดีตไปอนาคต)
+            let sortedPlans = [...planData].sort((a, b) => {
+                let dateA = new Date(a.year, a.monthIndex, a.day);
+                let dateB = new Date(b.year, b.monthIndex, b.day);
+                return dateA - dateB;
+            });
+
+            const todayObj = new Date();
+            todayObj.setHours(0, 0, 0, 0);
+
+            let currentStreak = 0;
+            let maxStreak = 0;
+            let tempStreak = 0;
+
+            // 2. ลูปคำนวณ Streak ย้อนหลัง
+            for (let plan of sortedPlans) {
+                let planDate = new Date(plan.year, plan.monthIndex, plan.day);
+                planDate.setHours(0, 0, 0, 0);
+
+                // คำนวณเฉพาะวันที่ผ่านมาแล้ว หรือ วันนี้
+                if (planDate <= todayObj) {
+                    
+                    // ✅ วันออกกำลังกายแล้วเสร็จ
+                    if (plan.isExercise && plan.completed) {
+                        tempStreak++;
+                    } 
+                    // 🛡️ วันพักผ่อนตามแผน (Rest Day) -> รักษา Streak ไว้ ไม่นับเพิ่ม แต่วันไม่ขาด!
+                    else if (!plan.isExercise && plan.status !== 'Missed') {
+                        // คง tempStreak เท่าเดิมไว้
+                    } 
+                    // 💔 วันที่ไม่ได้ออกกำลังกาย หรือ พลาด (Missed) -> Streak ขาดเริ่มต้นใหม่
+                    else if (plan.status === 'Missed' || (plan.isExercise && !plan.completed && planDate < todayObj)) {
+                        tempStreak = 0; 
+                    }
+
+                    if (tempStreak > maxStreak) {
+                        maxStreak = tempStreak;
+                    }
+                }
+            }
+
+            currentStreak = tempStreak;
+
+            // 3. อัปเดต UI หน้าจอ
+            document.getElementById('streakCount').innerText = currentStreak;
+            document.getElementById('maxStreakCount').innerText = maxStreak;
+
+            const msgEl = document.getElementById('streakMessage');
+            if (currentStreak === 0) {
+                msgEl.innerText = "เริ่มต้นออกกำลังกายวันแรกเพื่อจุดไฟของคุณ!";
+            } else if (currentStreak < 3) {
+                msgEl.innerText = "เยี่ยมมาก! เริ่มต้นจุดไฟวินัยได้ดีแล้ว 🔥";
+            } else if (currentStreak < 7) {
+                msgEl.innerText = "ไฟกำลังลุกโชน! ออกกำลังกายต่อเนื่องยอดเยี่ยมมาก 💪";
+            } else {
+                msgEl.innerText = "สุดยอดไปเลย! คุณคือต้นแบบการดูแลสุขภาพขั้นเทพ 🏆";
+            }
+        }
     </script>
 </body>
 </html>

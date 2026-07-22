@@ -3,6 +3,7 @@
 ฟังก์ชันจัดการข้อมูลผู้ป่วย: บันทึกข้อมูลดิบ, ผลการแนะนำ, โปรไฟล์ผู้ป่วย
 """
 
+from datetime import date, datetime
 import uuid
 from .connection import (
     sparql_read, sparql_write,
@@ -433,6 +434,7 @@ def get_patient_latest_record(patient_id):
 def get_patient_streak(patient_id):
     """
     ดึงข้อมูล Streak ปัจจุบัน, สถิติสูงสุด และวันที่ออกกำลังกายล่าสุด
+    (ใช้โค้ดเดิมของคุณได้เลย)
     """
     if not validate_id(patient_id):
         return {"current_streak": 0, "max_streak": 0, "last_date": ""}
@@ -470,7 +472,8 @@ def get_patient_streak(patient_id):
 
 def update_patient_streak(patient_id, new_streak, max_streak, today_date_str):
     """
-    อัปเดตข้อมูล Streak ใหม่ลง GraphDB (ลบ Triples เดิมแล้ว INSERT Triples ใหม่)
+    อัปเดตข้อมูล Streak ใหม่ลง GraphDB
+    (ใช้โค้ดเดิมของคุณได้เลย)
     """
     if not validate_id(patient_id):
         return False
@@ -506,3 +509,114 @@ def update_patient_streak(patient_id, new_streak, max_streak, today_date_str):
     except Exception as e:
         print(f"❌ Error updating streak for {pid}: {e}")
         return False
+
+
+# =========================================================================
+# 🔥 [ส่วนที่เพิ่มใหม่] ฟังก์ชันดึง DailyPlan ทั้งหมดมาเช็กสถานะ (Rest/Missing/Completed)
+# =========================================================================
+def get_patient_daily_plans(patient_id):
+    """
+    ดึงตารางแผนรายวันทั้งหมดของคนไข้เพื่อตรวจสอบ planStatus ในแต่ละวัน
+    """
+    clean_id = str(patient_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
+
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    
+    SELECT ?planDate ?planStatus
+    WHERE {{
+        ex:{pid} ex:hasMonthlyPlan ?monthly .
+        ?monthly ex:hasWeeklyPlan ?weekly .
+        ?weekly ex:hasDailyPlan ?dayNode .
+        
+        ?dayNode ex:planDate ?planDate .
+        ?dayNode ex:planStatus ?planStatus .
+    }}
+    ORDER BY ASC(?planDate)
+    """
+    try:
+        sparql_read.setQuery(query)
+        results = sparql_read.query().convert()
+        bindings = results["results"]["bindings"]
+
+        plans = []
+        for row in bindings:
+            p_date_str = row.get("planDate", {}).get("value", "")
+            status = row.get("planStatus", {}).get("value", "")
+
+            if p_date_str:
+                plans.append({
+                    "date": datetime.strptime(p_date_str, "%Y-%m-%d").date(),
+                    "status": status  # "Rest", "Missing", "Completed", "Pending"
+                })
+        return plans
+    except Exception as e:
+        print(f"❌ Error fetching daily plans for {pid}: {e}")
+        return []
+
+
+# =========================================================================
+# 🔥 [ส่วนที่แก้ไข] ฟังก์ชันคำนวณ Streak ใหม่ โดยรองรับ Rest และตรวจเช็ก Missing
+# =========================================================================
+def process_patient_streak_on_complete(patient_id):
+    """
+    เรียกใช้เมื่อผู้ป่วยออกกำลังกายเสร็จ ( completed = True )
+    ระบบจะคำนวณ Streak ใหม่โดยตรวจสอบว่าระหว่างวันที่เล่นครั้งล่าสุดจนถึงวันนี้
+    มีวันที่ขาดออกกำลังกาย ( Missing ) หรือไม่
+    """
+    today_date = date.today()
+    today_str = today_date.strftime("%Y-%m-%d")
+
+    # 1. ดึงข้อมูล Streak ปัจจุบัน
+    streak_info = get_patient_streak(patient_id)
+    current_streak = streak_info.get("current_streak", 0)
+    max_streak = streak_info.get("max_streak", 0)
+    last_date_str = streak_info.get("last_date", "")
+
+    # 2. คำนวณ Streak ตามเงื่อนไข
+    if not last_date_str:
+        # กรณีที่ 1: เพิ่งเล่นครั้งแรก
+        new_streak = 1
+    else:
+        # แปลงวันที่ออกกำลังกายล่าสุด
+        clean_last_date = last_date_str.split("T")[0].split(" ")[0]
+        last_date = datetime.strptime(clean_last_date, "%Y-%m-%d").date()
+
+        if last_date == today_date:
+            # กรณีออกกำลังกายซ้ำในวันเดียวกัน ให้ใช้ค่า Streak เดิม
+            new_streak = current_streak if current_streak > 0 else 1
+        else:
+            # ดึงตารางรายวันจาก GraphDB มาเช็กสถานะระหว่างช่วงวัน
+            daily_plans = get_patient_daily_plans(patient_id)
+            has_missing_day = False
+
+            # วนเช็กเฉพาะวันที่อยู่ระหว่าง last_date ถึง ก่อนวันนี้ (today_date)
+            for plan in daily_plans:
+                p_date = plan["date"]
+                p_status = plan["status"]
+
+                if last_date < p_date < today_date:
+                    # ถ้าเจอวันไหนที่เป็น "Missing" แสดงว่าขาดการออกกำลังกาย
+                    if p_status == "Missing":
+                        has_missing_day = True
+                        break
+
+            if has_missing_day:
+                # กรณีที่ 2: มีวันขาดออกกำลังกาย (Missing) -> รีเซ็ตเริ่ม 1
+                new_streak = 1
+            else:
+                # กรณีที่ 3: ไม่มีวัน Missing (มีแต่ Rest หรือ Completed) -> นับ Streak ต่อ! 🔥
+                new_streak = current_streak + 1
+
+    # อัปเดต Max Streak ถ้าทำสถิติใหม่ได้
+    new_max = max(new_streak, max_streak)
+
+    # 3. เซฟลง GraphDB
+    update_patient_streak(patient_id, new_streak, new_max, today_str)
+
+    return {
+        "current_streak": new_streak,
+        "max_streak": new_max,
+        "last_date": today_str
+    }

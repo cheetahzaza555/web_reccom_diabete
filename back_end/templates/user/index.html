@@ -198,17 +198,31 @@
                         </div>
                         <div>
                             <div class="d-flex align-items-baseline">
-                                <h1 class="fw-bold mb-0 me-2 lh-1" id="streakCount" style="font-size: 2.5rem;">0</h1>
+                                <!-- 🔥 1. ดึงค่า current_streak -->
+                                <h1 class="fw-bold mb-0 me-2 lh-1" id="streakCount" style="font-size: 2.5rem;">
+                                    {{ streak_info.current_streak if streak_info else 0 }}
+                                </h1>
                                 <span class="fs-5 fw-semibold">วันต่อเนื่อง!</span>
                             </div>
-                            <p class="mb-0 opacity-90 small" id="streakMessage">เริ่มต้นออกกำลังกายวันแรกเพื่อจุดไฟของคุณ!</p>
+                            <!-- 🔥 2. ปรับข้อความตามจำนวนวันติดกัน -->
+                            <p class="mb-0 opacity-90 small" id="streakMessage">
+                                {% if streak_info and streak_info.current_streak > 0 %}
+                                    สุดยอดเลย! ออกกำลังกายต่อเนื่องมา {{ streak_info.current_streak }} วันแล้ว 🔥
+                                {% else %}
+                                    เริ่มต้นออกกำลังกายวันแรกเพื่อจุดไฟของคุณ!
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
 
                     <!-- ฝั่งขวา: Badge หรือปุ่มประวัติ (แสดงผลในจอใหญ่) -->
                     <div class="d-none d-md-block text-end">
                         <span class="badge bg-white text-danger px-3 py-2 rounded-pill shadow-sm fw-bold">
-                            <i class="bi bi-trophy-fill me-1"></i> สถิติสูงสุด: <span id="maxStreakCount">0</span> วัน
+                            <!-- 🔥 3. ดึงค่า max_streak -->
+                            <i class="bi bi-trophy-fill me-1"></i> สถิติสูงสุด: 
+                            <span id="maxStreakCount">
+                                {{ streak_info.max_streak if streak_info else 0 }}
+                            </span> วัน
                         </span>
                     </div>
 

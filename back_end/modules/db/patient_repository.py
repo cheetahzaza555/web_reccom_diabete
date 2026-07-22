@@ -429,3 +429,80 @@ def get_patient_latest_record(patient_id):
     except Exception as e:
         print(f"❌ Error fetching latest record: {e}")
         return {"found": False}
+    
+def get_patient_streak(patient_id):
+    """
+    ดึงข้อมูล Streak ปัจจุบัน, สถิติสูงสุด และวันที่ออกกำลังกายล่าสุด
+    """
+    if not validate_id(patient_id):
+        return {"current_streak": 0, "max_streak": 0, "last_date": ""}
+
+    clean_id = str(patient_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
+
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    
+    SELECT ?currentStreak ?maxStreak ?lastDate
+    WHERE {{
+        OPTIONAL {{ ex:{pid} ex:currentStreak ?currentStreak }}
+        OPTIONAL {{ ex:{pid} ex:maxStreak ?maxStreak }}
+        OPTIONAL {{ ex:{pid} ex:lastExerciseDate ?lastDate }}
+    }}
+    """
+    try:
+        sparql_read.setQuery(query)
+        results = sparql_read.query().convert()
+        bindings = results["results"]["bindings"]
+
+        if bindings:
+            row = bindings[0]
+            return {
+                "current_streak": int(row.get("currentStreak", {}).get("value", 0)),
+                "max_streak": int(row.get("maxStreak", {}).get("value", 0)),
+                "last_date": row.get("lastDate", {}).get("value", "")
+            }
+    except Exception as e:
+        print(f"❌ Error fetching streak data for {pid}: {e}")
+
+    return {"current_streak": 0, "max_streak": 0, "last_date": ""}
+
+
+def update_patient_streak(patient_id, new_streak, max_streak, today_date_str):
+    """
+    อัปเดตข้อมูล Streak ใหม่ลง GraphDB (ลบ Triples เดิมแล้ว INSERT Triples ใหม่)
+    """
+    if not validate_id(patient_id):
+        return False
+
+    clean_id = str(patient_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
+
+    update_query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    DELETE {{
+        ex:{pid} ex:currentStreak ?c .
+        ex:{pid} ex:maxStreak ?m .
+        ex:{pid} ex:lastExerciseDate ?d .
+    }}
+    INSERT {{
+        ex:{pid} ex:currentStreak "{int(new_streak)}"^^xsd:integer .
+        ex:{pid} ex:maxStreak "{int(max_streak)}"^^xsd:integer .
+        ex:{pid} ex:lastExerciseDate "{escape_sparql(today_date_str)}"^^xsd:date .
+    }}
+    WHERE {{
+        OPTIONAL {{ ex:{pid} ex:currentStreak ?c }}
+        OPTIONAL {{ ex:{pid} ex:maxStreak ?m }}
+        OPTIONAL {{ ex:{pid} ex:lastExerciseDate ?d }}
+    }}
+    """
+    try:
+        sparql_write.setQuery(update_query)
+        sparql_write.query()
+        print(f"🔥 Updated Streak for {pid}: {new_streak} Days (Max: {max_streak})")
+        return True
+    except Exception as e:
+        print(f"❌ Error updating streak for {pid}: {e}")
+        return False

@@ -5,6 +5,7 @@ from linebot.models import TextSendMessage
 from linebot.exceptions import LineBotApiError
 from modules.db.connection import sparql_read  # ⚠️ ตรวจสอบ path ของ sparql_read ให้ตรงกับโปรเจกต์คุณด้วยนะครับ
 
+
 # โหลด Token จาก .env
 LINE_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 line_bot_api = LineBotApi(LINE_ACCESS_TOKEN)

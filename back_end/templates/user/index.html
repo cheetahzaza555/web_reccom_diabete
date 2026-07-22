@@ -84,42 +84,51 @@
         .nav-arrow:hover:not(:disabled) { background: #4f7cff; color: white; transform: scale(1.1); }
         .nav-arrow:disabled { color: #dee2e6; background: #f8f9fa; cursor: not-allowed; box-shadow: none; }
 
-        /* ✅ สไตล์สำหรับกล่องเปิดการแจ้งเตือน (ตามรูปวาด) */
-        .notify-toggle-wrapper {
-            border: 2px solid #335da1; /* สีน้ำเงินเข้มของเว็บ */
-            border-radius: 8px;
-            padding: 6px 16px 6px 12px;
-            display: inline-flex;
-            align-items: center;
-            background-color: white;
-            cursor: pointer;
-            transition: box-shadow 0.2s, transform 0.1s;
-        }
-        .notify-toggle-wrapper:hover {
-            box-shadow: 0 4px 10px rgba(51, 93, 161, 0.15);
-        }
-        .notify-toggle-wrapper:active {
-            transform: scale(0.98); /* ลูกเล่นเวลากดให้บุ๋มลงนิดนึง */
-        }
-        .notify-toggle-wrapper .form-check {
-            margin-bottom: 0;
-            padding-left: 2.8em; /* ขยายพื้นที่สวิตช์ */
-        }
-        .notify-toggle-wrapper .form-check-input {
-            width: 2.5em; /* ทำให้สวิตช์ใหญ่ขึ้น */
-            height: 1.25em;
-            margin-left: -2.8em;
-            cursor: pointer;
-        }
-        .notify-toggle-wrapper .form-check-input:checked {
-            background-color: #335da1; /* เปลี่ยนสีตอนเปิดเป็นน้ำเงินเข้ม */
-            border-color: #335da1;
-        }
-        .notify-text {
-            font-weight: 600;
-            color: #335da1;
-            font-size: 1rem;
-        }
+/* ✅ ปุ่มดูวิธีเชื่อมต่อการแจ้งเตือน LINE (แบบ expand/collapse ไม่ใช่ toggle เปิด-ปิด) */
+.btn-line-info {
+    border: 2px solid #06C755; /* สีเขียว LINE */
+    border-radius: 30px;
+    padding: 8px 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: white;
+    color: #06C755;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-line-info:hover {
+    background-color: #f0fff7;
+    box-shadow: 0 4px 10px rgba(6, 199, 85, 0.15);
+}
+.btn-line-info:active {
+    transform: scale(0.98);
+}
+.btn-line-info.active {
+    background-color: #06C755;
+    color: white;
+}
+.btn-line-info .bi-chevron-down {
+    transition: transform 0.25s ease;
+}
+.btn-line-info.active .bi-chevron-down {
+    transform: rotate(180deg);
+}
+
+.line-qr-close-btn {
+    background: none;
+    border: none;
+    color: #6c757d;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+}
+.line-qr-close-btn:hover {
+    color: #dc3545;
+}
 
         @media (max-width: 768px) {
             .calendar-grid { grid-template-columns: 1fr; }
@@ -151,13 +160,12 @@
                 <!-- ฝั่งขวา: กลุ่มปุ่ม (เปิดการแจ้งเตือน + ลบตาราง) -->
                 <div class="d-flex align-items-center gap-2">
                     
-                    <!-- สวิตช์เปิด-ปิดการแจ้งเตือน LINE (ดีไซน์ใหม่) -->
-                    <label class="notify-toggle-wrapper mb-0" for="lineNotifyToggle">
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="lineNotifyToggle" onclick="toggleLineQR()">
-                        </div>
-                        <span class="notify-text">เปิดการแจ้งเตือน</span>
-                    </label>
+<!-- ปุ่มดูวิธีเชื่อมต่อการแจ้งเตือน LINE (expand/collapse) -->
+<button type="button" class="btn-line-info" id="lineInfoBtn" onclick="toggleLineQR()">
+    <i class="bi bi-line"></i>
+    <span>รับการแจ้งเตือนผ่าน LINE</span>
+    <i class="bi bi-chevron-down"></i>
+</button>
                     
                     <!-- ปุ่มลบตาราง -->
                     <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center" onclick="confirmClearPlan()" style="height: 40px; padding: 0 16px; border-radius: 8px;">
@@ -167,26 +175,35 @@
                 </div>
             </div>
 
-            <!-- 🌟 กล่อง QR Code (ซ่อนไว้เป็นค่าเริ่มต้น) -->
-            <div id="lineQrSection" class="card border-0 shadow-sm mb-4" style="display: none; background-color: #f6fffa; border-left: 5px solid #06C755 !important;">
-                <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between p-3 p-md-4">
-                    <div class="text-center text-md-start mb-3 mb-md-0">
-                        <h5 class="fw-bold mb-2" style="color: #06C755;">
-                            <i class="bi bi-line"></i> เชื่อมต่อระบบแจ้งเตือนผ่าน LINE
-                        </h5>
-                        <p class="mb-1 text-dark">1. สแกน QR Code เพื่อเพิ่มเพื่อน DiaBalance</p>
-                        <p class="mb-2 text-dark">2. พิมพ์รหัสของคุณส่งไปในแชทเพื่อยืนยันตัวตน:</p>
-                        
-                        <!-- ⚠️ รหัสผู้ใช้ -->
-                        <h3 class="fw-bold text-dark bg-white px-3 py-2 rounded d-inline-block shadow-sm border mt-1">
-                            #{{ session['user_id'] }}
-                        </h3>
-                    </div>
-                    <div class="text-center bg-white p-2 rounded shadow-sm border">
-                        <img src="{{ url_for('static', filename='images/lineqr.png') }}" alt="LINE QR Code" style="width: 130px; height: 130px; object-fit: cover;">
-                    </div>
-                </div>
+ <!-- 🌟 กล่อง QR Code (ซ่อนไว้เป็นค่าเริ่มต้น) -->
+<div id="lineQrSection" class="card border-0 shadow-sm mb-4" style="display: none; background-color: #f6fffa; border-left: 5px solid #06C755 !important;">
+    <div class="card-body p-3 p-md-4">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h5 class="fw-bold mb-0" style="color: #06C755;">
+                <i class="bi bi-line"></i> เชื่อมต่อการแจ้งเตือนผ่าน LINE
+            </h5>
+            <button type="button" class="line-qr-close-btn" onclick="closeLineQR()" aria-label="ปิด">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <p class="text-muted small mb-3">ทำ 2 ขั้นตอน เพื่อรับการแจ้งเตือนผ่าน LINE ได้ทันที </p>
+
+        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+            <div class="text-center text-md-start">
+                <p class="mb-1 text-dark">1. สแกน QR Code เพื่อเพิ่มเพื่อน DiaBalance</p>
+                <p class="mb-2 text-dark">2. พิมพ์รหัสของคุณส่งไปในแชทเพื่อยืนยันตัวตน:</p>
+
+                <!-- ⚠️ รหัสผู้ใช้ -->
+                <h3 class="fw-bold text-dark bg-white px-3 py-2 rounded d-inline-block shadow-sm border mt-1">
+                    #{{ session['user_id'] }}
+                </h3>
             </div>
+            <div class="text-center bg-white p-2 rounded shadow-sm border">
+                <img src="{{ url_for('static', filename='images/lineqr.png') }}" alt="LINE QR Code" style="width: 130px; height: 130px; object-fit: cover;">
+            </div>
+        </div>
+    </div>
+</div>
 
             <div class="card border-0 shadow-sm mb-3 " style="background: white; border-radius: 16px;">
                 <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-between">
@@ -606,24 +623,34 @@
             }
         }
 
-        // 🌟 ฟังก์ชันสำหรับเปิด/ปิดกล่อง QR Code
         function toggleLineQR() {
-            const checkBox = document.getElementById("lineNotifyToggle");
-            const qrSection = document.getElementById("lineQrSection");
-            
-            if (checkBox.checked) {
-                qrSection.style.opacity = 0;
-                qrSection.style.display = "block";
-                let opacity = 0;
-                let timer = setInterval(function() {
-                    if (opacity >= 1) { clearInterval(timer); }
-                    qrSection.style.opacity = opacity;
-                    opacity += 0.1;
-                }, 20);
-            } else {
-                qrSection.style.display = "none";
-            }
-        }
+    const btn = document.getElementById("lineInfoBtn");
+    const qrSection = document.getElementById("lineQrSection");
+    const isOpen = qrSection.style.display === "block";
+
+    if (!isOpen) {
+        btn.classList.add("active");
+        qrSection.style.opacity = 0;
+        qrSection.style.display = "block";
+        let opacity = 0;
+        let timer = setInterval(function () {
+            if (opacity >= 1) { clearInterval(timer); }
+            qrSection.style.opacity = opacity;
+            opacity += 0.1;
+        }, 20);
+        // เลื่อนหน้าจอไปให้เห็นกล่อง (มีประโยชน์บนมือถือที่จอเล็ก)
+        qrSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        closeLineQR();
+    }
+}
+
+function closeLineQR() {
+    const btn = document.getElementById("lineInfoBtn");
+    const qrSection = document.getElementById("lineQrSection");
+    btn.classList.remove("active");
+    qrSection.style.display = "none";
+}
     </script>
 </body>
 </html>

@@ -185,8 +185,15 @@
         function finishExercise() {
             clearInterval(tInterval);
             
-            // คำนวณเวลาที่ทำได้จริงเป็นนาที
-            let totalMinutesCompleted = Math.floor(difference / (1000 * 60));
+            // คำนวณเวลาเป็นนาที (ขั้นต่ำ 1 นาที ถ้าเล่นไม่ถึงนาที)
+            let totalMinutesCompleted = Math.max(1, Math.floor(difference / (1000 * 60)));
+
+            // แสดง Loading กันผู้ใช้กดปุ่มซ้ำ
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
             // 1. ส่งข้อมูลไปอัปเดตสถานะ + Streak ที่ Backend
             fetch('/user/update_day_status', {
@@ -226,7 +233,7 @@
                         });
                     }
                 } else {
-                    // กรณีเกิดข้อผิดพลาด
+                    // กรณีเกิดข้อผิดพลาดจาก Backend
                     Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
                 }
             })

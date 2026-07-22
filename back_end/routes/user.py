@@ -3,7 +3,7 @@ from flask import Blueprint, json, render_template, jsonify, request, session, r
 import calendar
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from modules.db.patient_repository import get_patient_streak, update_patient_streak
+from modules.db.patient_repository import get_patient_streak, process_patient_streak_on_complete, update_patient_streak
 from utils.security import login_required  # 🛡️ ยามเฝ้าประตูสำหรับผู้ใช้ทั่วไป
 
 from modules.logic import process_patient_realtime
@@ -183,51 +183,31 @@ def update_day_status():
     if not day_node_id:
         return jsonify({'status': 'error', 'message': 'Missing day_id'}), 400
 
-    # ✅ แก้ IDOR: ตรวจว่า day_node_id นี้เป็นของคนที่ล็อกอินอยู่จริง
+    # ตรวจสอบสิทธิ์ IDOR
     expected_owner_fragment = f"Patient{user_id}_"
     if expected_owner_fragment not in day_node_id:
         return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้'}), 403
 
-    # 1. อัปเดตสถานะของวันนั้นใน GraphDB
+    # 1. อัปเดตสถานะของวันนั้น
     success = update_daily_plan_status(day_node_id, completed, duration)
 
     if success:
-        today_str = datetime.now().strftime('%Y-%m-%d')
-        
-        # 2. 🔥 กรณีผู้ป่วยกด "ทำสำเร็จ" (completed == True)
+        # 2. 🔥 ถ้าออกกำลังกายเสร็จสมบูรณ์ คำนวณและอัปเดต Streak
         if completed:
-            current_streak_info = get_patient_streak(user_id)
-            last_date = current_streak_info.get("last_date")
-            current_streak = current_streak_info.get("current_streak", 0)
-            max_streak = current_streak_info.get("max_streak", 0)
+            streak_result = process_patient_streak_on_complete(user_id)
 
-            # เช็กว่าวันนี้ยังไม่ได้นับ Streak ซ้ำ
-            if last_date != today_str:
-                new_streak = current_streak + 1
-                new_max = max(new_streak, max_streak)
-                
-                # อัปเดตค่าลง GraphDB
-                update_patient_streak(user_id, new_streak, new_max, today_str)
-                
-                return jsonify({
-                    'status': 'success',
-                    'streak_updated': True,
-                    'current_streak': new_streak,
-                    'max_streak': new_max,
-                    'message': 'บันทึกสำเร็จ! เพิ่ม Streak แล้ว 🔥'
-                })
+            return jsonify({
+                'status': 'success',
+                'streak_updated': True,
+                'current_streak': streak_result['current_streak'],
+                'max_streak': streak_result['max_streak'],
+                'message': 'บันทึกสำเร็จ! เพิ่ม Streak แล้ว 🔥'
+            })
+        
+        # กรณีอัปเดตสถานะอื่นๆ สำเร็จแต่ไม่ได้นับ Streak
+        return jsonify({'status': 'success', 'streak_updated': False, 'message': 'อัปเดตสถานะเรียบร้อย'})
 
-        # กรณีทำสำเร็จซ้ำในวันเดียวกัน หรือกดยกเลิก
-        updated_streak_info = get_patient_streak(user_id)
-        return jsonify({
-            'status': 'success',
-            'streak_updated': False,
-            'current_streak': updated_streak_info.get("current_streak", 0),
-            'max_streak': updated_streak_info.get("max_streak", 0)
-        })
-
-    else:
-        return jsonify({'status': 'error', 'message': 'Failed to update'}), 500
+    return jsonify({'status': 'error', 'message': 'Failed to update'}), 500
 
 
 @user_bp.route('/reset_plan', methods=['POST'])

@@ -3,7 +3,7 @@ from flask import Blueprint, json, render_template, jsonify, request, session, r
 import calendar
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from modules.db.patient_repository import get_patient_streak, process_patient_streak_on_complete, update_patient_streak
+from modules.db.patient_repository import  process_patient_streak_on_complete, get_patient_streak
 from utils.security import login_required  # 🛡️ ยามเฝ้าประตูสำหรับผู้ใช้ทั่วไป
 
 from modules.logic import process_patient_realtime

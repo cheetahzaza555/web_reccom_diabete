@@ -185,27 +185,61 @@
         function finishExercise() {
             clearInterval(tInterval);
             
-            // คำนวณเวลาที่ทำได้จริงเป็นนาที
-            let totalMinutesCompleted = Math.floor(difference / (1000 * 60));
+            // คำนวณเวลาเป็นนาที (ขั้นต่ำ 1 นาที ถ้าเล่นไม่ถึงนาที)
+            let totalMinutesCompleted = Math.max(1, Math.floor(difference / (1000 * 60)));
 
+            // แสดง Loading กันผู้ใช้กดปุ่มซ้ำ
             Swal.fire({
-                title: 'ยอดเยี่ยมมาก!',
-                text: `คุณออกกำลังกายไป ${totalMinutesCompleted} นาที ระบบกำลังบันทึกข้อมูล...`,
-                icon: 'success',
-                showConfirmButton: false,
-                timer: 2500
-            }).then(() => {
-                fetch('/user/update_day_status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        day_id: "{{ day_id }}", 
-                        completed: true, 
-                        duration: totalMinutesCompleted 
-                    })
-                }).then(() => {
-                    window.location.href = '/user/dashboard';
-                });
+                title: 'กำลังบันทึกข้อมูล...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // 1. ส่งข้อมูลไปอัปเดตสถานะ + Streak ที่ Backend
+            fetch('/user/update_day_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    day_id: "{{ day_id }}", 
+                    completed: true, 
+                    duration: totalMinutesCompleted 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 2. ถ้ามีการอัปเดต Streak เพิ่มขึ้น ให้โชว์ SweetAlert ฉลองไฟติด! 🔥
+                    if (data.streak_updated) {
+                        Swal.fire({
+                            title: '🔥 สุดยอดไปเลย!',
+                            html: `คุณออกกำลังกายไป <b>${totalMinutesCompleted}</b> นาที<br>` +
+                                `สะสม Streak ต่อเนื่องได้แล้ว <b>${data.current_streak} วัน</b> !`,
+                            icon: 'success',
+                            confirmButtonText: 'ลุยต่อเลย!',
+                            confirmButtonColor: '#ff6b6b'
+                        }).then(() => {
+                            window.location.href = '/user/dashboard';
+                        });
+                    } else {
+                        // ถ้าทำซ้ำวันเดิมแล้ว ให้โชว์ SweetAlert ปกติ
+                        Swal.fire({
+                            title: 'ยอดเยี่ยมมาก!',
+                            text: `คุณออกกำลังกายไป ${totalMinutesCompleted} นาที ระบบบันทึกข้อมูลเรียบร้อย`,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = '/user/dashboard';
+                        });
+                    }
+                } else {
+                    // กรณีเกิดข้อผิดพลาดจาก Backend
+                    Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
             });
         }
     </script>

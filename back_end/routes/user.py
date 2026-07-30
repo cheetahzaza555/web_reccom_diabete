@@ -3,6 +3,7 @@ from flask import Blueprint, json, render_template, jsonify, request, session, r
 import calendar
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from modules.db.patient_repository import  process_patient_streak_on_complete, get_patient_streak
 from utils.security import login_required  # 🛡️ ยามเฝ้าประตูสำหรับผู้ใช้ทั่วไป
 
 from modules.logic import process_patient_realtime
@@ -59,8 +60,16 @@ def dashboard_page():
             'status': r["status"],
         })
 
-    return render_template('user/index.html', schedule=schedule_data, info=current_date_info)
+    # 2. 🔥 เพิ่มการดึงข้อมูล Streak จาก GraphDB
+    streak_info = get_patient_streak(user_id)
 
+    # 3. 🔥 ส่ง streak_info ไปยังหน้า HTML template (user/index.html)
+    return render_template(
+        'user/index.html', 
+        schedule=schedule_data, 
+        info=current_date_info,
+        streak_info=streak_info  # <--- เพิ่มจุดนี้
+    )
 
 @user_bp.route('/recommendations')
 @login_required
@@ -169,23 +178,36 @@ def update_day_status():
     day_node_id = data.get('day_id')
     completed = data.get('completed')
     duration = data.get('duration', 0)
+    user_id = session.get('user_id')
 
     if not day_node_id:
         return jsonify({'status': 'error', 'message': 'Missing day_id'}), 400
 
-    # ✅ แก้ IDOR: ตรวจว่า day_node_id นี้เป็นของคนที่ล็อกอินอยู่จริง
-    # (day_node_id มีรูปแบบ DailyPlan_Patient{id}_{run_id}_Day{n} จาก generate_30_days_plan)
-    expected_owner_fragment = f"Patient{session['user_id']}_"
+    # ตรวจสอบสิทธิ์ IDOR
+    expected_owner_fragment = f"Patient{user_id}_"
     if expected_owner_fragment not in day_node_id:
         return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้'}), 403
 
-    # อัปเดต GraphDB
+    # 1. อัปเดตสถานะของวันนั้น
     success = update_daily_plan_status(day_node_id, completed, duration)
 
     if success:
-        return jsonify({'status': 'success'})
-    else:
-        return jsonify({'status': 'error', 'message': 'Failed to update'}), 500
+        # 2. 🔥 ถ้าออกกำลังกายเสร็จสมบูรณ์ คำนวณและอัปเดต Streak
+        if completed:
+            streak_result = process_patient_streak_on_complete(user_id)
+
+            return jsonify({
+                'status': 'success',
+                'streak_updated': True,
+                'current_streak': streak_result['current_streak'],
+                'max_streak': streak_result['max_streak'],
+                'message': 'บันทึกสำเร็จ! เพิ่ม Streak แล้ว 🔥'
+            })
+        
+        # กรณีอัปเดตสถานะอื่นๆ สำเร็จแต่ไม่ได้นับ Streak
+        return jsonify({'status': 'success', 'streak_updated': False, 'message': 'อัปเดตสถานะเรียบร้อย'})
+
+    return jsonify({'status': 'error', 'message': 'Failed to update'}), 500
 
 
 @user_bp.route('/reset_plan', methods=['POST'])

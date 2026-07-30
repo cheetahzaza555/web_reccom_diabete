@@ -3,6 +3,7 @@
 ฟังก์ชันจัดการข้อมูลผู้ป่วย: บันทึกข้อมูลดิบ, ผลการแนะนำ, โปรไฟล์ผู้ป่วย
 """
 
+from datetime import date, datetime , timedelta
 import uuid
 from .connection import (
     sparql_read, sparql_write,
@@ -429,3 +430,158 @@ def get_patient_latest_record(patient_id):
     except Exception as e:
         print(f"❌ Error fetching latest record: {e}")
         return {"found": False}
+
+def get_patient_streak(patient_id):
+    """
+    ดึงข้อมูล Streak ปัจจุบันของผู้ป่วยจาก GraphDB เพื่อนำไปแสดงผลบน Dashboard
+    """
+    if not validate_id(patient_id):
+        return {"current_streak": 0, "max_streak": 0, "last_date": ""}
+
+    clean_id = str(patient_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
+
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    
+    SELECT ?currentStreak ?maxStreak ?lastDate
+    WHERE {{
+        OPTIONAL {{ ex:{pid} ex:currentStreak ?currentStreak }}
+        OPTIONAL {{ ex:{pid} ex:maxStreak ?maxStreak }}
+        OPTIONAL {{ ex:{pid} ex:lastExerciseDate ?lastDate }}
+    }}
+    """
+    try:
+        sparql_read.setQuery(query)
+        results = sparql_read.query().convert()
+        bindings = results["results"]["bindings"]
+
+        if bindings:
+            row = bindings[0]
+            return {
+                "current_streak": int(row.get("currentStreak", {}).get("value", 0)),
+                "max_streak": int(row.get("maxStreak", {}).get("value", 0)),
+                "last_date": row.get("lastDate", {}).get("value", "")
+            }
+    except Exception as e:
+        print(f"❌ Error fetching streak data for {pid}: {e}")
+
+    return {"current_streak": 0, "max_streak": 0, "last_date": ""}
+    
+def process_patient_streak_on_complete(patient_id):
+    """
+    คำนวณและอัปเดต Streak ของผู้ป่วยเมื่อออกกำลังกายเสร็จ
+    - ยุบรวมการดึงข้อมูล คำนวณ และอัปเดต GraphDB ในฟังก์ชันเดียว
+    - คำนวณย้อนหลังจากวันนี้จริง (ไม่เชื่อค่า currentStreak เก่าที่ค้างใน DB)
+    - รองรับสถานะ "Missed" จาก GraphDB เพื่อรีเซ็ต Streak ทันทีเมื่อขาดเล่น
+    """
+    if not validate_id(patient_id):
+        return {"current_streak": 0, "max_streak": 0, "last_date": ""}
+
+    clean_id = str(patient_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
+    today_date = date.today()
+    today_str = today_date.strftime("%Y-%m-%d")
+
+    # 1. ดึงตารางแผนรายวันทั้งหมดของผู้ป่วยจาก GraphDB
+    query_plans = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    
+    SELECT ?planDate ?planStatus
+    WHERE {{
+        ex:{pid} ex:hasMonthlyPlan ?monthly .
+        ?monthly ex:hasWeeklyPlan ?weekly .
+        ?weekly ex:hasDailyPlan ?dayNode .
+        
+        ?dayNode ex:planDate ?planDate .
+        ?dayNode ex:planStatus ?planStatus .
+    }}
+    """
+    plan_dict = {}
+    try:
+        sparql_read.setQuery(query_plans)
+        results = sparql_read.query().convert()
+        bindings = results["results"]["bindings"]
+        
+        for row in bindings:
+            p_date_str = row.get("planDate", {}).get("value", "")
+            p_status = row.get("planStatus", {}).get("value", "")
+            if p_date_str:
+                # แปลงวันที่ string เป็น date object (ตัดส่วนเวลา T00:00:00 ออกถ้ามี)
+                clean_d = p_date_str.split("T")[0].split(" ")[0]
+                d_obj = datetime.strptime(clean_d, "%Y-%m-%d").date()
+                plan_dict[d_obj] = p_status
+    except Exception as e:
+        print(f"❌ Error fetching daily plans for {pid}: {e}")
+
+    # กำหนดให้สถานะของวันนี้เป็น "Completed" แน่นอน (เพราะพึ่งเล่นเสร็จ)
+    plan_dict[today_date] = "Completed"
+
+    # 2. 🔥 [จุดแก้ไขหลัก] วนลูปถอยหลังทีละ 1 วันนับจาก "วันนี้"
+    new_streak = 0
+    check_date = today_date
+
+    while True:
+        status = plan_dict.get(check_date)
+
+        if status == "Completed":
+            new_streak += 1
+        elif status == "Rest":
+            # วันพัก: ไม่เพิ่ม Streak แต่ให้ข้ามไปนับวันก่อนหน้าต่อได้ (Streak ไม่ขาด)
+            pass
+        else:
+            # ถ้าเจอ "Missed", "Missing", "Pending" หรือไม่มีข้อมูล -> สั่งหยุดนับทันที!
+            break
+
+        check_date -= timedelta(days=1) # ถอยหลังไป 1 วัน
+
+    # 3. ดึงค่า maxStreak เดิมจาก GraphDB เพื่อนำมาเปรียบเทียบทำสถิติใหม่
+    query_max = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    SELECT ?maxStreak WHERE {{ OPTIONAL {{ ex:{pid} ex:maxStreak ?maxStreak }} }}
+    """
+    old_max = 0
+    try:
+        sparql_read.setQuery(query_max)
+        res = sparql_read.query().convert()
+        b = res["results"]["bindings"]
+        if b and "maxStreak" in b[0]:
+            old_max = int(b[0]["maxStreak"]["value"])
+    except Exception as e:
+        print(f"⚠️ Could not fetch maxStreak for {pid}: {e}")
+
+    new_max = max(new_streak, old_max)
+
+    # 4. บันทึก/อัปเดตค่า Streak ใหม่ลงใน GraphDB
+    update_query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    DELETE {{
+        ex:{pid} ex:currentStreak ?c .
+        ex:{pid} ex:maxStreak ?m .
+        ex:{pid} ex:lastExerciseDate ?d .
+    }}
+    INSERT {{
+        ex:{pid} ex:currentStreak "{int(new_streak)}"^^xsd:integer .
+        ex:{pid} ex:maxStreak "{int(new_max)}"^^xsd:integer .
+        ex:{pid} ex:lastExerciseDate "{escape_sparql(today_str)}"^^xsd:date .
+    }}
+    WHERE {{
+        OPTIONAL {{ ex:{pid} ex:currentStreak ?c }}
+        OPTIONAL {{ ex:{pid} ex:maxStreak ?m }}
+        OPTIONAL {{ ex:{pid} ex:lastExerciseDate ?d }}
+    }}
+    """
+    try:
+        sparql_write.setQuery(update_query)
+        sparql_write.query()
+        print(f"🔥 Updated Streak for {pid}: {new_streak} Days (Max: {new_max})")
+    except Exception as e:
+        print(f"❌ Error updating streak in GraphDB for {pid}: {e}")
+
+    return {
+        "current_streak": new_streak,
+        "max_streak": new_max,
+        "last_date": today_str
+    }

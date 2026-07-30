@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 # 🔑 ตั้งค่า API Key (แนะนำให้ตั้งใน Environment Variable หรือวางตรงๆ สำหรับทดสอบ)
-# os.environ["GEMINI_API_KEY"] = "YOUR_GEMINI_API_KEY"
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def process_ocr_image(image_file):

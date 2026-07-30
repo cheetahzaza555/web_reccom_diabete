@@ -248,10 +248,13 @@ def active_exercise(day_node_id):
 
     info = get_daily_plan_info(day_node_id)
     if info:
+# เพิ่มการส่งค่า exercise_id (สำหรับดึงรูป GIF) และ youtube_id (สำหรับวิดีโอ) 
         return render_template('user/active_exercise.html',
                                 day_id=day_node_id,
+                                exercise_id=info.get("exercise_id"),   
                                 exercise_name=info["exercise_name"],
-                                target_minutes=info["target_minutes"])
+                                target_minutes=info["target_minutes"],
+                                youtube_id=info.get("youtube_id")) 
     return redirect(url_for('user.dashboard_page'))
 
 

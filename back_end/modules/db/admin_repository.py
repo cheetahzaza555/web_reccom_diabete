@@ -213,7 +213,6 @@ def update_user_role_in_graphdb(user_id, new_role):
         return False, error_msg
 
 def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=None, mets=None, youtube_id=None):
-    """ฟังก์ชันอเนกประสงค์สำหรับเขียนข้อมูลท่าออกกำลังกายลง GraphDB ตรงตามโครงสร้างคู่มือโครงสร้างจริง"""
     try:
         from SPARQLWrapper import SPARQLWrapper
         from modules.config import GRAPHDB_WRITE 
@@ -223,46 +222,44 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
         base_prefix = "http://example.org/diabetes#"
         
         final_id = existing_id if existing_id else f"17{random.randint(100, 999)}"
-        
         subject_uri = f"<{base_prefix}{final_id}>"
+        
+        # ปรับแก้ให้ใช้ exercise_type ตรงๆ โดยไม่ส่ง string ซ้ำซ้อน
         type_uri = f"<{base_prefix}{exercise_type}>"
         
-        # ตั้งค่าตัวแปรตามโครงสร้างภาพ
         parent_class = None
         middle_class = None
 
-        # 🌳 1. จำแนกกลุ่มตามภาพผังโครงสร้าง Ontology
-        # -------------------------------------------------------------
-        # [กลุ่มที่ 1]: ภายใต้ ex:Aerobic -> ex:WeightBearingAerobicExercise
+        # 🌳 1. จำแนกกลุ่มตามผัง Ontology
+        # [กลุ่ม Aerobic - WeightBearing]
         if exercise_type in ["Walking", "Running", "Dancing", "WeightBearingAerobicSport"]:
             parent_class = "ex:Aerobic"
             middle_class = "ex:WeightBearingAerobicExercise"
 
-        # [กลุ่มที่ 2]: ภายใต้ ex:Aerobic -> ex:NonWeightBearingAerobicExercise
+        # [กลุ่ม Aerobic - NonWeightBearing]
         elif exercise_type in ["Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"]:
             parent_class = "ex:Aerobic"
             middle_class = "ex:NonWeightBearingAerobicExercise"
 
-        # [กลุ่มที่ 3]: ภายใต้ ex:Resistance -> ex:WeightBearingResistanceExercise
-        elif exercise_type in ["WeightBearingResistanceExercise"]: # หรือชื่อประเภทรายย่อยในกลุ่มนี้ถ้ามี
+        # [กลุ่ม Resistance]
+        elif exercise_type in ["WeightBearingResistanceExercise"]:
             parent_class = "ex:Resistance"
             middle_class = "ex:WeightBearingResistanceExercise"
 
-        # [กลุ่มที่ 4]: ภายใต้ ex:Resistance -> ex:NonWeightBearingResistanceExercise
-        elif exercise_type in ["NonWeightBearingResistanceExercise"]: # หรือชื่อประเภทรายย่อยในกลุ่มนี้ถ้ามี
+        elif exercise_type in ["NonWeightBearingResistanceExercise"]:
             parent_class = "ex:Resistance"
             middle_class = "ex:NonWeightBearingResistanceExercise"
 
-        # [กลุ่มที่ 5]: ภายใต้ ex:Stretching (กลุ่มนี้ยิงตรงจาก ex:Exercise ไม่มี middle_class)
-        elif exercise_type in ["Stretching"]: 
-            parent_class = "ex:Stretching"
+        # [กลุ่ม Stretching - เพิ่มคำว่า StretchingExercise และ ResistanceAndStretchingExercise]
+        elif exercise_type in ["Stretching", "StretchingExercise", "ResistanceAndStretchingExercise"]: 
+            parent_class = "ex:StretchingExercise"
             middle_class = None
             
         else:
-            # Fallback ป้องกันกรณีหลุดโผ
-            parent_class = "ex:Aerobic"
+            # 🚨 แก้ไข Fallback: ถ้าไม่รู้จัก ให้ใช้ประเภทที่ส่งมาเป็น parent แทน ห้ามใช้ ex:Aerobic มั่ว
+            parent_class = f"ex:{exercise_type}"
 
-        # 🌳 2. ตรวจสอบการเพิ่ม Triple แถวพิเศษระดับกลาง (ถ้ามี)
+        # 🌳 2. สร้าง Triple
         middle_class_triple = f"{subject_uri} rdf:type {middle_class} ." if middle_class else ""
 
         insert_query = f"""
@@ -277,9 +274,8 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
             {subject_uri} rdf:type ex:Exercise .
             {subject_uri} rdf:type {parent_class} .
             
-            {middle_class_triple}  # แทรกคลาสย่อยชั้นกลางตามผังต้นไม้
+            {middle_class_triple}
             
-            {subject_uri} rdf:type {type_uri} .
             {subject_uri} ex:hasKindOfExercise {type_uri} .
             {subject_uri} rdfs:label "{name}" .
             {subject_uri} ex:metValue "{float(mets)}"^^xsd:decimal .
@@ -291,7 +287,7 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
         sparql_write_client.setMethod('POST')
         sparql_write_client.query()
 
-        print(f"💾 [GraphDB] ซิงค์ข้อมูล ID #{final_id} ตามโครงสร้างใหม่เสร็จสิ้น")
+        print(f"💾 [GraphDB] ซิงค์ข้อมูล ID #{final_id} เสร็จสิ้น (Parent: {parent_class})")
         return {"success": True, "message": "ซิงค์สำเร็จ"}
         
     except Exception as e:

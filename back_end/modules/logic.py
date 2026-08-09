@@ -202,46 +202,67 @@ def process_patient_realtime(patient_id, input_data=None):
         s_recs, s_warns, s_comorbs, s_complis = [], [], [], []
         s_avoids, s_intens, s_freqs = [], [], []
 
-        # 1. Exercises
-        recs_list = list(p.recommendedExercise)
+        # ----------------------------------------------------
+        # 0. ดึงข้อมูล Avoid, Intensity, Frequency ออกมาก่อน
+        # ----------------------------------------------------
+        for a in getattr(p, "avoidExercise", []):
+            s_avoids.append(a.name)
+        for i in getattr(p, "intensityOfExercise", []):
+            s_intens.append(i.name)
+        for f in getattr(p, "exerciseFrequency", []):
+            s_freqs.append(f.name)
 
-        for r in list(set(recs_list)):
-            s_recs.append(r.name)  # เก็บชื่อท่าลง DB
-            name = get_thai_text(r)
+        # เช็กว่ามีคำสั่งห้ามออกกำลังกายเด็ดขาดหรือไม่ (เช่น Avoid4)
+        has_strict_avoid = "Avoid4" in s_avoids or "Avoid12" in s_avoids
 
-            details = []
-            try:
-                ints = getattr(r, "intensityOfExercise", [])
-                if not isinstance(ints, list):
-                    ints = [ints]
-                for i in ints:
-                    txt = get_thai_text(i) if hasattr(i, 'label') or hasattr(i, 'name') else str(i)
-                    details.append(f"ความหนัก: {txt}")
+        # ----------------------------------------------------
+        # 1. Exercises (ทำงานเฉพาะเมื่อไม่มีคำสั่งห้ามเด็ดขาด)
+        # ----------------------------------------------------
+        if has_strict_avoid:
+            print(f"🛑 [FILTER] Patient {p.name} has Avoid condition ({s_avoids})! Clearing recommended exercises.")
+            recs = []
+            s_recs = []
+        else:
+            recs_list = list(getattr(p, "recommendedExercise", []))
 
-                freqs = getattr(r, "exerciseFrequency", [])
-                if not isinstance(freqs, list):
-                    freqs = [freqs]
-                for f in freqs:
-                    txt = get_thai_text(f) if hasattr(f, 'label') or hasattr(f, 'name') else str(f)
-                    details.append(f"ความถี่: {txt}")
-            except Exception as e:
-                # ✅ log ไว้แทนการเงียบสนิท จะได้รู้ว่าทำไมบางท่าไม่มีรายละเอียดความหนัก/ความถี่
-                print(f"⚠️ Could not extract intensity/frequency for '{r.name}': {e}")
+            for r in list(set(recs_list)):
+                s_recs.append(r.name)  # เก็บชื่อท่าลง DB
+                name = get_thai_text(r)
 
-            final_label = f"{name} ({', '.join(details)})" if details else name
+                details = []
+                try:
+                    ints = getattr(r, "intensityOfExercise", [])
+                    if not isinstance(ints, list):
+                        ints = [ints]
+                    for i in ints:
+                        txt = get_thai_text(i) if hasattr(i, 'label') or hasattr(i, 'name') else str(i)
+                        details.append(f"ความหนัก: {txt}")
 
-            ex_types = []
-            for c in getattr(r, "is_a", []):
-                if hasattr(c, "name"):
-                    ex_types.append(c.name)
-            type_str = ",".join(ex_types)
+                    freqs = getattr(r, "exerciseFrequency", [])
+                    if not isinstance(freqs, list):
+                        freqs = [freqs]
+                    for f in freqs:
+                        txt = get_thai_text(f) if hasattr(f, 'label') or hasattr(f, 'name') else str(f)
+                        details.append(f"ความถี่: {txt}")
+                except Exception as e:
+                    print(f"⚠️ Could not extract intensity/frequency for '{r.name}': {e}")
 
-            recs.append({
-                "label": final_label,
-                "type": type_str
-            })
+                final_label = f"{name} ({', '.join(details)})" if details else name
 
-        # 2. Warnings / Comorbs / Complis
+                ex_types = []
+                for c in getattr(r, "is_a", []):
+                    if hasattr(c, "name"):
+                        ex_types.append(c.name)
+                type_str = ",".join(ex_types)
+
+                recs.append({
+                    "label": final_label,
+                    "type": type_str
+                })
+
+        # ----------------------------------------------------
+        # 2. Warnings / Comorbs / Complis (ทำงานตามปกติ)
+        # ----------------------------------------------------
         for w in p.hasPatientWarning:
             warns.append(get_thai_text(w))
             s_warns.append(w.name)
@@ -251,14 +272,6 @@ def process_patient_realtime(patient_id, input_data=None):
         for cp in p.hasComplication:
             complis.append(get_thai_text(cp))
             s_complis.append(cp.name)
-
-        # 3. Collect Extra Data
-        for a in getattr(p, "avoidExercise", []):
-            s_avoids.append(a.name)
-        for i in getattr(p, "intensityOfExercise", []):
-            s_intens.append(i.name)
-        for f in getattr(p, "exerciseFrequency", []):
-            s_freqs.append(f.name)
 
         warns = list(set(warns))
         comorbs = list(set(comorbs))

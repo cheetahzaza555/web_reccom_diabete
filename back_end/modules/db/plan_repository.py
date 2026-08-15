@@ -209,7 +209,8 @@ def get_daily_plan_info(day_node_id):
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    SELECT ?status ?duration ?exName ?exId
+    # 🌟 1. เพิ่ม ?youtubeId ตรง SELECT
+    SELECT ?status ?duration ?exName ?exId ?youtubeId
     WHERE {{
         OPTIONAL {{ ex:{day_node_id} ex:planStatus ?status }}
         OPTIONAL {{ ex:{day_node_id} ex:durationMinutes ?duration }}
@@ -218,6 +219,9 @@ def get_daily_plan_info(day_node_id):
             BIND(STRAFTER(STR(?ex), "#") AS ?exId)
             OPTIONAL {{ ?ex rdfs:label ?label }}
             BIND(COALESCE(?label, ?exId) AS ?exName)
+            
+            # 🌟 2. เพิ่มการดึง ID ของวิดีโอ (ถ้ามี)
+            OPTIONAL {{ ?ex ex:hasYoutubeID ?youtubeId }}
         }}
     }} LIMIT 1
     """
@@ -232,8 +236,30 @@ def get_daily_plan_info(day_node_id):
             "exercise_name": r.get("exName", {}).get("value", ""),
             "exercise_id": r.get("exId", {}).get("value", ""),
             "completed": r.get("status", {}).get("value", "") == "Completed",
-            "target_minutes": int(r.get("duration", {}).get("value", 30))
+            "target_minutes": int(r.get("duration", {}).get("value", 30)),
+            # 🌟 3. ดึงค่าส่งออกไปให้ Flask ถ้าไม่มีคลิปจะได้เป็นค่า None
+            "youtube_id": r.get("youtubeId", {}).get("value", None)
         }
     except Exception as e:
         print(f"❌ Error getting daily plan info: {e}")
         return None
+
+def update_schedule_status(plan_id, new_status):
+    """
+    ฟังก์ชันสำหรับอัปเดต ex:status ใน GraphDB
+    """
+    sparql_query = f"""
+    PREFIX ex: <http://example.org/>
+    
+    DELETE {{
+        ex:{plan_id} ex:status ?oldStatus .
+    }}
+    INSERT {{
+        ex:{plan_id} ex:status "{new_status}" .
+    }}
+    WHERE {{
+        OPTIONAL {{ ex:{plan_id} ex:status ?oldStatus . }}
+    }}
+    """
+    # รันคำสั่ง SPARQL UPDATE ผ่านตัวเชื่อมต่อ GraphDB ของคุณ
+    # execute_sparql_update(sparql_query)

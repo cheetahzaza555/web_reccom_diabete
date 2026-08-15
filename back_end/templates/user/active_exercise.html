@@ -66,6 +66,43 @@
         <div class="timer-container w-100">
             <h2 class="exercise-title">{{ exercise_name }}</h2>
             
+            <!-- YouTube หรือ GIF -->
+            {% if youtube_id %}
+                <!-- กรณีมี YouTube ID ให้แสดงวิดีโอ -->
+                <div class="d-flex justify-content-center mb-4 w-100">
+                    <div style="width: 100%; max-width: 500px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                        <div class="ratio ratio-16x9">
+                            <iframe 
+                                src="https://www.youtube.com/embed/{{ youtube_id }}?rel=0&modestbranding=1" 
+                                title="YouTube video player" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- กรณีไม่มี YouTube ID ให้แสดงวิดีโอ MP4 (เล่นวนลูปเหมือน GIF) -->
+                <div class="d-flex justify-content-center mb-4">
+                    <div style="width: 250px; height: 250px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        
+                        <!-- 🌟 เปลี่ยนจาก <img> เป็น <video> -->
+                        <video autoplay loop muted playsinline style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                            <!-- ดึงไฟล์นามสกุล .mp4 -->
+                            <source src="{{ url_for('static', filename='images/exercises/' ~ exercise_id ~ '.mp4') }}" type="video/mp4">
+                            
+                            <!-- 🌟 Fallback: ถ้าหาไฟล์ MP4 ไม่เจอ จะสลับมาโชว์รูปภาพนี้แทน -->
+                            <img src="{{ url_for('static', filename='images/default_exercise.png') }}" 
+                                 alt="{{ exercise_name }}" 
+                                 style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </video>
+
+                    </div>
+                </div>
+            {% endif %}
+            <!-- Check Youtube Video -->
+
             <div class="timer-circle" id="timerCircle">
                 <div class="time-display" id="timeDisplay">00:00</div>
                 <div class="text-muted mt-2 fw-bold" id="statusText">กำลังจับเวลา...</div>

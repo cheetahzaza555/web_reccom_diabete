@@ -3,7 +3,8 @@ from flask import Blueprint, json, render_template, jsonify, request, session, r
 import calendar
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from modules.db.patient_repository import get_patient_streak, process_patient_streak_on_complete, update_patient_streak
+from modules.db.patient_repository import  process_patient_streak_on_complete, get_patient_streak
+from modules.db.plan_repository import update_schedule_status
 from utils.security import login_required  # 🛡️ ยามเฝ้าประตูสำหรับผู้ใช้ทั่วไป
 
 from modules.logic import process_patient_realtime
@@ -45,6 +46,19 @@ def dashboard_page():
         actual_date = r["date_obj"]
         short_month_name = thai_months[actual_date.month - 1][:3] + "."
 
+        current_status = r["status"]
+        
+        # 🟢 ถ้าเป็นวันในอดีต + ต้องออกกำลังกาย + ยังไม่ได้กดทำ + สถานะเดิมยังไม่ใช่ "Missed"
+        if actual_date < today and r["is_exercise_day"] and not r["completed"] and current_status != "Missed":
+            current_status = "Missed"
+            
+            # 🔥 สั่งบันทึกสถานะ "Missed" ลง GraphDB ทันที
+            try:
+                update_schedule_status(r["id"], "Missed")
+                print(f"✅ Updated status to Missed in GraphDB for plan: {r['id']}")
+            except Exception as e:
+                print(f"❌ Error updating GraphDB: {e}")
+
         schedule_data.append({
             'id': r["id"],
             'day_of_week': r["day_of_week"],
@@ -57,7 +71,7 @@ def dashboard_page():
             'year': actual_date.year,
             'display_date': f"{actual_date.day} {short_month_name}",
             'is_today': (actual_date == today),
-            'status': r["status"],
+            'status': current_status,
         })
 
     # 2. 🔥 เพิ่มการดึงข้อมูล Streak จาก GraphDB
@@ -248,10 +262,13 @@ def active_exercise(day_node_id):
 
     info = get_daily_plan_info(day_node_id)
     if info:
+# เพิ่มการส่งค่า exercise_id (สำหรับดึงรูป GIF) และ youtube_id (สำหรับวิดีโอ) 
         return render_template('user/active_exercise.html',
                                 day_id=day_node_id,
+                                exercise_id=info.get("exercise_id"),   
                                 exercise_name=info["exercise_name"],
-                                target_minutes=info["target_minutes"])
+                                target_minutes=info["target_minutes"],
+                                youtube_id=info.get("youtube_id")) 
     return redirect(url_for('user.dashboard_page'))
 
 

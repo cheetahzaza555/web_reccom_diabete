@@ -1,4 +1,5 @@
 from flask import Flask
+import datetime
 import os
 from routes.user import user_bp
 from flask_cors import CORS
@@ -6,9 +7,10 @@ from dotenv import load_dotenv
 from routes.auth import auth
 from routes.admin import admin_bp
 from apscheduler.schedulers.background import BackgroundScheduler
-from modules.db.reschedule_repository import run_daily_reschedule_job
+from modules.db.reschedule_repository import run_daily_reschedule_job ,get_all_patients_with_active_plan, reschedule_missed_days
 from routes.webhook import webhook_bp
 from modules.line_utils import run_morning_reminder_job # 🌟 นำเข้าหุ่นยนต์แจ้งเตือนที่เพิ่งจัดระเบียบใหม่
+
 
 # โหลดตัวแปรจาก .env
 load_dotenv()
@@ -26,9 +28,23 @@ if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
 
 @app.route('/force-run-reschedule')
 def force_run_reschedule():
-    print("⏳ บังคับรันระบบเลื่อนตาราง (Manual Trigger)...")
-    run_daily_reschedule_job()
-    return "สั่งรันระบบเลื่อนตารางแล้ว! กรุณาเช็กข้อความใน Terminal/Console ครับ"
+    print("⏳ บังคับรันระบบเลื่อนตาราง (โหมดจำลองข้ามเวลา)...")
+    
+    # หลอกระบบว่าวันนี้คืออีก 3 วันข้างหน้า (บวกเพิ่ม 3 วัน)
+    fake_today = datetime.datetime.today().date() + datetime.timedelta(days=1)
+    print(f"🕒 จำลองเวลาปัจจุบันเป็น: {fake_today}")
+
+    # ดึงรายชื่อคนไข้และสั่งรันทีละคน โดยโยนเวลาจำลองเข้าไป
+    patient_ids = get_all_patients_with_active_plan()
+    for pid in patient_ids:
+        try:
+            changed = reschedule_missed_days(pid, today=fake_today)
+            if changed:
+                print(f"[reschedule] เลื่อนตารางให้ Patient{pid} เรียบร้อย (โหมดจำลอง)")
+        except Exception as e:
+            print(f"[reschedule] เกิดข้อผิดพลาดกับ Patient{pid}: {e}")
+
+    return f"สั่งจำลองการข้ามเวลาไปยังวันที่ {fake_today} เรียบร้อย! ลองรีเฟรชหน้าเว็บดูครับ"
 
 @app.route('/force-run-reminder')
 def force_run_reminder():

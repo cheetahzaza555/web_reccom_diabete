@@ -73,11 +73,24 @@
             </div>
 
             <div class="nav-item">
-                <a href="/admin/exercises" class="nav-link">
-                    <i class="bi bi-book-fill"></i>
-                    <span>จัดการคลังข้อมูล</span>
-
+                <!-- ปุ่มหลักสำหรับกดเปิด-ปิด เมนูย่อย -->
+                <a href="#masterDataMenu" class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="masterDataMenu">
+                    <div>
+                        <i class="bi bi-book-fill"></i>
+                        <span>จัดการคลังข้อมูล</span>
+                    </div>
+                    <i class="bi bi-chevron-down ms-auto text-xs"></i>
                 </a>
+
+                <!-- รายการเมนูย่อยที่ซ่อนอยู่ (จะสไลด์ลงมาเมื่อกด) -->
+                <div class="collapse ps-4 pt-1" id="masterDataMenu">
+                    <a href="/admin/exercises" class="nav-link text-sm py-1">ท่าออกกำลังกาย</a>
+                    <a href="/admin/category" class="nav-link text-sm py-1">หมวดหมู่การออกกำลังกาย</a>
+                    <a href="/admin/frequency" class="nav-link text-sm py-1">ความถี่</a>
+                    <a href="/admin/warning" class="nav-link text-sm py-1">คำเตือนการออกกำลังกาย</a>
+                    <a href="/admin/symptom" class="nav-link text-sm py-1">อาการ</a>
+                    <a href="/admin/treatment" class="nav-link text-sm py-1">การรักษา</a>
+                </div>
             </div>
         </nav>
 
@@ -142,12 +155,35 @@
             });
         }
 
-        // Active Link Logic
+        // Active Link Logic (รองรับ ?tab=... และกางเมนูย่อยอัตโนมัติ)
+        const currentFullUrl = window.location.pathname + window.location.search;
         const currentPath = window.location.pathname;
-        document.querySelectorAll('.nav-link').forEach(link => {
-            if (link.getAttribute('href') === currentPath) {
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+        document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+            const href = link.getAttribute('href');
+            
+            // ลบ class active ทั้งหมดออกก่อน
+            link.classList.remove('active');
+
+            // เช็คว่า URL ปัจจุบันตรงกับ href หรือไม่ (รองรับกรณีไม่มี ?tab= ให้ไปจับที่ tab=exercise เป็นหลัก)
+            const isExactMatch = href === currentFullUrl;
+            const isDefaultTab = (currentPath === '/admin/exercises' && currentFullUrl === '/admin/exercises' && href === '/admin/exercises?tab=exercise');
+
+            if (isExactMatch || isDefaultTab) {
                 link.classList.add('active');
+
+                // ถ้าเมนูที่ active อยู่ภายใน collapse ให้สั่งกางเมนูแม่ไว้อัตโนมัติ
+                const parentCollapse = link.closest('.collapse');
+                if (parentCollapse) {
+                    parentCollapse.classList.add('show'); // กางเมนูย่อยลงมา
+                    
+                    // ปรับปุ่มแม่ให้เป็นสเตตัสเปิด (aria-expanded = true)
+                    const parentToggle = document.querySelector(`[href="#${parentCollapse.id}"]`);
+                    if (parentToggle) {
+                        parentToggle.setAttribute('aria-expanded', 'true');
+                        parentToggle.style.color = '#ffffff'; // ไฮไลท์ข้อความเมนูแม่ให้ชัดเจน
+                    }
+                }
             }
         });
 

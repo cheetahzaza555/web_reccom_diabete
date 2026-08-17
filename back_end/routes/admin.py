@@ -1,5 +1,5 @@
 from flask import Blueprint, redirect, render_template, jsonify, request, session, url_for
-from modules.db.admin_repository import delete_exercise_from_ontology, insert_exercise_to_ontology, insert_exercise_to_ontology_v2
+from modules.db.admin_repository import delete_category_from_ontology, delete_exercise_from_ontology, get_all_categories_from_ontology, insert_exercise_to_ontology, insert_exercise_to_ontology_v2, update_category_hierarchy_in_ontology
 from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db
 from modules.db.exercise_repository import get_all_exercises_for_library
 from utils.security import admin_required  # 🛡️ เปิดใช้งานยามเฝ้าประตู
@@ -224,3 +224,52 @@ def update_admin_settings():
         return jsonify({"status": "success", "message": "อัปเดตข้อมูลผู้ดูแลระบบสำเร็จ"})
     else:
         return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500
+
+@admin_bp.route('/category', methods=['GET'])
+@admin_required
+def categories_page():
+    # ดึงข้อมูลหมวดหมู่จริงจาก GraphDB
+    categories_data = get_all_categories_from_ontology()
+    return render_template('admin/edit_category.html', categories=categories_data)
+
+@admin_bp.route('/api/category/update', methods=['POST'])
+@admin_required
+def api_update_category_hierarchy():
+    """API Endpoint สำหรับแก้ไข/อัปเดตสายตระกูลและชื่อหมวดหมู่"""
+    try:
+        data = request.get_json()
+        
+        category_id = data.get('category_id')          # เช่น "Walking"
+        parent_category_id = data.get('parent_id')     # เช่น "Aerobic"
+        label_th = data.get('label_th')                 # เช่น "การเดิน" (ส่งหรือไม่ส่งก็ได้)
+
+        # Validation ตรวจสอบข้อมูลจำเป็น
+        if not category_id or not parent_category_id:
+            return jsonify({
+                "success": False, 
+                "message": "กรุณาระบุ category_id และ parent_id ให้ครบถ้วน"
+            }), 400
+
+        # เรียกใช้ฟังก์ชัน GraphDB ที่เราเตรียมไว้
+        result = update_category_hierarchy_in_ontology(category_id, parent_category_id, label_th)
+
+        if result.get("success"):
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
+
+    except Exception as e:
+        print(f"❌ API Error: {e}")
+        return jsonify({"success": False, "message": f"เกิดข้อผิดพลาดที่เซิร์ฟเวอร์: {str(e)}"}), 500
+
+@admin_bp.route('/api/categories/delete', methods=['POST'])
+@admin_required
+def api_delete_category():
+    data = request.json
+    category_id = data.get('category_id')
+    
+    if not category_id:
+        return jsonify({"success": False, "message": "ไม่พบ รหัสหมวดหมู่"}), 400
+
+    success, message = delete_category_from_ontology(category_id)
+    return jsonify({"success": success, "message": message})

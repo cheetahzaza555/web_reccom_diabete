@@ -322,7 +322,148 @@ def delete_exercise_from_ontology(exercise_id):
         sparql_write_client.query()
         
         print(f"🗑️ [GraphDB Success] ลบข้อมูลไอดี #{exercise_id} ออกจากระบบเรียบร้อย")
-        return {"success": True, "message": "ลบข้อมูลสำเร็จ"}
+        return {"success": True, "message": "ลบข้อมูลสำกำดเร็จ"}
     except Exception as e:
         print(f"❌ Error deleting exercise: {e}")
         return {"success": False, "message": str(e)}
+
+def get_all_categories_from_ontology():
+    """
+    ดึงเฉพาะหมวดหมู่สาย Exercise เท่านั้น 
+    ตัดสาย KindOfExercise และคลาสย่อที่ซ้ำซ้อนออก
+    """
+    sparql = SPARQLWrapper(GRAPHDB_READ)
+    category_map = {}
+
+    query = """
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX ex: <http://example.org/diabetes#>
+
+    SELECT DISTINCT ?cat ?label ?parent WHERE {
+        # ดึงเฉพาะคลาสที่เป็น SubClass ของ Exercise เท่านั้น
+        ?cat rdfs:subClassOf* ex:Exercise .
+        
+        OPTIONAL { ?cat rdfs:subClassOf ?parent . }
+        OPTIONAL { ?cat rdfs:label ?label . }
+        
+        FILTER(STRSTARTS(STR(?cat), "http://example.org/diabetes#"))
+    }
+    """
+    try:
+        sparql.setQuery(query)
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
+
+        # รายชื่อ Class ระบบ และ Class สาย KindOfExercise ที่ต้องการตัดออก
+        ignore_classes = {
+            "Exercise", "KindOfExercise", "Resource", "Resource",
+            "WBearingAerobicExercise", "NWBearingAerobicExercise", # ตัดตัวย่อซ้ำซ้อน
+            "ResistanceAndStretchingExercise",
+            "Patient", "Disease", "Comorbidity", "Complication", 
+            "LabExam", "PhysicalExam", "Symptom", "DiabeteType", 
+            "Intensity", "Frequency", "PatientWarning", "WarningAvoidExercise",
+            "WeeklyPlan", "DailyPlan", "MonthlyPlan", "ExercisePlan"
+        }
+
+        for row in results["results"]["bindings"]:
+            cat_uri = row["cat"]["value"]
+            cat_id = cat_uri.split("#")[-1] if "#" in cat_uri else cat_uri.split("/")[-1]
+
+            if cat_id in ignore_classes:
+                continue
+
+            parent_uri = row.get("parent", {}).get("value", "")
+            parent_id = parent_uri.split("#")[-1] if "#" in parent_uri else (parent_uri.split("/")[-1] if parent_uri else "")
+
+            # กำหนด Parent เริ่มต้นถ้าชี้ไปหา Exercise หรือ Resource
+            if parent_id in ["Exercise", "Resource", "owl:Thing", ""] or parent_id == cat_id:
+                parent_id = "ExerciseCategory"
+
+            label_val = row.get("label", {}).get("value", cat_id)
+
+            if cat_id not in category_map:
+                category_map[cat_id] = {
+                    "category_id": cat_id,
+                    "label_th": label_val if label_val else cat_id,
+                    "parent_id": parent_id
+                }
+            else:
+                if parent_id != "ExerciseCategory":
+                    category_map[cat_id]["parent_id"] = parent_id
+
+    except Exception as e:
+        print("❌ [Admin Error] ดึงข้อมูลหมวดหมู่ล้มเหลว:", e)
+
+    return list(category_map.values())
+
+def update_category_hierarchy_in_ontology(category_id, parent_category_id, label_th=None):
+    """ฟังก์ชันอัปเดตความสัมพันธ์แม่-ลูก ระหว่างหมวดหมู่ (rdfs:subClassOf)"""
+    try:
+        sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
+        base_prefix = "http://example.org/diabetes#"
+        category_uri = f"<{base_prefix}{category_id}>"
+        parent_uri = f"<{base_prefix}{parent_category_id}>"
+        
+        label_triple = f'{category_uri} rdfs:label "{label_th}" .' if label_th else ""
+
+        update_query = f"""
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX ex: <{base_prefix}>
+        
+        DELETE {{
+            {category_uri} rdfs:subClassOf ?oldParent .
+            {" " + category_uri + " rdfs:label ?oldLabel ." if label_th else ""}
+        }}
+        WHERE {{
+            OPTIONAL {{ 
+                {category_uri} rdfs:subClassOf ?oldParent . 
+                FILTER(?oldParent != rdfs:Resource)
+            }}
+            {" OPTIONAL { " + category_uri + " rdfs:label ?oldLabel . }" if label_th else ""}
+        }} ;
+
+        INSERT DATA {{
+            {category_uri} a rdfs:Class ;
+                         rdfs:subClassOf {parent_uri} .
+            {label_triple}
+        }}
+        """
+        
+        sparql_write_client.setQuery(update_query)
+        sparql_write_client.setMethod('POST')
+        sparql_write_client.query()
+        
+        print(f"✏️ [GraphDB Success] กำหนดให้หมวดหมู่ '{category_id}' อยู่ใต้ '{parent_category_id}' เรียบร้อย")
+        return {"success": True, "message": "อัปเดตสายตระกูลหมวดหมู่สำเร็จ"}
+    except Exception as e:
+        print(f"❌ Error updating category hierarchy: {e}")
+        return {"success": False, "message": str(e)}
+
+def delete_category_from_ontology(category_id):
+    """
+    ลบ Class หมวดหมู่ ออกจาก GraphDB
+    ลบทั้ง Triple ที่หมวดหมู่นี้เป็น Subject และเป็น Object
+    """
+    sparql = SPARQLWrapper(GRAPHDB_WRITE)
+    
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+
+    DELETE {{
+        ex:{category_id} ?p1 ?o1 .
+        ?s2 ?p2 ex:{category_id} .
+    }}
+    WHERE {{
+        OPTIONAL {{ ex:{category_id} ?p1 ?o1 . }}
+        OPTIONAL {{ ?s2 ?p2 ex:{category_id} . }}
+    }}
+    """
+    try:
+        sparql.setQuery(query)
+        sparql.setMethod('POST')
+        sparql.query()
+        return True, f"ลบหมวดหมู่ {category_id} เรียบร้อยแล้ว"
+    except Exception as e:
+        print("❌ [Admin Error] ลบหมวดหมู่ล้มเหลว:", e)
+        return False, str(e)

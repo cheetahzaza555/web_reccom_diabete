@@ -188,10 +188,9 @@
                 <table class="category-table">
                     <thead>
                         <tr>
-                            <th style="width: 25%;">Class ID (Ontology)</th>
-                            <th style="width: 35%;">ชื่อหมวดหมู่ (ภาษาไทย)</th>
-                            <th style="width: 25%;">อยู่ใต้หมวดหมู่ (SubClass Of)</th>
-                            <th style="width: 15%; text-align: center;">จัดการข้อมูล</th>
+                            <th style="width: 35%;">ชื่อหมวดหมู่</th>
+                            <th style="width: 35%;">อยู่ใต้หมวดหมู่</th>
+                            <th style="width: 30%; text-align: center;">จัดการข้อมูล</th>
                         </tr>
                     </thead>
                     <tbody id="categoryTableBody">
@@ -220,7 +219,6 @@
                 
                 html += `
                 <tr>
-                    <td><strong>#${item.category_id}</strong></td>
                     <td><strong>${item.label_th || item.category_id}</strong></td>
                     <td>
                         <span class="badge-cat">
@@ -267,7 +265,7 @@
                 // ป้องกันไม่ให้เลือกตัวเองเป็นหมวดหมู่แม่
                 if (item.category_id !== currentCatId) {
                     const isSelected = (item.category_id === selectedParentId) ? 'selected' : '';
-                    options += `<option value="${item.category_id}" ${isSelected}>• ${item.label_th || item.category_id} (${item.category_id})</option>`;
+                    options += `<option value="${item.category_id}" ${isSelected}>• ${item.label_th || item.category_id}</option>`;
                 }
             });
             return options;
@@ -280,13 +278,13 @@
             Swal.fire({
                 title: 'เพิ่มหมวดหมู่ใหม่',
                 html: `
-                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">Category Class ID (ภาษาอังกฤษ)</label></div>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">Category Class ID</label></div>
                     <input id="swal-cat-id" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น Aerobic, Walking">
                     
-                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อหมวดหมู่ (ภาษาไทย)</label></div>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อหมวดหมู่</label></div>
                     <input id="swal-cat-label" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น การออกกำลังกายแบบแอโรบิก">
 
-                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">อยู่ภายใต้หมวดหมู่แม่ (SubClass Of)</label></div>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">อยู่ภายใต้หมวดหมู่แม่ </label></div>
                     <select id="swal-cat-parent" class="swal2-input" style="margin:0; width:100%; height:42px; padding: 0 10px;">
                         ${parentDropdownHtml}
                     </select>
@@ -303,7 +301,7 @@
                     const parentId = document.getElementById('swal-cat-parent').value;
                     
                     if (!catId) { Swal.showValidationMessage('กรุณากรอก Category Class ID'); return false; }
-                    if (!catLabel) { Swal.showValidationMessage('กรุณากรอกชื่อหมวดหมู่ภาษาไทย'); return false; }
+                    if (!catLabel) { Swal.showValidationMessage('กรุณากรอกชื่อหมวดหมู่'); return false; }
                     
                     return {
                         category_id: catId,
@@ -328,10 +326,10 @@
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">Category Class ID</label></div>
                     <input id="swal-cat-id" class="swal2-input" style="margin:0 0 16px 0; width:100%; background-color: #E2E8F0;" value="${catId}" readonly>
                     
-                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อหมวดหมู่ (ภาษาไทย)</label></div>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อหมวดหมู่</label></div>
                     <input id="swal-cat-label" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${catLabel}">
 
-                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">อยู่ภายใต้หมวดหมู่แม่ (SubClass Of)</label></div>
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">อยู่ภายใต้หมวดหมู่</label></div>
                     <select id="swal-cat-parent" class="swal2-input" style="margin:0; width:100%; height:42px; padding: 0 10px;">
                         ${parentDropdownHtml}
                     </select>
@@ -365,7 +363,7 @@
         function sendCategoryUpdate(payload) {
             Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
             
-            fetch("/admin/api/categories/update", {
+            fetch("/admin/api/category/update", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)

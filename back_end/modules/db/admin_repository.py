@@ -398,42 +398,84 @@ def get_all_categories_from_ontology():
     return list(category_map.values())
 
 def update_category_hierarchy_in_ontology(category_id, parent_category_id, label_th=None):
-    """ฟังก์ชันอัปเดตความสัมพันธ์แม่-ลูก ระหว่างหมวดหมู่ (rdfs:subClassOf)"""
+    """ฟังก์ชันอัปเดตความสัมพันธ์แม่-ลูก ระหว่างหมวดหมู่ (rdfs:subClassOf) พร้อมแมปกลุ่ม KindOfExercise"""
     try:
         sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
         base_prefix = "http://example.org/diabetes#"
         category_uri = f"<{base_prefix}{category_id}>"
         parent_uri = f"<{base_prefix}{parent_category_id}>"
-        
-        label_triple = f'{category_uri} rdfs:label "{label_th}" .' if label_th else ""
 
+        # -------------------------------------------------------------
+        # 1. เงื่อนไขจำแนกกลุ่มสำหรับ Visual Graph (KindOfExercise Sub-groups)
+        # -------------------------------------------------------------
+        w_bearing_list = [
+            "WeightBearingAerobicExercise", "WeightBearingAerobicSport",
+            "Running", "Dancing", "Walking", "WBearingAerobicExercise"
+        ]
+        nw_bearing_list = [
+            "NonWeightBearingAerobicExercise", "NonWeightBearingAerobicSport",
+            "WaterActivity", "Bicycling", "NWBearingAerobicExercise"
+        ]
+        resistance_list = [
+            "WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise",
+            "StretchingExercise", "ResistanceAndStretchingExercise"
+        ]
+
+        # เช็กว่า parent_category_id ตรงกับกลุ่มไหน
+        if parent_category_id in w_bearing_list:
+            group_triple = f"{category_uri} a ex:WBearingAerobicExercise ."
+        elif parent_category_id in nw_bearing_list:
+            group_triple = f"{category_uri} a ex:NWBearingAerobicExercise ."
+        elif parent_category_id in resistance_list:
+            group_triple = f"{category_uri} a ex:ResistanceAndStretchingExercise ."
+        else:
+            # ถ้าเป็นหมวดใหม่อื่นๆ ให้ไม่ใส่ triple ย่อย หรือใช้ URI ตัวมันเอง
+            group_triple = ""
+
+        # -------------------------------------------------------------
+        # 2. จัดเตรียม Triple สำหรับ rdfs:label
+        # -------------------------------------------------------------
+        label_triple = f'{category_uri} rdfs:label "{label_th}"@th .' if label_th else ""
+
+        # -------------------------------------------------------------
+        # 3. คำสั่ง SPARQL DELETE & INSERT
+        # -------------------------------------------------------------
         update_query = f"""
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX ex: <{base_prefix}>
-        
+
         DELETE {{
             {category_uri} rdfs:subClassOf ?oldParent .
+            {category_uri} rdf:type ?oldGroupType .
             {" " + category_uri + " rdfs:label ?oldLabel ." if label_th else ""}
         }}
         WHERE {{
-            OPTIONAL {{ 
-                {category_uri} rdfs:subClassOf ?oldParent . 
+            OPTIONAL {{
+                {category_uri} rdfs:subClassOf ?oldParent .
                 FILTER(?oldParent != rdfs:Resource)
+            }}
+            OPTIONAL {{
+                {category_uri} rdf:type ?oldGroupType .
+                FILTER(?oldGroupType IN (ex:WBearingAerobicExercise, ex:NWBearingAerobicExercise, ex:ResistanceAndStretchingExercise))
             }}
             {" OPTIONAL { " + category_uri + " rdfs:label ?oldLabel . }" if label_th else ""}
         }} ;
 
         INSERT DATA {{
-            {category_uri} a rdfs:Class ;
-                         rdfs:subClassOf {parent_uri} .
+            {category_uri} a owl:Class ;
+                           a ex:KindOfExercise ;
+                           rdfs:subClassOf {parent_uri} .
+            {group_triple}
             {label_triple}
         }}
         """
-        
+
         sparql_write_client.setQuery(update_query)
         sparql_write_client.setMethod('POST')
         sparql_write_client.query()
-        
+
         print(f"✏️ [GraphDB Success] กำหนดให้หมวดหมู่ '{category_id}' อยู่ใต้ '{parent_category_id}' เรียบร้อย")
         return {"success": True, "message": "อัปเดตสายตระกูลหมวดหมู่สำเร็จ"}
     except Exception as e:
@@ -443,12 +485,14 @@ def update_category_hierarchy_in_ontology(category_id, parent_category_id, label
 def delete_category_from_ontology(category_id):
     """
     ลบ Class หมวดหมู่ ออกจาก GraphDB
-    ลบทั้ง Triple ที่หมวดหมู่นี้เป็น Subject และเป็น Object
+    - ลบทุก Triple ที่หมวดหมู่นี้เป็น Subject (กวาดลบ Type, Label, Parent ทั้งหมด)
+    - ลบทุก Triple ที่หมวดหมู่นี้เป็น Object (เช่น ถูกอ้างอิงว่าเป็น parent_category ของคลาสอื่น)
     """
     sparql = SPARQLWrapper(GRAPHDB_WRITE)
+    base_prefix = "http://example.org/diabetes#"
     
     query = f"""
-    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX ex: <{base_prefix}>
 
     DELETE {{
         ex:{category_id} ?p1 ?o1 .
@@ -463,7 +507,8 @@ def delete_category_from_ontology(category_id):
         sparql.setQuery(query)
         sparql.setMethod('POST')
         sparql.query()
-        return True, f"ลบหมวดหมู่ {category_id} เรียบร้อยแล้ว"
+        print(f"🗑️ [GraphDB Success] ลบหมวดหมู่ '{category_id}' ออกจากระบบเรียบร้อย")
+        return {"success": True, "message": f"ลบหมวดหมู่ {category_id} เรียบร้อยแล้ว"}
     except Exception as e:
-        print("❌ [Admin Error] ลบหมวดหมู่ล้มเหลว:", e)
-        return False, str(e)
+        print(f"❌ [Admin Error] ลบหมวดหมู่ล้มเหลว: {e}")
+        return {"success": False, "message": str(e)}

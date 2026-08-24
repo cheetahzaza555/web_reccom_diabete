@@ -75,35 +75,6 @@
             outline: none;
             background-color: var(--white);
         }
-        .filter-select {
-            padding: 10px 14px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background-color: var(--white);
-            font-family: 'Prompt', sans-serif;
-            font-size: 14px;
-            outline: none;
-            cursor: pointer;
-            min-width: 220px;
-        }
-
-        .btn-refresh {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            background-color: var(--primary-blue);
-            color: var(--white);
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.2s;
-            font-family: 'Prompt', sans-serif;
-            white-space: nowrap;
-        }
-        .btn-refresh:hover { background-color: var(--primary-hover); }
 
         .table-card {
             background-color: var(--white);
@@ -126,43 +97,6 @@
         .rule-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .rule-table tr:hover { background-color: #F8FAFC; }
 
-        /* 🏷️ Badge สำหรับเงื่อนไขย่อย */
-        .cond-badge {
-            display: inline-block;
-            background-color: #F1F5F9;
-            color: #475569;
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #E2E8F0;
-            margin-right: 4px;
-            margin-bottom: 4px;
-            font-family: monospace;
-        }
-
-        /* 🎛️ Custom Switch Toggle */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 46px;
-            height: 24px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #CBD5E1;
-            transition: .3s;
-            border-radius: 24px;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
-            background-color: white;
-            transition: .3s;
-            border-radius: 50%;
-        }
-        input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(22px); }
-
         /* 🎛️ ปุ่มลบ */
         .btn-delete {
             padding: 6px 12px;
@@ -183,7 +117,7 @@
         .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
 
         /* 🏷️ รูปแบบกล่องแสดง SWRL Rule แบบเต็ม */
-        .swrl-code-box {
+        .swrl-rule-box {
             background-color: #F8FAFC;
             border: 1px solid #CBD5E1;
             border-radius: 8px;
@@ -192,14 +126,8 @@
             font-size: 13px;
             color: #1E293B;
             line-height: 1.6;
-            white-space: pre-wrap; /* ให้เว้นวรรคและขึ้นบรรทัดใหม่อัตโนมัติ */
+            white-space: pre-wrap;
             word-break: break-all;
-        }
-
-        /* เน้นสี Hilight ให้ดูง่ายขึ้น (Optional) */
-        .swrl-code-box .highlight {
-            color: #2563EB;
-            font-weight: 600;
         }
     </style>
 </head>
@@ -218,7 +146,7 @@
             <div class="header-section">
                 <div>
                     <h1>จัดการกฎ SWRL (SWRL Rules Engine)</h1>
-                    <p>แสดงรายการกฎ ควบคุมการเปิด/ปิดใช้งาน และจัดการลบกฎออกจากคลังข้อมูล GraphDB</p>
+                    <p>แสดงรายการกฎ และจัดการลบกฎออกจากคลังข้อมูล GraphDB</p>
                 </div>
             </div>
 
@@ -228,12 +156,6 @@
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อกฎ หรือคำอธิบาย...">
                 </div>
-                
-                <select id="filterStatus" class="filter-select">
-                    <option value="all">สถานะทั้งหมด</option>
-                    <option value="active">เปิดใช้งานอยู่ (Active)</option>
-                    <option value="inactive">ปิดใช้งาน (Inactive)</option>
-                </select>
             </div>
 
             <!-- Table Card -->
@@ -241,10 +163,9 @@
                 <table class="rule-table">
                     <thead>
                         <tr>
-                            <th style="width: 20%;">ชื่อกฎ (Label)</th>
+                            <th style="width: 25%;">ชื่อกฎ (Label)</th>
                             <th style="width: 25%;">รายละเอียด / คำอธิบาย (Comment)</th>
-                            <th style="width: 35%;">เงื่อนไขที่แกะได้ (Conditions)</th>
-                            <th style="width: 10%; text-align: center;">สถานะ</th>
+                            <th style="width: 40%;">เงื่อนไขที่แกะได้ (Conditions)</th>
                             <th style="width: 10%; text-align: center;">จัดการ</th>
                         </tr>
                     </thead>
@@ -264,7 +185,7 @@
             const tableBody = document.getElementById('rulesTableBody');
             
             if (!data || !data.length) {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลกฎ SWRL ในระบบ</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลกฎ SWRL ในระบบ</td></tr>`;
                 return;
             }
 
@@ -276,8 +197,6 @@
 
             let html = "";
             sortedData.forEach(rule => {
-                const isEnabled = (rule.is_enabled === 'true' || rule.is_enabled === true);
-                
                 // ดึงข้อความ SWRL Rule แบบเต็ม
                 let swrlFullExpression = rule.full_rule || rule.swrl_text || rule.swrl_string || "";
                 
@@ -297,12 +216,6 @@
                         <div class="swrl-rule-box">${swrlFullExpression}</div>
                     </td>
                     <td style="text-align: center;">
-                        <label class="switch">
-                            <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleRuleStatus('${rule.rule_uri}', this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                    </td>
-                    <td style="text-align: center;">
                         <button class="btn-delete" onclick="deleteRule('${rule.rule_uri}', '${(rule.rule_label || '').replace(/'/g, "\\'")}')">
                             <i class="fa-solid fa-trash-can"></i> ลบ
                         </button>
@@ -313,50 +226,16 @@
             tableBody.innerHTML = html;
         }
 
-        // 🔍 ฟังก์ชันกรองข้อมูลการค้นหาและสถานะ
+        // 🔍 ฟังก์ชันกรองข้อมูลการค้นหา
         function filterContent() {
             const searchVal = document.getElementById('searchBar').value.toLowerCase();
-            const filterStatusVal = document.getElementById('filterStatus').value;
 
             const filtered = swrlRulesData.filter(item => {
                 const labelMatch = (item.rule_label || '').toLowerCase().includes(searchVal);
                 const commentMatch = (item.comment || '').toLowerCase().includes(searchVal);
-                const matchSearch = labelMatch || commentMatch;
-
-                const isEnabled = (item.is_enabled === 'true' || item.is_enabled === true);
-                let matchStatus = true;
-                if (filterStatusVal === 'active') matchStatus = isEnabled;
-                if (filterStatusVal === 'inactive') matchStatus = !isEnabled;
-
-                return matchSearch && matchStatus;
+                return labelMatch || commentMatch;
             });
             renderTable(filtered);
-        }
-
-        // 🔄 ฟังก์ชัน Toggle เปิด/ปิดสถานะกฎ (ใช้ SweetAlert2 แจ้งเตือน)
-        async function toggleRuleStatus(ruleUri, isChecked) {
-            try {
-                const response = await fetch('/api/admin/swrl-rules/toggle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ rule_uri: ruleUri, is_enabled: isChecked })
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'อัปเดตสถานะสำเร็จ',
-                        text: result.message || 'เปลี่ยนสถานะการใช้งานกฎเรียบร้อยแล้ว',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                } else {
-                    Swal.fire('ล้มเหลว!', result.message || 'ไม่สามารถเปลี่ยนสถานะได้', 'error').then(() => location.reload());
-                }
-            } catch (err) {
-                Swal.fire('ข้อผิดพลาด!', 'เกิดปัญหาในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
-            }
         }
 
         // 🗑️ ฟังก์ชันลบกฎ SWRL (ใช้ SweetAlert2 ยืนยัน)
@@ -398,7 +277,6 @@
 
         // 🟢 Event Listeners & โหลดข้อมูลเริ่มต้น
         document.getElementById('searchBar').addEventListener('input', filterContent);
-        document.getElementById('filterStatus').addEventListener('change', filterContent);
 
         window.addEventListener('DOMContentLoaded', () => {
             renderTable(swrlRulesData);

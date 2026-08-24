@@ -2,6 +2,7 @@ from flask import Blueprint, redirect, render_template, jsonify, request, sessio
 from modules.db.admin_repository import delete_category_from_ontology, delete_exercise_from_ontology, get_all_categories_from_ontology, insert_exercise_to_ontology, insert_exercise_to_ontology_v2, update_category_hierarchy_in_ontology
 from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db
 from modules.db.exercise_repository import get_all_exercises_for_library
+from modules.db.swrl import get_all_swrl_rules
 from utils.security import admin_required  # 🛡️ เปิดใช้งานยามเฝ้าประตู
 from werkzeug.security import check_password_hash, generate_password_hash
 import random
@@ -273,3 +274,15 @@ def api_delete_category():
 
     success, message = delete_category_from_ontology(category_id)
     return jsonify({"success": success, "message": message})
+
+# -------------------------------------------------------------
+# 1. API ดึงรายการกฎ SWRL ทั้งหมด
+# -------------------------------------------------------------
+@admin_bp.route('/swrl', methods=['GET'])
+@admin_required
+def api_get_swrl_rules():
+    """Endpoint สำหรับดึงกฎ SWRL ไปโชว์บนหน้าเว็บ Admin"""
+    result = get_all_swrl_rules()
+    if result["success"]:
+        return render_template('admin/swrl.html', swrl_rules=result["data"]), 200
+    return jsonify(result), 500

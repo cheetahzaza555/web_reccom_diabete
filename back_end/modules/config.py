@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ดึง URL และ ชื่อ Repo มาจาก .env (ถ้าหาไม่เจอให้ใช้ค่า Default ด้านหลัง)
-GRAPHDB_URL = os.getenv("GRAPHDB_URL", "http://127.0.0.1:7200")
+GRAPHDB_URL = os.getenv("GRAPHDB_URL", "http://26.118.79.77:7200")
 REPO_NAME = os.getenv("GRAPHDB_REPO", "Project")
 
 # เอามาประกอบร่างกันใน Python

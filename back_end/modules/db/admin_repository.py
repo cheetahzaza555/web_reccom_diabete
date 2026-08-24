@@ -512,3 +512,81 @@ def delete_category_from_ontology(category_id):
     except Exception as e:
         print(f"❌ [Admin Error] ลบหมวดหมู่ล้มเหลว: {e}")
         return {"success": False, "message": str(e)}
+
+def get_frequencies():
+    sparql = SPARQLWrapper(GRAPHDB_READ)
+    query = """
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    SELECT ?freqURI ?label ?description WHERE {
+        ?freqURI a ex:Frequency .
+        OPTIONAL { ?freqURI rdfs:label ?label . }
+        OPTIONAL { ?freqURI ex:description ?description . } 
+    }
+    """
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    
+    freq_list = []
+    for row in results["results"]["bindings"]:
+        uri = row["freqURI"]["value"]
+        name = uri.split("#")[-1] # ได้เป็น Freq1, Freq2
+        label = row.get("label", {}).get("value", name)
+        description = row.get("description", {}).get("value", "")
+        
+        freq_list.append({
+            "uri": uri, 
+            "freq_id": name,         # ตั้งชื่อให้ตรงกับหน้า HTML Admin
+            "label": label, 
+            "description": description
+        })
+
+    # เรียงลำดับ Freq1, Freq2, Freq3...
+    freq_list.sort(key=lambda x: int(''.join(filter(str.isdigit, x['freq_id'])) or 0))
+    return {"success": True, "data": freq_list}
+
+def save_or_update_frequency(freq_id, description=""):
+    try:
+        sparql = SPARQLWrapper(GRAPHDB_WRITE)
+        query = f"""
+        PREFIX ex: <http://example.org/diabetes#>
+
+        DELETE {{
+            ex:{freq_id} ex:description ?oldDesc .
+        }}
+        WHERE {{
+            OPTIONAL {{ ex:{freq_id} ex:description ?oldDesc . }}
+        }} ;
+
+        INSERT DATA {{
+            ex:{freq_id} a ex:Frequency ;
+                        ex:description "{description}" .
+        }}
+        """
+        sparql.setMethod(POST)
+        sparql.setQuery(query)
+        sparql.query()
+        return {"success": True, "message": f"บันทึกข้อมูล ex:{freq_id} เรียบร้อยแล้ว"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    
+# 3. ฟังก์ชันลบข้อมูล Frequency
+def delete_frequency(freq_id):
+    try:
+        sparql = SPARQLWrapper(GRAPHDB_WRITE)
+        query = f"""
+        PREFIX ex: <http://example.org/diabetes#>
+
+        DELETE WHERE {{ 
+            ex:{freq_id} ?p ?o . 
+        }}
+        """
+        sparql.setMethod(POST)
+        sparql.setQuery(query)
+        sparql.query()
+        return {"success": True, "message": f"ลบข้อมูล ex:{freq_id} เรียบร้อยแล้ว"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    

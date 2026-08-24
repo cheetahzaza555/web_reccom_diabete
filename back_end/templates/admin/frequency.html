@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiaBalance Admin | จัดการความถี่การออกกำลังกาย (Frequency)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-blue: #2B5CB3;
+            --light-bg: #F4F7FC;
+            --text-dark: #333333;
+            --text-muted: #666666;
+            --white: #ffffff;
+            --border-color: #E2E8F0;
+            --badge-bg: #E0F2FE;
+            --badge-text: #0369A1;
+            --danger: #E53E3E;
+            --warning: #D97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+
+        .admin-layout { display: flex; width: 100%; min-height: 100vh; }
+        .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
+
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .header-section h1 { font-size: 28px; font-weight: 600; }
+
+        .toolbar-section { display: flex; gap: 16px; margin-bottom: 20px; align-items: center; width: 100%; }
+        .search-wrapper { position: relative; flex-grow: 1; }
+        .search-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-input { width: 100%; padding: 10px 14px 10px 40px; border-radius: 8px; border: 1px solid var(--border-color); font-family: 'Prompt', sans-serif; font-size: 14px; outline: none; }
+        
+        .btn-add-freq { padding: 10px 20px; border-radius: 8px; font-size: 14px; background-color: var(--primary-blue); color: var(--white); border: none; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background-color 0.2s; font-family: 'Prompt', sans-serif; white-space: nowrap; }
+        .btn-add-freq:hover { background-color: #1e458a; }
+
+        .table-card { background-color: var(--white); border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01); border: 1px solid var(--border-color); width: 100%; overflow-x: auto; }
+        .freq-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .freq-table th { background-color: #F8FAFC; color: var(--text-muted); font-weight: 600; padding: 16px; font-size: 14px; border-bottom: 2px solid var(--border-color); }
+        .freq-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .freq-table tr:hover { background-color: #F8FAFC; }
+
+        .badge-freq { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background-color: var(--badge-bg); color: var(--badge-text); }
+
+        .action-buttons { display: flex; gap: 8px; justify-content: center; }
+        .btn-edit { padding: 6px 12px; border-radius: 6px; font-size: 13px; background-color: #FFFDF5; color: var(--warning); cursor: pointer; border: 1px solid #FEF3C7; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-edit:hover { background-color: var(--warning); color: var(--white); border-color: var(--warning); }
+
+        .btn-delete { padding: 6px 12px; border-radius: 6px; font-size: 13px; background-color: #FEF2F2; color: var(--danger); cursor: pointer; border: 1px solid #FEE2E2; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
+
+        .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
+        .swal2-input { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
+    </style>
+</head>
+<body>
+
+    <!-- 📥 รับข้อมูล JSON จาก Flask Controller -->
+    <div id="freq-data-container" style="display: none;" 
+         data-json="{% if frequencies %}{{ frequencies | tojson | safe | forceescape }}{% else %}[]{% endif %}">
+    </div>
+
+    <div class="admin-layout">
+        {% include 'includes/navbar_admin.html' %}
+
+        <div class="main-content">
+            <div class="header-section">
+                <div>
+                    <h1>จัดการความถี่การออกกำลังกาย</h1>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">จัดการข้อมูล Class Instances ของ ex:Frequency ในระบบ GraphDB</p>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหารายละเอียดความถี่หรือ Freq ID...">
+                </div>
+
+                <button class="btn-add-freq" onclick="openAddFreqModal()">
+                    <i class="fa-solid fa-clock-rotate-left"></i> เพิ่มความถี่ใหม่
+                </button>
+            </div>
+
+            <div class="table-card">
+                <table class="freq-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Instance ID</th>
+                            <th style="width: 45%;">คำอธิบาย / ความถี่</th>
+                            <th style="width: 30%; text-align: center;">จัดการข้อมูล</th>
+                        </tr>
+                    </thead>
+                    <tbody id="freqTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('freq-data-container');
+        const frequenciesData = JSON.parse(container.getAttribute('data-json') || '[]');
+
+        // 📊 ฟังก์ชันเรนเดอร์ตาราง
+        function renderTable(data) {
+            const tableBody = document.getElementById('freqTableBody');
+            
+            if (!data || !data.length) {
+                tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลความถี่ที่ค้นหา</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            data.forEach(item => {
+                html += `
+                <tr>
+                    <td>
+                        <span class="badge-freq">
+                            ex:${item.freq_id}
+                        </span>
+                    </td>
+                    <td><strong>${item.description || item.freq_id}</strong></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="openEditFreqModal('${item.freq_id}', '${(item.description || '').replace(/'/g, "\\'")}')">
+                                <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                            </button>
+                            <button class="btn-delete" onclick="deleteFreq('${item.freq_id}', '${(item.description || '').replace(/'/g, "\\'")}')">
+                                <i class="fa-solid fa-trash"></i> ลบ
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        // 🔍 ฟังก์ชันค้นหา
+        function filterContent() {
+            const searchVal = document.getElementById('searchBar').value.toLowerCase();
+            const filtered = frequenciesData.filter(item => {
+                return ((item.description && item.description.toLowerCase().includes(searchVal)) || 
+                       item.freq_id.toLowerCase().includes(searchVal));
+            });
+            renderTable(filtered);
+        }
+
+        document.getElementById('searchBar').addEventListener('input', filterContent);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTable(frequenciesData);
+        });
+
+        // 🟢 ฟังก์ชันเพิ่มความถี่ใหม่
+        function openAddFreqModal() {
+            Swal.fire({
+                title: 'เพิ่มข้อมูลความถี่ใหม่',
+                html: `
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">Frequency Instance ID</label></div>
+                    <input id="swal-freq-id" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น Freq8">
+                    
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">คำอธิบายความถี่</label></div>
+                    <input id="swal-freq-desc" class="swal2-input" style="margin:0; width:100%;" placeholder="เช่น Aerobic: 150 นาที/สัปดาห์">
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#2B5CB3',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'บันทึกข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+                preConfirm: () => {
+                    const freqId = document.getElementById('swal-freq-id').value.trim();
+                    const freqDesc = document.getElementById('swal-freq-desc').value.trim();
+                    
+                    if (!freqId) { Swal.showValidationMessage('กรุณากรอก Frequency Instance ID'); return false; }
+                    if (!freqDesc) { Swal.showValidationMessage('กรุณากรอกคำอธิบายความถี่'); return false; }
+                    
+                    // ✅ เปลี่ยน key เป็น description ให้ตรงกับ Backend
+                    return { freq_id: freqId, description: freqDesc }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    sendFreqUpdate(result.value);
+                }
+            });
+        }
+
+        // 🟡 ฟังก์ชันแก้ไขความถี่
+        function openEditFreqModal(freqId, freqDesc) {
+            Swal.fire({
+                title: 'แก้ไขข้อมูลความถี่',
+                html: `
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">Frequency Instance ID</label></div>
+                    <input id="swal-freq-id" class="swal2-input" style="margin:0 0 16px 0; width:100%; background-color: #E2E8F0;" value="${freqId}" readonly>
+                    
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">คำอธิบายความถี่ (ex:description)</label></div>
+                    <input id="swal-freq-desc" class="swal2-input" style="margin:0; width:100%;" value="${freqDesc}">
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#2B5CB3',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'อัปเดตข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+                preConfirm: () => {
+                    const freqDescVal = document.getElementById('swal-freq-desc').value.trim();
+                    if (!freqDescVal) { Swal.showValidationMessage('กรุณากรอกคำอธิบายความถี่'); return false; }
+                    
+                    // ✅ เปลี่ยน key เป็น description ให้ตรงกับ Backend
+                    return { freq_id: freqId, description: freqDescVal }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    sendFreqUpdate(result.value);
+                }
+            });
+        }
+
+        // 🚀 ส่งข้อมูลไปที่ Backend API
+        function sendFreqUpdate(payload) {
+            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            
+            fetch("/admin/api/frequency/update", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    Swal.fire('สำเร็จ!', 'อัปเดตข้อมูลความถี่ใน GraphDB เรียบร้อย', 'success').then(() => location.reload());
+                } else { throw new Error(data.message); }
+            })
+            .catch(err => Swal.fire('เกิดข้อผิดพลาด!', err.message, 'error'));
+        }
+
+        // 🔴 ฟังก์ชันลบความถี่
+        function deleteFreq(freqId, freqDesc) {
+            Swal.fire({
+                title: 'ยืนยันการลบความถี่?',
+                text: `คุณต้องการลบ "ex:${freqId} | ${freqDesc || freqId}" ใช่หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E53E3E',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'ยืนยัน ลบข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+                    fetch("/admin/api/frequency/delete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ freq_id: freqId })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire('ลบสำเร็จ!', data.message, 'success').then(() => location.reload());
+                        } else { throw new Error(data.message); }
+                    })
+                    .catch(err => Swal.fire('ไม่สามารถลบได้!', err.message, 'error'));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

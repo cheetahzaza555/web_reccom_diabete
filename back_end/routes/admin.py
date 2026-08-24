@@ -3,7 +3,6 @@ from modules.db.admin_repository import delete_category_from_ontology, delete_ex
 from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db
 from modules.db.exercise_repository import get_all_exercises_for_library
 from modules.db.swrl import get_all_swrl_rules
-from services import GRAPHDB_WRITE
 from utils.security import admin_required  # 🛡️ เปิดใช้งานยามเฝ้าประตู
 from werkzeug.security import check_password_hash, generate_password_hash
 import random

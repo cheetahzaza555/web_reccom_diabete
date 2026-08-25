@@ -1,5 +1,5 @@
 from flask import Blueprint, redirect, render_template, jsonify, request, session, url_for
-from modules.db.admin_repository import delete_category_from_ontology, delete_exercise_from_ontology, delete_frequency, get_all_categories_from_ontology, get_frequencies, insert_exercise_to_ontology, insert_exercise_to_ontology_v2, save_or_update_frequency, update_category_hierarchy_in_ontology
+from modules.db.admin_repository import delete_avoidance, delete_category_from_ontology, delete_exercise_from_ontology, delete_frequency, get_all_categories_for_dropdown, get_all_categories_from_ontology, get_avoidance_page, get_frequencies, insert_exercise_to_ontology, insert_exercise_to_ontology_v2, save_or_update_avoidance, save_or_update_avoidance, save_or_update_frequency, update_category_hierarchy_in_ontology
 from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db
 from modules.db.exercise_repository import get_all_exercises_for_library
 from modules.db.swrl import get_all_swrl_rules
@@ -106,13 +106,14 @@ def update_user_role():
         return jsonify({"success": False, "message": f"หลังบ้านขัดข้อง: {message}"}), 500
     
 @admin_bp.route("/exercises", methods=["GET"])
-@admin_required  # 🔒 บล็อกถาวร พอล็อกเอาต์แล้วเปิดหน้านี้จะโดนเด้งกลับหน้าแรกทันที
+@admin_required 
 def exercises_management_page():
     return render_template(
         "admin/exercises.html",
         username=session.get("username"),
         role=session.get("role"),
-        exercises=get_all_exercises_for_library()
+        exercises=get_all_exercises_for_library(),
+        categories=get_all_categories_for_dropdown()
     )       
     
 @admin_bp.route('/exercises/add', methods=['POST'])
@@ -332,6 +333,50 @@ def api_delete_frequency():
         }), 400
 
     result = delete_frequency(freq_id=freq_id)
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+@admin_bp.route('/warning', methods=['GET'])
+@admin_required
+def warning_page():
+    data = get_avoidance_page()
+    return render_template('admin/warning_avoid.html', warnings=data["data"])
+
+@admin_bp.route('/api/warning/update', methods=['POST'])
+@admin_required
+def api_update_warning():
+    data = request.json or {}
+    
+    warning_id = data.get('id', '').strip()
+    description = data.get('description', '').strip()
+
+    if not warning_id:
+        return jsonify({
+            "success": False, 
+            "message": "กรุณาระบุ Warning ID"
+        }), 400
+
+    result = save_or_update_avoidance(
+        avoid_id=warning_id,
+        description=description
+    )
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+@admin_bp.route('/api/warning/delete', methods=['POST'])
+@admin_required
+def api_delete_warning():
+    data = request.json or {}
+        
+    avoid_id = data.get('warning_id', '').strip()
+    
+    result = delete_avoidance(avoid_id=avoid_id)
 
     if result.get("success"):
         return jsonify(result), 200

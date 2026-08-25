@@ -11,6 +11,55 @@
 
 from SPARQLWrapper import POST, SPARQLWrapper, JSON
 from modules.config import GRAPHDB_READ, GRAPHDB_WRITE
+import random
+
+
+
+def get_all_categories_for_dropdown():
+    sparql_read = SPARQLWrapper(GRAPHDB_READ)
+    """ดึงเฉพาะ Class ย่อยล่างสุด (Leaf Classes) ภายใต้ ex:Exercise"""
+    query = """
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+    SELECT DISTINCT ?cat ?label WHERE {
+        # 1. ดึงเฉพาะ class ที่เป็น subClassOf ของ ex:Exercise
+        ?cat rdfs:subClassOf+ ex:Exercise .
+        
+        # 🟢 2. กรองคลาสแม่ออก: เอาเฉพาะคลาสที่ "ไม่มีคลาสอื่นมา subClassOf ตัวมันอีก" (Leaf Class)
+        FILTER NOT EXISTS {
+            ?subClass rdfs:subClassOf ?cat .
+            FILTER(?subClass != ?cat)
+        }
+        
+        # 🟢 3. กันเหนียว ตัด ex:Exercise และ owl:Nothing ออก
+        FILTER(?cat NOT IN (ex:Exercise, owl:Nothing))
+        
+        OPTIONAL { ?cat rdfs:label ?label . }
+    }
+    ORDER BY ?label ?cat
+    """
+    try:
+        sparql_read.setQuery(query)
+        sparql_read.setReturnFormat(JSON)
+        results = sparql_read.query().convert()
+
+        categories = []
+        for r in results["results"]["bindings"]:
+            cat_uri = r["cat"]["value"]
+            cat_id = cat_uri.split("#")[-1] if "#" in cat_uri else cat_uri.split("/")[-1]
+            label_val = r.get("label", {}).get("value", cat_id)
+
+            categories.append({
+                "id": cat_id,
+                "name": label_val
+            })
+
+        return categories
+    except Exception as e:
+        print(f"❌ Error in get_all_categories_for_dropdown: {e}")
+        return []
 
 
 def get_admin_dashboard_stats():
@@ -29,8 +78,11 @@ def get_admin_dashboard_stats():
     # 2. นับจำนวนท่าออกกำลังกายที่ไม่ซ้ำกันเลยในระบบ (DISTINCT ?exercise)
     query_exercises = """
     PREFIX ex: <http://example.org/diabetes#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
     SELECT (COUNT(DISTINCT ?exercise) AS ?count) WHERE {
-        ?p ex:recommendedExercise ?exercise .
+        ?exercise rdf:type/rdfs:subClassOf* ex:Exercise .
     }
     """
 
@@ -39,6 +91,14 @@ def get_admin_dashboard_stats():
     PREFIX ex: <http://example.org/diabetes#>
     SELECT (COUNT(?exercise) AS ?count) WHERE {
         ?p ex:recommendedExercise ?exercise .
+    }
+    """
+
+    query_rule = """
+    PREFIX swrl: <http://www.w3.org/2003/11/swrl#>
+    SELECT (COUNT(DISTINCT ?rule) AS ?count) 
+    WHERE {
+        ?rule a swrl:Imp .
     }
     """
 
@@ -56,6 +116,10 @@ def get_admin_dashboard_stats():
         sparql.setQuery(query_recommendations)
         res_r = sparql.query().convert()
         stats["total_mets"] = int(res_r["results"]["bindings"][0]["count"]["value"])
+
+        sparql.setQuery(query_rule)
+        res_r = sparql.query().convert()
+        stats["total_rules"] = int(res_r["results"]["bindings"][0]["count"]["value"])
 
     except Exception as e:
         print("❌ [Admin Module Error] เกิดข้อผิดพลาดขณะ Query สถิติรวม:", e)
@@ -213,54 +277,15 @@ def update_user_role_in_graphdb(user_id, new_role):
         return False, error_msg
 
 def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=None, mets=None, youtube_id=None):
-    try:
-        from SPARQLWrapper import SPARQLWrapper
-        from modules.config import GRAPHDB_WRITE 
-        import random
-        
+    try: 
         sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
         base_prefix = "http://example.org/diabetes#"
         
         final_id = existing_id if existing_id else f"17{random.randint(100, 999)}"
         subject_uri = f"<{base_prefix}{final_id}>"
         
-        # ปรับแก้ให้ใช้ exercise_type ตรงๆ โดยไม่ส่ง string ซ้ำซ้อน
-        type_uri = f"<{base_prefix}{exercise_type}>"
-        
-        parent_class = None
-        middle_class = None
-
-        # 🌳 1. จำแนกกลุ่มตามผัง Ontology
-        # [กลุ่ม Aerobic - WeightBearing]
-        if exercise_type in ["Walking", "Running", "Dancing", "WeightBearingAerobicSport"]:
-            parent_class = "ex:Aerobic"
-            middle_class = "ex:WeightBearingAerobicExercise"
-
-        # [กลุ่ม Aerobic - NonWeightBearing]
-        elif exercise_type in ["Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"]:
-            parent_class = "ex:Aerobic"
-            middle_class = "ex:NonWeightBearingAerobicExercise"
-
-        # [กลุ่ม Resistance]
-        elif exercise_type in ["WeightBearingResistanceExercise"]:
-            parent_class = "ex:Resistance"
-            middle_class = "ex:WeightBearingResistanceExercise"
-
-        elif exercise_type in ["NonWeightBearingResistanceExercise"]:
-            parent_class = "ex:Resistance"
-            middle_class = "ex:NonWeightBearingResistanceExercise"
-
-        # [กลุ่ม Stretching - เพิ่มคำว่า StretchingExercise และ ResistanceAndStretchingExercise]
-        elif exercise_type in ["Stretching", "StretchingExercise", "ResistanceAndStretchingExercise"]: 
-            parent_class = "ex:StretchingExercise"
-            middle_class = None
-            
-        else:
-            # 🚨 แก้ไข Fallback: ถ้าไม่รู้จัก ให้ใช้ประเภทที่ส่งมาเป็น parent แทน ห้ามใช้ ex:Aerobic มั่ว
-            parent_class = f"ex:{exercise_type}"
-
-        # 🌳 2. สร้าง Triple
-        middle_class_triple = f"{subject_uri} rdf:type {middle_class} ." if middle_class else ""
+        # URI ของ Class ย่อยที่เลือก (เช่น ex:Walking)
+        class_uri = f"ex:{exercise_type}"
 
         insert_query = f"""
         PREFIX ex: <{base_prefix}>
@@ -272,11 +297,9 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
         INSERT DATA {{
             {subject_uri} rdf:type owl:NamedIndividual .
             {subject_uri} rdf:type ex:Exercise .
-            {subject_uri} rdf:type {parent_class} .
+            {subject_uri} rdf:type {class_uri} .                  # 🟢 เพิ่ม Class ย่อยตรงนี้
             
-            {middle_class_triple}
-            
-            {subject_uri} ex:hasKindOfExercise {type_uri} .
+            {subject_uri} ex:hasKindOfExercise {class_uri} . # 🟢 เพิ่ม Object Property ตรงนี้
             {subject_uri} rdfs:label "{name}" .
             {subject_uri} ex:metValue "{float(mets)}"^^xsd:decimal .
             {subject_uri} ex:hasYoutubeID "{youtube_id if youtube_id else ''}" .
@@ -287,13 +310,13 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
         sparql_write_client.setMethod('POST')
         sparql_write_client.query()
 
-        print(f"💾 [GraphDB] ซิงค์ข้อมูล ID #{final_id} เสร็จสิ้น (Parent: {parent_class})")
+        print(f"💾 [GraphDB] ซิงค์ข้อมูล ID #{final_id} (Type: {exercise_type}) เรียบร้อยแล้ว")
         return {"success": True, "message": "ซิงค์สำเร็จ"}
         
     except Exception as e:
         print(f"❌ Error sync ontology: {e}")
         return {"success": False, "message": str(e)}
-
+    
 # 💡 และอย่าลืมเปลี่ยนไส้ในของฟังก์ชันเพิ่มอันเก่า (insert_exercise_to_ontology) ให้เรียกใช้งานผ่านตัว v2 นี้ด้วยนะ ตัวอย่างเช่น:
 def insert_exercise_to_ontology(name, exercise_type, mets, youtube_id=None):
     return insert_exercise_to_ontology_v2(None, name, exercise_type, mets, youtube_id)
@@ -397,49 +420,43 @@ def get_all_categories_from_ontology():
 
     return list(category_map.values())
 
-def update_category_hierarchy_in_ontology(category_id, parent_category_id, label_th=None):
-    """ฟังก์ชันอัปเดตความสัมพันธ์แม่-ลูก ระหว่างหมวดหมู่ (rdfs:subClassOf) พร้อมแมปกลุ่ม KindOfExercise"""
+def update_category_hierarchy_in_ontology(category_id, parent_category_id=None, label_th=None):
     try:
         sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
         base_prefix = "http://example.org/diabetes#"
         category_uri = f"<{base_prefix}{category_id}>"
-        parent_uri = f"<{base_prefix}{parent_category_id}>"
 
-        # -------------------------------------------------------------
-        # 1. เงื่อนไขจำแนกกลุ่มสำหรับ Visual Graph (KindOfExercise Sub-groups)
-        # -------------------------------------------------------------
-        w_bearing_list = [
-            "WeightBearingAerobicExercise", "WeightBearingAerobicSport",
-            "Running", "Dancing", "Walking", "WBearingAerobicExercise"
-        ]
-        nw_bearing_list = [
-            "NonWeightBearingAerobicExercise", "NonWeightBearingAerobicSport",
-            "WaterActivity", "Bicycling", "NWBearingAerobicExercise"
-        ]
-        resistance_list = [
-            "WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise",
-            "StretchingExercise", "ResistanceAndStretchingExercise"
-        ]
+        parent_to_group_map = {
+            "WeightBearingAerobicExercise": "WBearingAerobicExercise",
+            "WeightBearingAerobicSport": "WBearingAerobicExercise",
+            "WBearingAerobicExercise": "WBearingAerobicExercise",
+            "Running": "WBearingAerobicExercise",
+            "Dancing": "WBearingAerobicExercise",
+            "Walking": "WBearingAerobicExercise",
 
-        # เช็กว่า parent_category_id ตรงกับกลุ่มไหน
-        if parent_category_id in w_bearing_list:
-            group_triple = f"{category_uri} a ex:WBearingAerobicExercise ."
-        elif parent_category_id in nw_bearing_list:
-            group_triple = f"{category_uri} a ex:NWBearingAerobicExercise ."
-        elif parent_category_id in resistance_list:
-            group_triple = f"{category_uri} a ex:ResistanceAndStretchingExercise ."
-        else:
-            # ถ้าเป็นหมวดใหม่อื่นๆ ให้ไม่ใส่ triple ย่อย หรือใช้ URI ตัวมันเอง
-            group_triple = ""
+            "NonWeightBearingAerobicExercise": "NWBearingAerobicExercise",
+            "NonWeightBearingAerobicSport": "NWBearingAerobicExercise",
+            "NWBearingAerobicExercise": "NWBearingAerobicExercise",
+            "WaterActivity": "NWBearingAerobicExercise",
+            "Bicycling": "NWBearingAerobicExercise",
 
-        # -------------------------------------------------------------
-        # 2. จัดเตรียม Triple สำหรับ rdfs:label
-        # -------------------------------------------------------------
+            "WeightBearingResistanceExercise": "ResistanceAndStretchingExercise",
+            "NonWeightBearingResistanceExercise": "ResistanceAndStretchingExercise",
+            "StretchingExercise": "ResistanceAndStretchingExercise",
+            "ResistanceAndStretchingExercise": "ResistanceAndStretchingExercise"
+        }
+
+        # 🟢 1. จัดเตรียม Dynamic Triples ให้ถูก Syntax
+        target_group_short = parent_to_group_map.get(
+            parent_category_id, 
+            parent_category_id if parent_category_id else "KindOfExercise"
+        )
+        group_triple = f"{category_uri} rdf:type ex:{target_group_short} ." if target_group_short else ""
+        
+        parent_triple = f"{category_uri} rdfs:subClassOf <{base_prefix}{parent_category_id}> ." if parent_category_id else ""
         label_triple = f'{category_uri} rdfs:label "{label_th}"@th .' if label_th else ""
 
-        # -------------------------------------------------------------
-        # 3. คำสั่ง SPARQL DELETE & INSERT
-        # -------------------------------------------------------------
+        # 🟢 2. SPARQL Update ที่ใช้รูปแบบ DELETE ... INSERT ... WHERE ... (ไม่มีเครื่องหมาย ; คั่นกลาง)
         update_query = f"""
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         PREFIX owl: <http://www.w3.org/2002/07/owl#>
@@ -451,6 +468,14 @@ def update_category_hierarchy_in_ontology(category_id, parent_category_id, label
             {category_uri} rdf:type ?oldGroupType .
             {" " + category_uri + " rdfs:label ?oldLabel ." if label_th else ""}
         }}
+        INSERT {{
+            {category_uri} rdf:type owl:Class .
+            {category_uri} rdf:type owl:NamedIndividual .
+            {category_uri} rdf:type ex:KindOfExercise .
+            {parent_triple}
+            {group_triple}
+            {label_triple}
+        }}
         WHERE {{
             OPTIONAL {{
                 {category_uri} rdfs:subClassOf ?oldParent .
@@ -458,17 +483,10 @@ def update_category_hierarchy_in_ontology(category_id, parent_category_id, label
             }}
             OPTIONAL {{
                 {category_uri} rdf:type ?oldGroupType .
-                FILTER(?oldGroupType IN (ex:WBearingAerobicExercise, ex:NWBearingAerobicExercise, ex:ResistanceAndStretchingExercise))
+                FILTER(?oldGroupType NOT IN (ex:KindOfExercise, owl:Class, owl:NamedIndividual))
+                FILTER(STRSTARTS(STR(?oldGroupType), "{base_prefix}"))
             }}
             {" OPTIONAL { " + category_uri + " rdfs:label ?oldLabel . }" if label_th else ""}
-        }} ;
-
-        INSERT DATA {{
-            {category_uri} a owl:Class ;
-                           a ex:KindOfExercise ;
-                           rdfs:subClassOf {parent_uri} .
-            {group_triple}
-            {label_triple}
         }}
         """
 
@@ -476,8 +494,9 @@ def update_category_hierarchy_in_ontology(category_id, parent_category_id, label
         sparql_write_client.setMethod('POST')
         sparql_write_client.query()
 
-        print(f"✏️ [GraphDB Success] กำหนดให้หมวดหมู่ '{category_id}' อยู่ใต้ '{parent_category_id}' เรียบร้อย")
+        print(f"✏️ [GraphDB Success] อัปเดต '{category_id}' สำเร็จ")
         return {"success": True, "message": "อัปเดตสายตระกูลหมวดหมู่สำเร็จ"}
+
     except Exception as e:
         print(f"❌ Error updating category hierarchy: {e}")
         return {"success": False, "message": str(e)}
@@ -590,3 +609,83 @@ def delete_frequency(freq_id):
     except Exception as e:
         return {"success": False, "message": str(e)}
     
+def get_avoidance_page():
+    sparql = SPARQLWrapper(GRAPHDB_READ)
+    
+    # ใช้ SPARQL ค้นหา Class ที่มีคำว่า WarningAvoidExercise โดยไม่ต้องฟิกซ์ PREFIX ทั้งหมด
+    query = """
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+    SELECT ?subject ?description WHERE {
+        ?subject rdf:type ?type .
+        FILTER(STRENDS(STR(?type), "WarningAvoidExercise"))
+        OPTIONAL { 
+            ?subject ?p ?description .
+            FILTER(STRENDS(STR(?p), "description"))
+        }
+    }
+    """
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    
+    avoids = []
+    for row in results["results"]["bindings"]:
+        uri = row["subject"]["value"]
+        name = uri.split("#")[-1] if "#" in uri else uri.split("/")[-1]
+        description = row.get("description", {}).get("value", "")
+        
+        avoids.append({
+            "id": name,
+            "description": description
+        })
+
+    avoids.sort(key=lambda x: int(''.join(filter(str.isdigit, x['id'])) or 0))
+
+    return {"success": True, "data": avoids}
+
+def save_or_update_avoidance(avoid_id, description=""):
+    try:
+        sparql = SPARQLWrapper(GRAPHDB_WRITE)
+        
+        # 🟢 ปรับ PREFIX และ Class name ให้ตรงกับ WarningAvoidExercise
+        query = f"""
+        PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
+
+        DELETE {{
+            ex:{avoid_id} ex:description ?oldDesc .
+        }}
+        WHERE {{
+            OPTIONAL {{ ex:{avoid_id} ex:description ?oldDesc . }}
+        }} ;
+
+        INSERT DATA {{
+            ex:{avoid_id} a ex:WarningAvoidExercise ;
+                        ex:description "{description}" .
+        }}
+        """
+        sparql.setMethod(POST)
+        sparql.setQuery(query)
+        sparql.query()
+        return {"success": True, "message": f"บันทึกข้อมูล ex:{avoid_id} เรียบร้อยแล้ว"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    
+def delete_avoidance(avoid_id):
+    sparql = SPARQLWrapper(GRAPHDB_WRITE)
+    sparql.setMethod(POST)
+
+    query = f"""
+    PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
+
+    DELETE WHERE {{
+        ex:{avoid_id} ?p ?o .
+    }}
+    """
+    sparql.setQuery(query)
+    try:
+        sparql.query()
+        return {"success": True, "message": "ลบข้อมูลสำเร็จ"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}

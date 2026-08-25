@@ -18,14 +18,6 @@
             --text-muted: #666666;
             --white: #ffffff;
             --border-color: #E2E8F0;
-            
-            /* 🎨 ปรับสีป้ายประเภท (Badge) ให้อ่านง่าย ชัดเจน ไม่จาง */
-            --aerobic-bg: #9bd6fd;
-            --aerobic-text: #0369A1;
-            --strength-bg: #93ffb9;
-            --strength-text: #15803D;
-            --flex-bg: #9334f8;
-            --flex-text: #6B21A8;
 
             --danger: #E53E3E;
             --warning: #D97706;
@@ -123,7 +115,6 @@
         .exercise-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .exercise-table tr:hover { background-color: #F8FAFC; }
 
-        /* 🏷️ ดีไซน์กลุ่ม Badge */
         .badge { 
             padding: 6px 14px; 
             border-radius: 20px; 
@@ -132,12 +123,9 @@
             display: inline-flex; 
             align-items: center;
             gap: 6px;
+            transition: all 0.3s ease;
         }
-        .badge-aerobic { background-color: var(--aerobic-bg); color: var(--aerobic-text); }
-        .badge-strength { background-color: var(--strength-bg); color: var(--strength-text); }
-        .badge-flexibility { background-color: var(--flex-bg); color: var(--flex-text); }
 
-        /* 🎛️ ปุ่มคำสั่ง จัดการแก้ไข และ ลบ */
         .action-buttons { display: flex; gap: 8px; justify-content: center; }
         .btn-edit {
             padding: 6px 12px;
@@ -178,7 +166,8 @@
 <body>
 
     <div id="exercise-data-container" style="display: none;" 
-         data-json="{% if exercises %}{{ exercises | tojson | safe | forceescape }}{% else %}[]{% endif %}">
+         data-json="{% if exercises %}{{ exercises | tojson | safe | forceescape }}{% else %}[]{% endif %}"
+         data-categories="{% if categories %}{{ categories | tojson | safe | forceescape }}{% else %}[]{% endif %}">
     </div>
 
     <div class="admin-layout">
@@ -199,7 +188,7 @@
                 </div>
                 
                 <select id="filterType" class="filter-select">
-                    </select>
+                </select>
 
                 <button class="btn-add-exercise" onclick="openAddExerciseModal()">
                     <i class="fa-solid fa-circle-plus"></i> เพิ่มท่าออกกำลังกายใหม่
@@ -212,96 +201,141 @@
                         <tr>
                             <th style="width: 10%;">ไอดีท่า</th>
                             <th style="width: 35%;">ชื่อท่าออกกำลังกาย</th>
-                            <th style="width: 25%;">ประเภทจริงในคลัง (Class)</th>
+                            <th style="width: 20%;">ประเภท</th>
                             <th style="width: 15%;">ค่า METs</th>
                             <th style="width: 15%; text-align: center;">จัดการข้อมูล</th>
                         </tr>
                     </thead>
                     <tbody id="exerciseTableBody">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // 📥 ดึงข้อมูล JSON ผ่าน data-attribute
+        // 📥 1. ดึงข้อมูล JSON ทั้ง Exercises และ Categories
         const container = document.getElementById('exercise-data-container');
         const exercisesData = JSON.parse(container.getAttribute('data-json') || '[]');
+        const categoriesData = JSON.parse(container.getAttribute('data-categories') || '[]');
 
-        // 📝 ฟังก์ชันแปลคำศัพท์เฉพาะของ Ontology เพื่อแสดงผลในหน้าเว็บให้อ่านง่ายขึ้น
-        function translateType(className) {
-            const dictionary = {
-                "Walking": "การเดิน",
-                "Running": "การวิ่ง",
-                "Dancing": "การเต้นล",
-                "Bicycling": "การปั่นจักรยาน",
-                "WeightBearingAerobicSport": "กีฬาแอโรบิกแบบลงน้ำหนักตัว",
-                "NonWeightBearingAerobicSport": "กีฬาแอโรบิกแบบไม่ลงน้ำหนัก",
-                "WaterActivity": "กิจกรรมทางน้ำ",
-                "WeightBearingResistanceExercise": "ฝึกแรงต้านแบบลงน้ำหนัก",
-                "NonWeightBearingResistanceExercise": "ฝึกแรงต้านแบบไม่ลงน้ำหนัก",
-                "StretchingExercise": "การยืดเหยียดกล้ามเนื้อ"
-            };
-            return dictionary[className] || className;
+        // 🎨 ระบบสุ่มสี Badge แบบคงที่ตามชื่อ Class
+        const colorCache = {};
+
+        function getColorForClass(className) {
+            const key = className.toLowerCase().trim();
+            if (colorCache[key]) {
+                return colorCache[key];
+            }
+
+            // คำนวณ Hash จากชื่อคลาสเพื่อให้ชื่อเดิมได้สีเดิมเสมอ
+            let hash = 0;
+            for (let i = 0; i < key.length; i++) {
+                hash = key.charCodeAt(i) + ((hash << 5) - hash);
+            }
+
+            // สุ่มค่า Hue (0-360) จาก Hash
+            const h = Math.abs(hash) % 360;
+            // ใช้ความอิ่มตัว 70-85% และความสว่าง 85-92% เพื่อให้ได้สีพาสเทลสวยงามอ่านง่าย
+            const bg = `hsl(${h}, 80%, 88%)`;
+            const text = `hsl(${h}, 70%, 25%)`; // สีตัวอักษรเข้มข้นขึ้นเพื่อความคมชัด
+
+            colorCache[key] = { bg, text };
+            return colorCache[key];
         }
 
-        // 🔄 ฟังก์ชันสร้างตัวเลือกตัวกรองแบบมีลำดับขั้นตามคลาสจริงในคลัง (ตามที่ขอ)
+        // 🟢 2. ดึงรายชื่อ Class ทั้งหมด
+        function getAllUniqueClasses() {
+            if (categoriesData && categoriesData.length > 0) {
+                return categoriesData.map(c => c.id || c.name);
+            }
+            
+            const classSet = new Set();
+            exercisesData.forEach(item => {
+                if (item.original_type) classSet.add(item.original_type);
+            });
+            return Array.from(classSet).sort();
+        }
+
+        // 🔄 3. ฟังก์ชันเรนเดอร์ Dropdown ตัวกรอง
         function renderFilterDropdown() {
-            const dropdown = document.getElementById('filterType'); // ผูกเข้ากับไอดี filterType ตัวกรองของตาราง
-            const structure = {
-                "Aerobic (แอโรบิก)": ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"],
-                "Resistance (แรงต้าน)": ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"],
-                "Stretching (ยืดเหยียด)": ["StretchingExercise"]
-            };
+            const dropdown = document.getElementById('filterType');
             
             let html = `<option value="all">ทุกประเภท (แสดงทั้งหมด)</option>`;
-            for (const [parent, children] of Object.entries(structure)) {
-                html += `<optgroup label="─── ${parent} ───">`;
-                children.forEach(child => {
-                    html += `<option value="${child}">&nbsp;&nbsp;• ${translateType(child)}</option>`;
+            
+            if (categoriesData && categoriesData.length > 0) {
+                categoriesData.forEach(cat => {
+                    html += `<option value="${cat.id}">• ${cat.name}</option>`;
                 });
-                html += `</optgroup>`;
+            } else {
+                const classes = getAllUniqueClasses();
+                classes.forEach(cls => {
+                    html += `<option value="${cls}">• ${cls}</option>`;
+                });
             }
+            
             dropdown.innerHTML = html;
         }
 
-        // 📊 ฟังก์ชันเรนเดอร์ตารางข้อมูล
+        // 🟢 คัดกรองหาชื่อ Class ย่อยที่สุด (Leaf Class)
+        function getSpecificCategoryName(item) {
+            if (!item) return "Exercise";
+
+            const ignoreList = ['thing', 'namedindividual', 'exercise'];
+
+            if (item.all_categories && Array.isArray(item.all_categories) && item.all_categories.length > 0) {
+                for (let i = item.all_categories.length - 1; i >= 0; i--) {
+                    const cat = item.all_categories[i];
+                    if (!ignoreList.includes(cat.toLowerCase())) {
+                        return cat;
+                    }
+                }
+            }
+            
+            return item.original_type || "Exercise";
+        }
+
+        // 🟢 4. ฟังก์ชัน renderTable (เพิ่มการ Sort เรียงตามหมวดหมู่ A-Z)
         function renderTable(data) {
             const tableBody = document.getElementById('exerciseTableBody');
             
             if (!data || !data.length) {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลท่าออกกำลังกายที่ตรงกับเงื่อนไข</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูล</td></tr>`;
                 return;
             }
 
-            let html = "";
-            data.forEach(item => {
-                let actualClass = item.original_type || "Exercise";
-                const categories = item.all_categories || [];
-
-                let typeBadgeClass = "badge-flexibility"; 
-                let typeIcon = '<i class="fa-solid fa-child-reaching"></i>';
+            // 📌 จัดเรียงข้อมูล: เรียงตามชื่อหมวดหมู่ (Specific Category) ก่อน แล้วตามด้วย ID
+            const sortedData = [...data].sort((a, b) => {
+                const catA = getSpecificCategoryName(a).toLowerCase();
+                const catB = getSpecificCategoryName(b).toLowerCase();
                 
-                // ตรวจเช็กเงื่อนไขป้ายสีตามประเภทหลัก
-                if (categories.includes("Aerobic") || actualClass.toLowerCase().includes("walking") || actualClass.toLowerCase().includes("cycling") || actualClass.toLowerCase().includes("bicycling") || actualClass.toLowerCase().includes("running")) {
-                    typeBadgeClass = "badge-aerobic";
-                    typeIcon = '<i class="fa-solid fa-heart-pulse"></i>';
-                } else if (categories.includes("Resistance") || categories.includes("Strength") || actualClass.toLowerCase().includes("resistance")) {
-                    typeBadgeClass = "badge-strength";
-                    typeIcon = '<i class="fa-solid fa-dumbbell"></i>';
-                }
+                // 1. เปรียบเทียบชื่อหมวดหมู่ (A-Z)
+                if (catA < catB) return -1;
+                if (catA > catB) return 1;
+                
+                // 2. ถ้าหมวดหมู่เดียวกัน ให้เรียงตาม ID
+                return a.id.toString().localeCompare(b.id.toString(), undefined, { numeric: true });
+            });
+
+            let html = "";
+            sortedData.forEach(item => {
+                let rawClass = getSpecificCategoryName(item);
+                let actualClass = rawClass.charAt(0).toUpperCase() + rawClass.slice(1);
+                
+                // 🎨 ดึงสีสุ่มตามชื่อ Class
+                const badgeColor = getColorForClass(actualClass);
 
                 let metsDisplay = parseFloat(item.mets) ? `${parseFloat(item.mets).toFixed(1)} METs` : "0.0 METs";
-                let ytBadge = item.youtube_id ? ` <small style="color: #ef4444;" title="มีลิงก์วิดีโอ"><i class="fa-brands fa-youtube"></i></small>` : '';
+                let ytBadge = item.youtube_id ? ` <small style="color: #ef4444;"><i class="fa-brands fa-youtube"></i></small>` : '';
 
                 html += `
                 <tr>
                     <td><strong>#${item.id}</strong></td>
                     <td><strong>${item.name}</strong>${ytBadge}</td>
                     <td>
-                        <span class="badge ${typeBadgeClass}">
-                            ${typeIcon} ${actualClass}
+                        <!-- แสดง Badge สีสุ่มอัตโนมัติ -->
+                        <span class="badge" style="background-color: ${badgeColor.bg}; color: ${badgeColor.text};">
+                            <i class="fa-solid fa-tag"></i> ${actualClass}
                         </span>
                     </td>
                     <td>
@@ -323,64 +357,53 @@
             tableBody.innerHTML = html;
         }
 
-        // 🔍 ฟังก์ชันการทำงานของตัวกรองค้นหาที่สัมพันธ์กับ Dropdown คลาสย่อยตัวใหม่
+        // 🔍 5. ฟังก์ชันกรองข้อมูล
         function filterContent() {
-            const searchVal = document.getElementById('searchBar').value.toLowerCase();
+            const searchVal = document.getElementById('searchBar').value.toLowerCase().trim();
             const filterTypeVal = document.getElementById('filterType').value;
 
             const filtered = exercisesData.filter(item => {
-                // ค้นหาจากชื่อหรือไอดี
-                const nameMatch = item.name.toLowerCase().includes(searchVal) || item.id.toString().toLowerCase().includes(searchVal);
+                const nameMatch = item.name.toLowerCase().includes(searchVal) || 
+                                  item.id.toString().toLowerCase().includes(searchVal);
                 
-                const itemCategories = item.all_categories || [];
-                const actualClass = item.original_type || "";
-                
-                // ตรรกะการตรวจสอบเงื่อนไขเลือกคลาสย่อย
                 let typeMatch = false;
                 if (!filterTypeVal || filterTypeVal === 'all') {
-                    typeMatch = true; // แสดงทั้งหมด
+                    typeMatch = true;
                 } else {
-                    // ตรวจหาว่าชื่อคลาสจริงตรงกับที่เลือกใน dropdown หรือมีจัดอยู่ในหมวดหมู่ย่อยนั้น ๆ หรือไม่
-                    typeMatch = (actualClass === filterTypeVal) || 
-                                (filterTypeVal === "Walking" && actualClass.toLowerCase().includes("walking")) ||
-                                (filterTypeVal === "Bicycling" && actualClass.toLowerCase().includes("cycling")) ||
-                                (filterTypeVal === "StretchingExercise" && actualClass.toLowerCase().includes("stretch"));
+                    const currentSpecific = getSpecificCategoryName(item).toLowerCase();
+                    const specificMatch = currentSpecific === filterTypeVal.toLowerCase();
+
+                    const originalMatch = (item.original_type || "").toLowerCase() === filterTypeVal.toLowerCase();
+
+                    const categoryMatch = item.all_categories && Array.isArray(item.all_categories) && 
+                        item.all_categories.some(cat => cat.toLowerCase() === filterTypeVal.toLowerCase());
+
+                    typeMatch = specificMatch || originalMatch || categoryMatch;
                 }
-                                  
+                                
                 return nameMatch && typeMatch;
             });
+
             renderTable(filtered);
         }
 
-        // ผูกตัวดักฟังเหตุการณ์การค้นหาข้อมูล
         document.getElementById('searchBar').addEventListener('input', filterContent);
         document.getElementById('filterType').addEventListener('change', filterContent);
 
-        // 🟢 เรียกโหลดโครงสร้าง dropdown และตารางทันทีที่เปิดหน้าเว็บ
         window.addEventListener('DOMContentLoaded', () => {
-            renderFilterDropdown(); // สร้างกลุ่มตัวเลือกแบบออนโทโลจีก่อน
-            renderTable(exercisesData); // เรนเดอร์ตารางข้อมูล
+            renderFilterDropdown();
+            renderTable(exercisesData);
         });
 
-        // 🟢 ฟังก์ชันเพิ่มข้อมูลท่าออกกำลังกายใหม่ (เวอร์ชัน Dropdown ตามหมวดหมู่ Ontology)
+        // 🟢 Modal เพิ่มข้อมูล
         function openAddExerciseModal() {
-            // 1. สร้างโครงสร้างตัวเลือก <option> และ <optgroup> ดึงจากผังโครงสร้างระบบ
-            const structure = {
-                "Aerobic (แอโรบิก)": ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"],
-                "Resistance (แรงต้าน)": ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"],
-                "Stretching (ยืดเหยียด)": ["StretchingExercise"]
-            };
+            const classes = getAllUniqueClasses();
 
             let dropdownHtml = `<option value="">-- กรุณาเลือกคลาสประเภทข้อมูล --</option>`;
-            for (const [parent, children] of Object.entries(structure)) {
-                dropdownHtml += `<optgroup label="─── ${parent} ───">`;
-                children.forEach(child => {
-                    dropdownHtml += `<option value="${child}">• ${translateType(child)} (${child})</option>`;
-                });
-                dropdownHtml += `</optgroup>`;
-            }
+            classes.forEach(cls => {
+                dropdownHtml += `<option value="${cls}">${cls}</option>`;
+            });
 
-            // 2. เรียกเปิด SweetAlert2 Modal
             Swal.fire({
                 title: 'เพิ่มท่าออกกำลังกายใหม่',
                 html: `
@@ -440,24 +463,15 @@
             });
         }
 
-        // 🟡 ฟังก์ชันแก้ไขข้อมูลท่าออกกำลังกาย (เวอร์ชันเปลี่ยนเป็น Dropdown พร้อมเลือกค่าเดิมให้อัตโนมัติ)
+        // 🟡 Modal แก้ไขข้อมูล
         function openEditExerciseModal(id, name, currentType, mets, youtubeId) {
-            const structure = {
-                "Aerobic (แอโรบิก)": ["Walking", "Running", "Dancing", "WeightBearingAerobicSport", "Bicycling", "WaterActivity", "NonWeightBearingAerobicSport"],
-                "Resistance (แรงต้าน)": ["WeightBearingResistanceExercise", "NonWeightBearingResistanceExercise"],
-                "Stretching (ยืดเหยียด)": ["StretchingExercise"]
-            };
+            const classes = getAllUniqueClasses();
 
             let dropdownHtml = ``;
-            for (const [parent, children] of Object.entries(structure)) {
-                dropdownHtml += `<optgroup label="─── ${parent} ───">`;
-                children.forEach(child => {
-                    // เช็กว่าถ้าตรงกับค่าประเภทเดิม ให้กำหนดเป็น selected ทันที
-                    const isSelected = (child === currentType) ? 'selected' : '';
-                    dropdownHtml += `<option value="${child}" ${isSelected}>• ${translateType(child)} (${child})</option>`;
-                });
-                dropdownHtml += `</optgroup>`;
-            }
+            classes.forEach(cls => {
+                const isSelected = (cls === currentType) ? 'selected' : '';
+                dropdownHtml += `<option value="${cls}" ${isSelected}>${cls}</option>`;
+            });
 
             Swal.fire({
                 title: 'แก้ไขข้อมูลท่าออกกำลังกาย',
@@ -519,13 +533,9 @@
             });
         }
 
-        // 🔴 ฟังก์ชันลบข้อมูลท่าออกกำลังกาย (เวอร์ชันค้นหาชื่อท่าอัตโนมัติจาก ID)
+        // 🔴 ฟังก์ชันลบข้อมูลท่าออกกำลังกาย
         function deleteExercise(exerciseId) {
-            // 🔍 ค้นหาข้อมูลของท่าออกกำลังกายนี้จากก้อนข้อมูล exercisesData ที่โหลดมาจาก Backend เปล่าๆ
-            // โดยใช้ไอดี (exerciseId) เป็นตัวจับคู่
             const exerciseItem = exercisesData.find(item => String(item.id) === String(exerciseId));
-            
-            // 🏷️ ดึงชื่อท่าออกมา ถ้าหาไม่เจอจริง ๆ ให้ใช้ ID แทน (กันเหนียวไว้)
             const exerciseName = exerciseItem ? exerciseItem.name : exerciseId;
 
             Swal.fire({
@@ -542,7 +552,6 @@
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                     
-                    // ยิง Request ส่งไปที่เซิร์ฟเวอร์
                     fetch(`/admin/exercises/delete/${exerciseId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }

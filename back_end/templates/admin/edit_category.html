@@ -260,7 +260,7 @@
 
         // 🟢 สร้างตัวเลือกหมวดหมู่แม่สำหรับ Modal
         function buildParentOptions(selectedParentId = "", currentCatId = "") {
-            let options = `<option value="ExerciseCategory">ExerciseCategory (คลาสหลักสูงสุด)</option>`;
+            let options = `<option value="Exercise">ExerciseCategory (คลาสหลักสูงสุด)</option>`;
             categoriesData.forEach(item => {
                 // ป้องกันไม่ให้เลือกตัวเองเป็นหมวดหมู่แม่
                 if (item.category_id !== currentCatId) {
@@ -377,11 +377,11 @@
             .catch(err => Swal.fire('เกิดข้อผิดพลาด!', err.message, 'error'));
         }
 
-        // 🔴 ฟังก์ชันลบหมวดหมู่
+        // 🔴 ฟังก์ชันลบหมวดหมู่ (แก้ไขปัญหาแสดงคำว่า message)
         function deleteCategory(catId, catLabel) {
             Swal.fire({
                 title: 'ยืนยันการลบหมวดหมู่?',
-                text: `คุณต้องการลบหมวดหมู่ "${catLabel || catId}" (#${catId}) ใช่หรือไม่?`,
+                text: `คุณต้องการลบหมวดหมู่ "${catLabel || catId}" ใช่หรือไม่?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E53E3E',
@@ -400,10 +400,18 @@
                     })
                     .then(res => res.json())
                     .then(data => {
-                        if(data.success) {
-                            Swal.fire('ลบสำเร็จ!', data.message, 'success').then(() => location.reload());
+                        if (data.success) {
+                            // ตรวจสอบข้อความ หากเป็นคำว่า 'message' หรือไม่มีค่า ให้ใช้ข้อความภาษาไทยแทน
+                            const successMsg = (typeof data.message === 'string' && data.message.trim() !== 'message' && data.message.trim() !== '') 
+                                            ? data.message 
+                                            : `ลบหมวดหมู่ "${catLabel || catId}" ออกจากระบบเรียบร้อยแล้ว`;
+
+                            Swal.fire('ลบสำเร็จ!', successMsg, 'success').then(() => location.reload());
                         } else { 
-                            throw new Error(data.message); 
+                            const errorMsg = (typeof data.message === 'string' && data.message.trim() !== 'message' && data.message.trim() !== '') 
+                                            ? data.message 
+                                            : 'เกิดข้อผิดพลาดในการลบหมวดหมู่';
+                            throw new Error(errorMsg); 
                         }
                     })
                     .catch(err => Swal.fire('ไม่สามารถลบได้!', err.message, 'error'));

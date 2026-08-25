@@ -91,7 +91,7 @@
                 <table class="freq-table">
                     <thead>
                         <tr>
-                            <th style="width: 25%;">Instance ID</th>
+                            <th style="width: 25%;">ไอดีความถี่</th>
                             <th style="width: 45%;">คำอธิบาย / ความถี่</th>
                             <th style="width: 30%; text-align: center;">จัดการข้อมูล</th>
                         </tr>
@@ -244,8 +244,8 @@
         // 🔴 ฟังก์ชันลบความถี่
         function deleteFreq(freqId, freqDesc) {
             Swal.fire({
-                title: 'ยืนยันการลบความถี่?',
-                text: `คุณต้องการลบ "ex:${freqId} | ${freqDesc || freqId}" ใช่หรือไม่?`,
+                title: 'ยืนยันการลบความถี่ ex:' + freqId + ' ?',
+                text: `คุณต้องการลบ "${freqDesc || freqId}" ใช่หรือไม่?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E53E3E',

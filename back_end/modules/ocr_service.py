@@ -22,6 +22,15 @@ def process_ocr_image(image_file):
         # 2. สร้าง Client ภายในฟังก์ชันพร้อมลบช่องว่างส่วนเกิน (.strip())
         client = genai.Client(api_key=api_key.strip())
 
+        print("🔍 รายชื่อ Models ที่ API Key นี้ใช้งานได้จริง:\n")
+        try:
+            for model in client.models.list():
+                # กรองเฉพาะโมเดลที่รองรับการอ่านภาพ/ข้อความ (generateContent)
+                if "generateContent" in model.supported_actions:
+                    print(f"✅ {model.name}")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
         # 3. เตรียมไฟล์ภาพ
         image_file.seek(0)
         image = Image.open(image_file)
@@ -59,9 +68,9 @@ def process_ocr_image(image_file):
 
         print("🤖 [GEMINI LOG] กำลังส่งรูปภาพไปให้ Gemini ประมวลผล...")
 
-        # 6. เรียกใช้ Gemini API (แนะนำ gemini-2.5-flash หรือ gemini-1.5-flash)
+        # 6. เรียกใช้ Gemini API
         response = client.models.generate_content(
-            model='gemini-3.5-flash',
+            model='gemini-3.5-flash-lite',
             contents=[image, prompt],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

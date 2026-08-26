@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, json, render_template, jsonify, request, session, redirect, url_for
 import calendar
+import time
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from modules.db.patient_repository import  process_patient_streak_on_complete, get_patient_streak
@@ -334,6 +335,9 @@ def update_settings():
 @user_bp.route('/api/ocr', methods=['POST'])
 @login_required
 def handle_ocr_api():
+    # ⏱️ เริ่มจับเวลาเริ่มต้นของ Request
+    start_total_time = time.time()
+
     # 1. ตรวจสอบว่าฝั่ง JavaScript ส่งไฟล์ภาพมาจริงไหม
     if 'file' not in request.files:
         return jsonify({"success": False, "message": "No file part"}), 400
@@ -343,14 +347,28 @@ def handle_ocr_api():
         return jsonify({"success": False, "message": "No selected file"}), 400
 
     try:
-        # 2. เรียกใช้งานฟังก์ชันแปลงรูปภาพที่คุณ Import มารันประมวลผล
+        # ⏱️ เริ่มจับเวลาเฉพาะช่วงเรียก Gemini OCR
+        start_ocr_time = time.time()
+
+        # 2. เรียกใช้งานฟังก์ชันแปลงรูปภาพประมวลผล
         ocr_result = process_ocr_image(file)
+
+        # ⏱️ สิ้นสุดจับเวลา
+        ocr_duration = time.time() - start_ocr_time
+        total_duration = time.time() - start_total_time
+
+        # 📊 พิมพ์ Debug Log ออก Terminal/Console
+        print("\n================ [OCR DEBUG LOG] ================")
+        print(f"⚡ เวลาที่ Gemini ใช้ประมวลผล: {ocr_duration:.2f} วินาที")
+        print(f"⏱️ เวลาประมวลผลรวมใน Backend: {total_duration:.2f} วินาที")
+        print("=================================================\n")
 
         return jsonify({
             "success": True,
-            "data": ocr_result
+            "data": ocr_result,
+            "execution_time_seconds": round(ocr_duration, 2)  # ส่งค่าเวลาไปที่ Frontend ด้วย
         })
 
     except Exception as e:
-        print(f"OCR Backend Error: {str(e)}")
+        print(f"❌ OCR Backend Error: {str(e)}")
         return jsonify({"success": False, "message": "เกิดข้อผิดพลาดในการประมวลผลภาพถ่าย"}), 500

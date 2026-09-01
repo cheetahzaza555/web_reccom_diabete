@@ -2,10 +2,6 @@ import re
 from SPARQLWrapper import SPARQLWrapper, JSON
 from modules.config import GRAPHDB_READ, GRAPHDB_WRITE
 
-import re
-from SPARQLWrapper import SPARQLWrapper, JSON
-from modules.config import GRAPHDB_READ, GRAPHDB_WRITE
-
 def get_all_swrl_rules():
     """ฟังก์ชันดึงรายชื่อและรายละเอียดกฎ SWRL ฉบับเต็มแบบครบถ้วนทุก Atom"""
     sparql_read_client = SPARQLWrapper(GRAPHDB_READ)

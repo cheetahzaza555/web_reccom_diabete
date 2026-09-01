@@ -91,7 +91,7 @@
                 <table class="freq-table">
                     <thead>
                         <tr>
-                            <th style="width: 25%;">ไอดีความถี่</th>
+                            <th style="width: 25%;">ไอดี</th>
                             <th style="width: 45%;">คำอธิบาย / ความถี่</th>
                             <th style="width: 30%; text-align: center;">จัดการข้อมูล</th>
                         </tr>
@@ -121,11 +121,11 @@
                 html += `
                 <tr>
                     <td>
-                        <span class="badge-freq">
+                        <span class="bold-text" style="font-weight: 600; color: var(--primary-black);">
                             ex:${item.freq_id}
                         </span>
                     </td>
-                    <td><strong>${item.description || item.freq_id}</strong></td>
+                    <td>${item.description || item.freq_id}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="openEditFreqModal('${item.freq_id}', '${(item.description || '').replace(/'/g, "\\'")}')">

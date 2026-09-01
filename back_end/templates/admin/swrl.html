@@ -145,8 +145,8 @@
             <!-- Header Section -->
             <div class="header-section">
                 <div>
-                    <h1>จัดการกฎ SWRL (SWRL Rules Engine)</h1>
-                    <p>แสดงรายการกฎ และจัดการลบกฎออกจากคลังข้อมูล GraphDB</p>
+                    <h1>กฎ SWRL Rules Engine</h1>
+                    <p>แสดงรายการกฎ</p>
                 </div>
             </div>
 
@@ -166,7 +166,6 @@
                             <th style="width: 25%;">ชื่อกฎ</th>
                             <th style="width: 25%;">รายละเอียด / คำอธิบาย</th>
                             <th style="width: 40%;">เงื่อนไข</th>
-                            <th style="width: 10%; text-align: center;">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody id="rulesTableBody">
@@ -214,11 +213,6 @@
                     <td style="color: var(--text-muted);">${rule.comment || '-'}</td>
                     <td>
                         <div class="swrl-rule-box">${swrlFullExpression}</div>
-                    </td>
-                    <td style="text-align: center;">
-                        <button class="btn-delete" onclick="deleteRule('${rule.rule_uri}', '${(rule.rule_label || '').replace(/'/g, "\\'")}')">
-                            <i class="fa-solid fa-trash-can"></i> ลบ
-                        </button>
                     </td>
                 </tr>`;
             });

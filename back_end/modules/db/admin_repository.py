@@ -503,33 +503,50 @@ def update_category_hierarchy_in_ontology(category_id, parent_category_id=None, 
 
 def delete_category_from_ontology(category_id):
     """
-    ลบ Class หมวดหมู่ ออกจาก GraphDB
-    - ลบทุก Triple ที่หมวดหมู่นี้เป็น Subject (กวาดลบ Type, Label, Parent ทั้งหมด)
-    - ลบทุก Triple ที่หมวดหมู่นี้เป็น Object (เช่น ถูกอ้างอิงว่าเป็น parent_category ของคลาสอื่น)
+    ลบหมวดหมู่ พร้อมกวาดลบ "ท่าออกกำลังกายทั้งหมด" ที่อยู่ในหมวดหมู่นั้นด้วย
     """
     sparql = SPARQLWrapper(GRAPHDB_WRITE)
     base_prefix = "http://example.org/diabetes#"
     
     query = f"""
     PREFIX ex: <{base_prefix}>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
     DELETE {{
+        # 1. ลบข้อมูลของตัวหมวดหมู่เอง
         ex:{category_id} ?p1 ?o1 .
-        ?s2 ?p2 ex:{category_id} .
+        ?s1 ?p2 ex:{category_id} .
+
+        # 2. ลบข้อมูลของท่าออกกำลังกายที่อยู่ในหมวดหมู่นี้
+        ?exercise ?p3 ?o3 .
+        ?s4 ?p4 ?exercise .
     }}
     WHERE {{
-        OPTIONAL {{ ex:{category_id} ?p1 ?o1 . }}
-        OPTIONAL {{ ?s2 ?p2 ex:{category_id} . }}
+        # 🔒 ตรวจสอบว่าหมวดหมู่นี้เป็นคลาสภายใต้ ex:Exercise
+        ex:{category_id} rdfs:subClassOf* ex:Exercise .
+
+        {{
+            # ดึงข้อมูลของหมวดหมู่
+            ex:{category_id} ?p1 ?o1 .
+        }} UNION {{
+            ?s1 ?p2 ex:{category_id} .
+        }} UNION {{
+            # ดึงท่าออกกำลังกายที่เป็นสมาชิกของหมวดหมู่นี้ (ทั้งแบบ Instance และ Subclass)
+            ?exercise (rdf:type|rdfs:subClassOf) ex:{category_id} .
+            
+            {{ ?exercise ?p3 ?o3 . }}
+            UNION
+            {{ ?s4 ?p4 ?exercise . }}
+        }}
     }}
     """
     try:
         sparql.setQuery(query)
         sparql.setMethod('POST')
         sparql.query()
-        print(f"🗑️ [GraphDB Success] ลบหมวดหมู่ '{category_id}' ออกจากระบบเรียบร้อย")
-        return {"success": True, "message": f"ลบหมวดหมู่ {category_id} เรียบร้อยแล้ว"}
+        return {"success": True, "message": f"ลบหมวดหมู่ {category_id} และท่าออกกำลังกายภายในทั้งหมดเรียบร้อยแล้ว"}
     except Exception as e:
-        print(f"❌ [Admin Error] ลบหมวดหมู่ล้มเหลว: {e}")
         return {"success": False, "message": str(e)}
 
 def get_frequencies():
@@ -592,14 +609,31 @@ def save_or_update_frequency(freq_id, description=""):
         return {"success": False, "message": str(e)}
     
 # 3. ฟังก์ชันลบข้อมูล Frequency
+# 3. ฟังก์ชันลบข้อมูล Frequency
 def delete_frequency(freq_id):
     try:
         sparql = SPARQLWrapper(GRAPHDB_WRITE)
         query = f"""
         PREFIX ex: <http://example.org/diabetes#>
 
-        DELETE WHERE {{ 
-            ex:{freq_id} ?p ?o . 
+        DELETE {{
+            # 1. ลบ Properties ทั้งหมดของ freq_id นี้
+            ex:{freq_id} ?p1 ?o1 .
+            # 2. ลบความสัมพันธ์ที่โหนดอื่นชี้มาหา freq_id นี้
+            ?s2 ?p2 ex:{freq_id} .
+        }}
+        WHERE {{
+            # 🔒 ล็อคเงื่อนไข: ต้องเป็นประเภท Frequency เท่านั้นถึงจะทำการลบ
+            ex:{freq_id} a ex:Frequency .
+
+            # ดึงความสัมพันธ์ทั้งหมดที่ออกไป และชี้เข้ามา
+            {{
+                ex:{freq_id} ?p1 ?o1 .
+            }}
+            UNION
+            {{
+                ?s2 ?p2 ex:{freq_id} .
+            }}
         }}
         """
         sparql.setMethod(POST)
@@ -679,13 +713,127 @@ def delete_avoidance(avoid_id):
     query = f"""
     PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
 
-    DELETE WHERE {{
-        ex:{avoid_id} ?p ?o .
+    DELETE {{
+        # 1. ลบ Properties ทั้งหมดของ avoid_id นี้
+        ex:{avoid_id} ?p1 ?o1 .
+        # 2. ลบความสัมพันธ์ที่โหนดอื่นชี้มาหา avoid_id นี้
+        ?s2 ?p2 ex:{avoid_id} .
+    }}
+    WHERE {{
+        # 🔒 ล็อคเงื่อนไข: ต้องเป็นประเภท WarningAvoidExercise เท่านั้นถึงจะทำการลบ
+        ex:{avoid_id} a ex:WarningAvoidExercise .
+
+        # ดึงความสัมพันธ์ทั้งหมดที่ออกไป และชี้เข้ามา
+        {{
+            ex:{avoid_id} ?p1 ?o1 .
+        }}
+        UNION
+        {{
+            ?s2 ?p2 ex:{avoid_id} .
+        }}
     }}
     """
     sparql.setQuery(query)
     try:
         sparql.query()
-        return {"success": True, "message": "ลบข้อมูลสำเร็จ"}
+        return {"success": True, "message": f"ลบข้อมูลข้อควรระวัง ex:{avoid_id} สำเร็จ"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+def get_patient_warning():
+    sparql = SPARQLWrapper(GRAPHDB_READ)
+    
+    # ใช้ SPARQL ค้นหา Class ที่มีคำว่า WarningAvoidExercise โดยไม่ต้องฟิกซ์ PREFIX ทั้งหมด
+    query = """
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+    SELECT ?subject ?description WHERE {
+        ?subject rdf:type ?type .
+        FILTER(STRENDS(STR(?type), "PatientWarning"))
+        OPTIONAL { 
+            ?subject ?p ?description .
+            FILTER(STRENDS(STR(?p), "description"))
+        }
+    }
+    """
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    
+    warning = []
+    for row in results["results"]["bindings"]:
+        uri = row["subject"]["value"]
+        name = uri.split("#")[-1] if "#" in uri else uri.split("/")[-1]
+        description = row.get("description", {}).get("value", "")
+        
+        warning.append({
+            "id": name,
+            "description": description
+        })
+
+    warning.sort(key=lambda x: int(''.join(filter(str.isdigit, x['id'])) or 0))
+
+    return {"success": True, "data": warning}
+
+def save_or_update_warning(warning_id, description=""):
+    try:
+        sparql = SPARQLWrapper(GRAPHDB_WRITE)
+        sparql.setMethod(POST)
+        
+        # 🟢 ปรับ PREFIX และ Class name ให้ตรงrกับ WarningAvoidExercise
+        query = f"""
+        PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
+
+        DELETE {{
+            ex:{warning_id} ex:description ?oldDesc .
+        }}
+        WHERE {{
+            OPTIONAL {{ ex:{warning_id} ex:description ?oldDesc . }}
+        }} ;
+
+        INSERT DATA {{
+            ex:{warning_id} a ex:PatientWarning;
+                        ex:description "{description}" .
+        }}
+        """
+        sparql.setMethod(POST)
+        sparql.setQuery(query)
+        sparql.query()
+        return {"success": True, "message": f"บันทึกข้อมูล ex:{warning_id} เรียบร้อยแล้ว"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    
+def delete_warning(warning_id):
+    sparql = SPARQLWrapper(GRAPHDB_WRITE)
+    sparql.setMethod(POST)
+
+    query = f"""
+    PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
+
+    DELETE {{
+        # 1. ลบ Properties ทั้งหมดของ warning_id นี้
+        ex:{warning_id} ?p1 ?o1 .
+        # 2. ลบความสัมพันธ์ที่โหนดอื่นชี้มาหา warning_id นี้
+        ?s2 ?p2 ex:{warning_id} .
+    }}
+    WHERE {{
+        # 🔒 เงื่อนไขสำคัญ: เช็กก่อนว่า ex:{warning_id} เป็น PatientWarning จริงหรือไม่
+        ex:{warning_id} a ex:PatientWarning .
+
+        # ดึงความสัมพันธ์ทั้งหมดที่ออกไป และชี้เข้ามา
+        {{
+            ex:{warning_id} ?p1 ?o1 .
+        }}
+        UNION
+        {{
+            ?s2 ?p2 ex:{warning_id} .
+        }}
+    }}
+    """
+    sparql.setQuery(query)
+    try:
+        sparql.query()
+        return {"success": True, "message": f"ลบข้อมูลคำเตือน ex:{warning_id} ทั้งหมดสำเร็จ"}
     except Exception as e:
         return {"success": False, "message": str(e)}

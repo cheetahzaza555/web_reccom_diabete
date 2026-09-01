@@ -1,5 +1,5 @@
 from flask import Blueprint, redirect, render_template, jsonify, request, session, url_for
-from modules.db.admin_repository import delete_avoidance, delete_category_from_ontology, delete_exercise_from_ontology, delete_frequency, get_all_categories_for_dropdown, get_all_categories_from_ontology, get_avoidance_page, get_frequencies, insert_exercise_to_ontology, insert_exercise_to_ontology_v2, save_or_update_avoidance, save_or_update_avoidance, save_or_update_frequency, update_category_hierarchy_in_ontology
+from modules.db.admin_repository import delete_avoidance, delete_category_from_ontology, delete_exercise_from_ontology, delete_frequency, delete_warning, get_all_categories_for_dropdown, get_all_categories_from_ontology, get_avoidance_page, get_frequencies, insert_exercise_to_ontology, insert_exercise_to_ontology_v2, save_or_update_avoidance, save_or_update_avoidance, save_or_update_frequency, save_or_update_warning, update_category_hierarchy_in_ontology, get_patient_warning
 from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db
 from modules.db.exercise_repository import get_all_exercises_for_library
 from modules.db.swrl import get_all_swrl_rules
@@ -377,6 +377,51 @@ def api_delete_warning():
     avoid_id = data.get('warning_id', '').strip()
     
     result = delete_avoidance(avoid_id=avoid_id)
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+@admin_bp.route('/patient_warning', methods=['GET'])
+@admin_required
+def patient_warnings_page():
+    data = get_patient_warning()
+    return render_template('admin/warning_patient.html', warnings=data["data"])
+
+@admin_bp.route('/api/patient_warning/update', methods=['POST'])
+@admin_required
+def api_update_patient_warning():
+    data = request.json or {}
+    
+    warning_id = data.get('id', '').strip()
+    description = data.get('description', '').strip()
+
+    if not warning_id:
+        return jsonify({
+            "success": False, 
+            "message": "กรุณาระบุ Warning ID"
+        }), 400
+
+    result = save_or_update_warning(
+        warning_id=warning_id,
+        description=description
+    )
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+
+@admin_bp.route('/api/patient_warning/delete', methods=['POST'])
+@admin_required
+def api_delete_patient_warning():
+    data = request.json or {}
+        
+    warning_id = data.get('warning_id', '').strip()
+    
+    result = delete_warning(warning_id=warning_id)
 
     if result.get("success"):
         return jsonify(result), 200

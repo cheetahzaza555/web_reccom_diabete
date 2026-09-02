@@ -12,9 +12,29 @@ def load_ontology():
         response = requests.get(f"{GRAPHDB_READ}/statements", headers=headers, params=params)
         response.raise_for_status()
         raw_data = response.content.decode('utf-8')
-        clean_lines = [line for line in raw_data.splitlines() if "http://www.w3.org/2002/07/owl#imports" not in line]
+        # ✅ [FIX] กรองทั้ง owl:imports และ "X a owl:Ontology" ทิ้ง
+        # เพราะ entity ที่ถูกประกาศเป็น owl:Ontology ซ้อนอยู่ใต้ namespace หลัก
+        # (เช่น ex:exerciseInst a owl:Ontology — เศษที่หลงเหลือจากการ import ไฟล์
+        # ในเครื่อง local ผ่าน Protégé) ทำให้ owlready2 สร้าง sub-ontology แยก
+        # แล้วเอา individual ใหม่ที่สร้างผ่าน ex.PhysicalExam(...)/ex.Patient(...) ไป
+        # ผูกกับ sub-ontology ปลอมนั้นแทน (เช่น .../diabetes#exerciseInst#hasWeight)
+        # ทำให้กฎ SWRL ทั้งหมด (ที่อ้างอิง .../diabetes#hasWeight ตรงๆ) ไม่ match เลย
+        clean_lines = [
+            line for line in raw_data.splitlines()
+            if "http://www.w3.org/2002/07/owl#imports" not in line
+            and "http://www.w3.org/2002/07/owl#Ontology" not in line
+        ]
         clean_data = "\n".join(clean_lines)
-        onto = get_ontology("http://example.org/diabetes_from_db").load(fileobj=io.BytesIO(clean_data.encode('utf-8')), format="ntriples")
+
+        # ✅ [FIX] เดิมใช้ base IRI "http://example.org/diabetes_from_db" ซึ่งไม่ตรงกับ
+        # namespace จริงที่ข้อมูล/กฎ SWRL ทั้งหมดใช้ ("http://example.org/diabetes#")
+        # ทำให้ owlready2 มองว่า entity ใหม่ที่สร้างผ่าน ex.Patient(...)/ex.PhysicalExam(...)
+        # (ใน logic.py) อยู่คนละ ontology-graph กับกฎ/entity เดิมที่โหลดมาจาก GraphDB
+        # (เห็นได้จาก repr ตอน debug: "diabetes_from_db.PE_xxx" vs "diabetes.T2DM")
+        # แก้โดยให้ base IRI ตรงกับ namespace จริง เพื่อให้ entity ใหม่ถูกผูกกับ
+        # ontology graph เดียวกับกฎทั้งหมด แล้ว sync_reasoner_pellet ถึงจะเห็นทุกอย่างครบ
+        onto = get_ontology("http://example.org/diabetes#").load(fileobj=io.BytesIO(clean_data.encode('utf-8')), format="ntriples")
+
         print(f"✅ Loaded! Rules count: {len(list(onto.rules()))}")
         return onto
     except Exception as e:

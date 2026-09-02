@@ -124,7 +124,7 @@ def analyze():
     # ✅ แก้ IDOR: บังคับใช้ ID ของคนที่ล็อกอินอยู่เท่านั้น
     # ไม่เชื่อค่า data['id'] ที่ client ส่งมาเด็ดขาด ป้องกันการยัดข้อมูลให้คนไข้คนอื่น
     data['id'] = session['user_id']
-
+    print("🔍 DEBUG: กำลังประมวลผลข้อมูลสำหรับ user_id =", data)
     save_raw_patient_data(data)
     recs, warns, comorbs, complis = process_patient_realtime(data['id'], input_data=data)
     return jsonify({"status": "ok", "exercises": recs, "warnings": warns, "comorbs": comorbs, "complis": complis})

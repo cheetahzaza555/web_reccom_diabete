@@ -13,7 +13,34 @@ from modules.db import (
 from modules.ontology import onto, ex
 
 
+def _classify_special(entity):
+    """
+    ✅ [FIX] Helper สำหรับแยกว่า entity ที่ได้มาจาก target_specials
+    ควรจัดเป็น 'comorbidity' (โรคร่วม) หรือ 'complication' (ภาวะแทรกซ้อน)
+    โดยเช็คจาก class hierarchy ของมันใน ontology (ex.Comorbidity)
+
+    หมายเหตุ: ปรับ logic ตรงนี้ให้ตรงกับ schema จริงของคุณอีกทีถ้าจำเป็น
+    (เช่นถ้า ontology ใช้ชื่อคลาสอื่นแทน ex.Comorbidity)
+    """
+    comorbidity_cls = getattr(ex, "Comorbidity", None)
+    if comorbidity_cls is None or entity is None:
+        return "complication"
+
+    try:
+        all_types = set(entity.is_a)
+        for t in list(all_types):
+            if hasattr(t, "ancestors"):
+                all_types |= set(t.ancestors())
+        if comorbidity_cls in all_types:
+            return "comorbidity"
+    except Exception:
+        pass
+
+    return "complication"
+
+
 def process_patient_realtime(patient_id, input_data=None):
+
     if not validate_id(patient_id) or not onto:
         return [], [], [], []
 
@@ -38,13 +65,23 @@ def process_patient_realtime(patient_id, input_data=None):
         if input_data:  # มีข้อมูลส่งเข้ามาแบบตรงๆ
             print(f"⚡ Processing {patient_id} (Direct)...")
 
+            # ✅ [FIX] hasSBP / hasDBP ใน ontology ประกาศ range เป็น xsd:positiveInteger
+            # (ดูตัวอย่างผู้ป่วยที่ข้อมูลถูกต้อง: "115"^^xsd:positiveInteger)
+            # เดิม branch นี้ใช้ safe_float() ทำให้ได้ float (เช่น 113.0) ซึ่ง
+            # owlready2 จะ serialize เป็น xsd:double ไม่ตรงกับ range ที่ประกาศไว้
+            # ทำให้ builtin comparison ในกฎ SWRL ที่เช็ค SBP/DBP (เช่น Rule 15/19)
+            # ไม่ match แม้ค่าจะอยู่ในช่วงที่ถูกต้องก็ตาม -> ต้อง cast เป็น int
+            # เหมือนที่ branch "ดึงจาก DB" ทำไว้อยู่แล้วด้านล่าง
+            sbp_val = safe_float(input_data.get('sbp'))
+            dbp_val = safe_float(input_data.get('dbp'))
+
             data = {
                 'type': input_data.get('type', 'T2DM'),
                 'weight': safe_float(input_data.get('weight')),
                 'height': safe_float(input_data.get('height')),
                 'bmi': safe_float(input_data.get('bmi')),
-                'sbp': safe_float(input_data.get('sbp')),
-                'dbp': safe_float(input_data.get('dbp')),
+                'sbp': int(sbp_val) if sbp_val is not None else None,
+                'dbp': int(dbp_val) if dbp_val is not None else None,
                 'chol': safe_float(input_data.get('chol')),
                 'ldl': safe_float(input_data.get('ldl')),
                 'hdl': safe_float(input_data.get('hdl')),
@@ -161,13 +198,47 @@ def process_patient_realtime(patient_id, input_data=None):
             if data.get('dbp'):
                 pe.hasDBP = [data['dbp']]
 
-            pe.hasSpecialComplication = []
+            # ✅ [FIX] เดิมโค้ดใส่ target_specials ลงใน pe.hasSpecialComplication
+            # (domain = PhysicalExam) เท่านั้น แต่กฎ SWRL ส่วนใหญ่ (88 จุดของ
+            # hasComplication + 60 จุดของ hasComorbidity จากทั้งหมด 62 กฎ) เช็ค
+            # ex:hasComplication / ex:hasComorbidity บนตัว Patient (x) โดยตรง
+            # ทำให้ Patient ที่สร้างขึ้นไม่มี complication/comorbidity ติดตัวเลย
+            # และแทบทุกกฎ unify ไม่ได้ -> ไม่มีกฎไหน fire
+            #
+            # ด้านล่างนี้จึงแยก target_specials ไปใส่ทั้ง p.hasComplication /
+            # p.hasComorbidity (ตาม class ของแต่ละ entity) และยังคงใส่ลง
+            # pe.hasSpecialComplication ไว้ด้วย เผื่อ 6 กฎที่อ้างอิง property นี้
+            # โดยเฉพาะยังทำงานตามเดิม
+            sp_objs = []
             for sp in target_specials:
                 sp_obj = onto.search_one(iri=f"*{sp}")
                 if not sp_obj:
                     sp_obj = ex.Complication(sp)
                     created_temp_entities.append(sp_obj)
-                pe.hasSpecialComplication.append(sp_obj)
+                sp_objs.append(sp_obj)
+
+            p.hasComplication = []
+            p.hasComorbidity = []
+            for sp_obj in sp_objs:
+                if _classify_special(sp_obj) == "comorbidity":
+                    p.hasComorbidity.append(sp_obj)
+                else:
+                    p.hasComplication.append(sp_obj)
+
+            # ถ้าไม่มีค่าเลย ให้ fallback เป็นค่า "ไม่มี" ตาม pattern ที่ใช้ใน
+            # ontology จริง (ดูตัวอย่างผู้ป่วยที่ข้อมูลครบ) กันไม่ให้ hasComplication /
+            # hasComorbidity ว่างเปล่าจนกฎที่เช็คเงื่อนไข "ไม่มีภาวะแทรกซ้อน" พังไปด้วย
+            if not p.hasComplication:
+                default_comp = (onto.search_one(iri="*NoGeneralComplication")
+                                 or onto.search_one(iri="*NoOtherComplication"))
+                if default_comp:
+                    p.hasComplication.append(default_comp)
+            if not p.hasComorbidity:
+                default_comorb = onto.search_one(iri="*NoComorbidity")
+                if default_comorb:
+                    p.hasComorbidity.append(default_comorb)
+
+            pe.hasSpecialComplication = list(sp_objs)
             p.hasPhysicalExam = [pe]
 
             le = ex.LabExam(f"LE_{unique_suffix}")
@@ -194,8 +265,32 @@ def process_patient_realtime(patient_id, input_data=None):
                     created_temp_entities.append(f_obj)
                 p.favoriteExercise.append(f_obj)
 
+        # ✅ [DEBUG] เช็คค่าบน pe / le ตรงๆ ก่อนรัน reasoner (ไม่ผ่าน p)
+        # เพื่อยืนยันว่าค่าที่ควรจะอยู่บน PhysicalExam/LabExam จริงๆ landed
+        # ถูกจุดหรือไม่ ก่อนที่ Pellet จะเอาไปประมวลผลกฎ 15/16/19/20
+        print("🧪 [DEBUG-PRE] pe.hasWeight:", pe.hasWeight, " hasHeight:", pe.hasHeight,
+              " hasBMI:", pe.hasBMI, " hasSBP:", pe.hasSBP, " hasDBP:", pe.hasDBP)
+        print("🧪 [DEBUG-PRE] pe.hasSpecialComplication:",
+              [x.name for x in pe.hasSpecialComplication])
+        print("🧪 [DEBUG-PRE] le.hasFPG:", le.hasFPG, " hasTotalCholesterol:", le.hasTotalCholesterol,
+              " hasLDL:", le.hasLDL, " hasHDL:", le.hasHDL, " hasTriglyceride:", le.hasTriglyceride)
+        print("🧪 [DEBUG-PRE] le.hasKetone:", le.hasKetone, " hasMicroalbuminurin:", le.hasMicroalbuminurin)
+        print("🧪 [DEBUG-PRE] p.hasPhysicalExam:", getattr(p, 'hasPhysicalExam', None),
+              " p.hasLabExam:", getattr(p, 'hasLabExam', None))
+
         print("🧠 Running Reasoner...")
+        # พิมพ์ดูว่า Owlready2 ถือ SWRL Rule อยู่ในมือจริงๆ กี่ข้อ
+        print("📌 Real Rules in Owlready2 Memory:", len(list(onto.rules())))
         sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
+
+        # ✅ [DEBUG] พิมพ์ state ของ patient หลัง reasoner รันเสร็จ เพื่อเช็คว่า
+        # precondition ของกฎแต่ละข้อ (hasComplication/hasComorbidity/diabetType/
+        # favoriteExercise) ถูก assert/infer ถูกต้องหรือไม่ ก่อนจะไป extract ผลลัพธ์
+        print("🩺 [DEBUG] diabetType:", [t.name for t in getattr(p, 'diabetType', [])])
+        print("🩺 [DEBUG] hasComplication:", [c.name for c in getattr(p, 'hasComplication', [])])
+        print("🩺 [DEBUG] hasComorbidity:", [c.name for c in getattr(p, 'hasComorbidity', [])])
+        print("🩺 [DEBUG] favoriteExercise:", [f.name for f in getattr(p, 'favoriteExercise', [])])
+        print("🩺 [DEBUG] hasPatientWarning:", [w.name for w in getattr(p, 'hasPatientWarning', [])])
 
         print("🔍 Extracting Results...")
         recs, warns, comorbs, complis = [], [], [], []

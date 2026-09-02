@@ -67,7 +67,7 @@
                 </div>
 
                 <div class="text-end mb-3 mt-3">
-                    <a href="#" class="text-white text-decoration-none small opacity-75 hover-opacity-100">ลืมรหัสผ่าน?</a>
+                    <a href="/forget_password" class="text-white text-decoration-none small opacity-75 hover-opacity-100">ลืมรหัสผ่าน?</a>
                 </div>
 
                 <button type="submit" class="btn btn-theme-light w-100 rounded-pill py-3 fw-bold fs-5 shadow-sm">
@@ -116,7 +116,13 @@
                 }
 
                 localStorage.setItem("token", data.token);
-                window.location.href = "/"; // สำเร็จ! ไปหน้าแรก
+                const userRole = (data.role || "").toLowerCase(); 
+
+                if (userRole === "admin") {
+                    window.location.href = "/admin/dashboard"; // พาไปหลังบ้าน
+                } else {
+                    window.location.href = "/user/dashboard";  // พาไปหน้าผู้ใช้ปกติ
+                }
 
             } catch (err) {
                 errorDiv.innerText = err.message || "เชื่อมต่อ server ไม่ได้";

@@ -4,225 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ผลตรวจสุขภาพ - DiaBalance</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    
-    <style>
-        /* --- CSS เดิม (แบบสีฟ้าที่คุณส่งมา) --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #ffffff; font-family: 'Prompt', sans-serif; overflow-x: hidden; }
-        
-        .main-content { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        .header-banner {
-            background-color: #85a2ff;
-            color: white;
-            padding: 1.25rem 1rem;
-            font-size: 2.5rem;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
 
-        .form-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        
-        .form-scroll-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 40px 50px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            min-height: 100%;
-        }
-
-        .button-area {
-            background-color: #ffffff;
-            padding: 20px 50px;
-            border-top: 1px solid #dee2e6;
-            flex-shrink: 0;
-        }
-
-        .form-label {
-            font-weight: 500; color: #333; margin-bottom: 8px;
-            font-size: 1.1rem;
-        }
-
-        .form-control, .form-select {
-            border-radius: 10px; padding: 12px;
-            border: 1px solid #dee2e6; font-size: 1.1rem; min-height: 50px;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: #85a2ff;
-            box-shadow: 0 0 0 0.2rem rgba(133, 162, 255, 0.25);
-        }
-
-        .btn-cancel {
-            background-color: #b0b0b0; color: white; padding: 15px 0;
-            border-radius: 10px; width: 100%; border: none;
-            font-size: 1.2rem; font-weight: 500; transition: all 0.3s ease;
-        }
-
-        .btn-next {
-            background-color: #85a2ff; color: white; padding: 15px 0;
-            border-radius: 10px; width: 100%; border: none;
-            font-size: 1.2rem; font-weight: 500; transition: all 0.3s ease;
-        }
-
-        .btn-next:hover {
-            background-color: #6d8ee6; transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(133, 162, 255, 0.3);
-        }
-
-        .btn-cancel:hover {
-            background-color: #909090; transform: translateY(-2px);
-        }
-
-        .form-section {
-            background: #f8f9fa; padding: 25px;
-            border-radius: 10px; margin-bottom: 20px;
-        }
-
-        /* --- Style สำหรับการ์ดเลือก (Step 2 & 3) --- */
-        .selection-card {
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-        }
-        .selection-card:hover {
-            border-color: #85a2ff;
-            background-color: #f4f8ff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .form-check-input {
-            width: 1.5em; height: 1.5em; margin-top: 0.2em; cursor: pointer;
-            border-color: #adb5bd;
-        }
-        .form-check-input:checked {
-            background-color: #85a2ff; border-color: #85a2ff;
-        }
-        .selection-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 5px; }
-        .selection-desc { font-size: 0.9rem; color: #666; margin: 0; line-height: 1.4; }
-
-        @media (max-width: 768px) {
-            .header-banner { font-size: 1.8rem; padding: 20px; }
-            .form-scroll-area { padding: 20px; }
-            .button-area { padding: 15px 20px; }
-        }
-    </style>
+    <!-- CSS ที่แยกออกมา -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rec_1.css') }}">
 </head>
 <body>
 
     {% include 'includes/navbar_user.html' %}
 
     <div class="main-content">
-        <div class="header-banner">
-            ผลตรวจสุขภาพ
-        </div>
+        <div class="header-banner" id="pageTitle">ผลตรวจสุขภาพ (1/3)</div>
 
         <div class="form-wrapper">
-            <form id="healthForm" action="/user/save_health_data" method="POST" class="h-100 d-flex flex-column">
-                
+            <form id="healthForm" onsubmit="return false;" style="display: contents;">
+
                 <div class="form-scroll-area">
                     <div class="form-content">
-                        
+
                         <div id="step1">
                             <div class="row gy-4">
                                 <div class="col-lg-6">
                                     <div class="form-section">
-                                        <h5 class="mb-3 text-primary fw-bold">ข้อมูลทั่วไป</h5>
-                                        <div class="row">
-                                            <div class="col-6 mb-3">
-                                                <label class="form-label">ประเภทเบาหวาน</label>
-                                                <select class="form-select" name="diabetes_type" required>
-                                                    <option value="" disabled selected>เลือก</option>
-                                                    <option value="1">ชนิดที่ 1</option>
-                                                    <option value="2">ชนิดที่ 2</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-6 mb-3">
-                                                <label class="form-label">การใช้อินซูลิน</label>
-                                                <select class="form-select" name="insulin_use" required>
-                                                    <option value="" disabled selected>เลือก</option>
-                                                    <option value="yes">ใช้</option>
-                                                    <option value="no">ไม่ใช้</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12 mb-3">
-                                                <label class="form-label">วันที่ตรวจ</label>
-                                                <input type="date" class="form-control" name="checkup_date" required>
+                                        <h5 class="mb-3 text-primary fw-bold">ข้อมูลผู้เข้ารับการตรวจ</h5>
+                                        <div class="alert alert-light border d-flex align-items-center gap-3 mb-4">
+                                            <i class="bi bi-person-circle fs-2 text-primary"></i>
+                                            <div>
+                                                <div class="text-muted small">ผู้ใช้งาน</div>
+                                                <div class="fw-bold fs-5" id="displayFullname">กำลังโหลดข้อมูล...</div>
                                             </div>
                                         </div>
-
-                                        <h5 class="mb-3 mt-4 text-primary fw-bold">สัดส่วนร่างกาย</h5>
                                         <div class="row">
-                                            <div class="col-6 mb-3">
-                                                <label class="form-label">น้ำหนัก (kg)</label>
-                                                <input type="number" class="form-control" id="weight" name="weight" step="0.1" required>
+                                            <div class="col-6 mb-3"><label class="form-label">เพศ</label>
+                                                <select class="form-select" name="gender">
+                                                    <option value="Male">ชาย</option><option value="Female">หญิง</option>
+                                                </select>
                                             </div>
-                                            <div class="col-6 mb-3">
-                                                <label class="form-label">ส่วนสูง (cm)</label>
-                                                <input type="number" class="form-control" id="height" name="height" step="0.1" required>
+                                            <div class="col-6 mb-3"><label class="form-label">วันที่ตรวจ</label><input type="date" class="form-control" name="checkup_date" required></div>
+                                            <div class="col-12 mb-3"><label class="form-label">ประเภทเบาหวาน</label>
+                                                <select class="form-select" name="diabetes_type" required>
+                                                    <option value="T2DM">เบาหวานชนิดที่ 2 (T2DM)</option>
+                                                    <option value="T1DM">เบาหวานชนิดที่ 1 (T1DM)</option>
+                                                </select>
                                             </div>
-                                            <div class="col-12 mb-3">
-                                                <label class="form-label">BMI</label>
-                                                <input type="text" class="form-control bg-light" id="bmi_result" readonly>
+                                            <div class="col-6 mb-3"><label class="form-label">การใช้อินซูลิน</label>
+                                                <select class="form-select" name="insulin_use" required>
+                                                    <option value="false">ไม่ได้ใช้</option>
+                                                    <option value="true">ใช้</option>
+                                                </select>
                                             </div>
-                                            <div class="col-6 mb-3">
-                                                <label class="form-label">ความดันตัวบน (SBP)</label>
-                                                <input type="number" class="form-control" name="bp_high" required>
-                                            </div>
-                                            <div class="col-6 mb-3">
-                                                <label class="form-label">ความดันตัวล่าง (DBP)</label>
-                                                <input type="number" class="form-control" name="bp_low" required>
-                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-section">
+                                        <h5 class="mb-3 text-primary fw-bold">สัดส่วนร่างกาย</h5>
+                                        <div class="row">
+                                            <div class="col-6 mb-3"><label class="form-label">น้ำหนัก (kg)</label><input type="number" class="form-control" id="weight" name="weight" step="0.1"></div>
+                                            <div class="col-6 mb-3"><label class="form-label">ส่วนสูง (cm)</label><input type="number" class="form-control" id="height" name="height" step="0.1"></div>
+                                            <div class="col-12 mb-3"><label class="form-label">BMI</label><input type="text" class="form-control bg-light" id="bmi_result" readonly></div>
+                                            <div class="col-6 mb-3"><label class="form-label">ความดันตัวบน (SBP)</label><input type="number" class="form-control" name="bp_high"></div>
+                                            <div class="col-6 mb-3"><label class="form-label">ความดันตัวล่าง (DBP)</label><input type="number" class="form-control" name="bp_low"></div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="col-lg-6">
                                     <div class="form-section">
-                                        <h5 class="mb-3 text-primary fw-bold">ผลตรวจเลือดและปัสสาวะ</h5>
-                                        <div class="mb-3">
-                                            <label class="form-label">วันที่เจาะเลือด</label>
-                                            <input type="date" class="form-control" name="blood_test_date" required>
+                                        <h5 class="mb-3 text-primary fw-bold">ผลตรวจเลือด (Lab Results)</h5>
+
+                                        <div id="ocrDropZone">
+                                            <div id="ocrPlaceholder">
+                                                <i class="bi bi-magic ocr-icon-magic mb-3 d-block"></i>
+                                                <h6 class="fw-bold text-primary mb-2">ตัวช่วยกรอกข้อมูลอัตโนมัติ (OCR)</h6>
+                                                <p class="small text-muted mb-0">คลิกที่นี่เพื่อ <strong class="text-primary">ถ่ายรูป</strong> หรือ <strong class="text-primary">อัปโหลดไฟล์</strong> ใบผลตรวจสุขภาพ</p>
+                                                <p class="small text-muted mt-1">(AI จะช่วยดึงตัวเลข HDL, LDL, FPG ให้อัตโนมัติ)</p>
+                                            </div>
+
+                                            <div id="ocrStatus" style="display: none; padding: 20px 0;">
+                                                <div class="d-flex flex-column align-items-center text-primary">
+                                                    <div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+                                                    <span class="small fw-bold">กำลังสแกนรูปภาพและประมวลผล...</span>
+                                                </div>
+                                            </div>
+
+                                            <div id="ocrSuccess" style="display: none; padding: 20px 0;">
+                                                <div class="d-flex flex-column align-items-center text-success">
+                                                    <i class="bi bi-check-circle-fill success-pulse mb-3" style="font-size: 2.5rem;"></i>
+                                                    <span class="small fw-bold">ดึงข้อมูลสำเร็จ!</span>
+                                                    <span class="small text-muted mt-1">(กรุณาตรวจสอบความถูกต้องด้านล่าง)</span>
+                                                </div>
+                                            </div>
+
+                                            <input type="file" id="ocrInput" accept="image/*" onchange="handleOCR(this)" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
                                         </div>
+
+                                        <div class="mb-3"><label class="form-label">วันที่เจาะเลือด</label><input type="date" class="form-control" name="blood_test_date"></div>
                                         <div class="row">
-                                            <div class="col-6 mb-3"><label class="form-label">FPG</label><input type="number" class="form-control" name="fpg" step="0.1" required></div>
-                                            <div class="col-6 mb-3"><label class="form-label">Cholesterol</label><input type="number" class="form-control" name="cholesterol" step="0.1" required></div>
-                                            <div class="col-6 mb-3"><label class="form-label">LDL</label><input type="number" class="form-control" name="ldl" step="0.1" required></div>
-                                            <div class="col-6 mb-3"><label class="form-label">HDL</label><input type="number" class="form-control" name="hdl" step="0.1" required></div>
-                                            <div class="col-12 mb-3"><label class="form-label">Triglyceride</label><input type="number" class="form-control" name="triglyceride" step="0.1" required></div>
-                                            <div class="col-6 mb-3">
-                                                <label class="form-label">Microalbumin</label>
-                                                <select class="form-select" name="microalbumin" required>
-                                                    <option value="negative">Negative</option><option value="positive">Positive</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-6 mb-3">
-                                                <label class="form-label">Ketone</label>
-                                                <select class="form-select" name="ketone" required>
-                                                    <option value="negative">Negative</option><option value="positive">Positive</option>
-                                                </select>
-                                            </div>
-                                            
-                                            
+                                            <div class="col-6 mb-3"><label class="form-label">HDL</label><input type="number" class="form-control" name="hdl" step="0.1"></div>
+                                            <div class="col-6 mb-3"><label class="form-label">LDL</label><input type="number" class="form-control" name="ldl" step="0.1"></div>
+                                            <div class="col-6 mb-3"><label class="form-label">Cholesterol</label><input type="number" class="form-control" name="cholesterol" step="0.1"></div>
+                                            <div class="col-6 mb-3"><label class="form-label">Triglyceride</label><input type="number" class="form-control" name="triglyceride" step="0.1"></div>
+                                            <div class="col-12 mb-3"><label class="form-label">FPG (ระดับน้ำตาลในเลือด)</label><input type="number" class="form-control " name="fpg" step="0.1"></div>
+                                            <div class="col-6 mb-3"><label class="form-label">Ketone ในปัสสาวะ</label>
+                                        <select class="form-select" name="ketone">
+                                            <option value="Negative">Negative (ปกติ)</option>
+                                            <option value="Positive">Positive (พบความเสี่ยง)</option>
+                                        </select>
+                                        </div>
+                                        <div class="col-6 mb-3"><label class="form-label">Microalbumin</label>
+                                            <select class="form-select" name="microalbumin">
+                                                <option value="Negative">Negative (ปกติ)</option>
+                                                <option value="Positive">Positive (พบความเสี่ยง)</option>
+                                            </select>
+                                        </div>
                                         </div>
                                     </div>
                                 </div>
@@ -233,54 +130,13 @@
                             <div class="row justify-content-center">
                                 <div class="col-lg-10">
                                     <h3 class="mb-2 fw-bold text-primary">โรคแทรกซ้อน</h3>
-                                    <p class="text-muted mb-4">สามารถเลือกได้หลายข้อ</p>
-                                    
+                                    <p class="text-muted mb-4">เลือกอาการที่คุณมี (ถ้าไม่มีให้เลือกข้อสุดท้าย)</p>
                                     <div class="row">
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="special" value="Retinopathy">
-                                                <div>
-                                                    <div class="selection-title">โรคจอประสาทตาเสื่อม (Retinopathy)</div>
-                                                    <p class="selection-desc">ภาวะแทรกซ้อนที่เกิดจากหลอดเลือดเล็กในจอตาเสียหาย ทำให้การมองเห็นพร่ามัว</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="special" value="HeartDisease">
-                                                <div>
-                                                    <div class="selection-title">โรคหัวใจและหลอดเลือด (HeartDisease)</div>
-                                                    <p class="selection-desc">ภาวะแทรกซ้อนที่เกิดจากการตีบหรืออุดตันของหลอดเลือดแดง</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="special" value="PeripheralNeuropathy">
-                                                <div>
-                                                    <div class="selection-title">โรคเส้นประสาทเสื่อม (Neuropathy)</div>
-                                                    <p class="selection-desc">เกิดจากระดับน้ำตาลสูงทำลายเส้นประสาท ทำให้ชาหรือเจ็บแปลบที่มือ/เท้า</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="special" value="AutonomicNeuropathy">
-                                                <div>
-                                                    <div class="selection-title">โรคประสาทอัตโนมัติผิดปกติ</div>
-                                                    <p class="selection-desc">ระบบประสาทอัตโนมัติทำงานผิดปกติ เช่น การย่อยอาหาร หรือหัวใจเต้น</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="selection-card border-success" style="background-color:#f0fff4;">
-                                                <input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)">
-                                                <div>
-                                                    <div class="selection-title text-success">ไม่มีภาวะแทรกซ้อนอื่น</div>
-                                                    <p class="selection-desc">เลือกข้อนี้หากท่านไม่มีอาการข้างต้น</p>
-                                                </div>
-                                            </label>
-                                        </div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="Retinopathy"><div><div class="selection-title">จอประสาทตาเสื่อม (Retinopathy)</div><p class="selection-desc">ตามัว มองไม่ชัด มีจุดดำลอย</p></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="HeartDisease"><div><div class="selection-title">โรคหัวใจ (Heart Disease)</div><p class="selection-desc">แน่นหน้าอก เหนื่อยง่าย</p></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="PeripheralNeuropathy"><div><div class="selection-title">ปลายประสาทเสื่อม (Neuropathy)</div><p class="selection-desc">ชาปลายมือ ปลายเท้า</p></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="AutonomicNeuropathy"><div><div class="selection-title">ระบบประสาทอัตโนมัติ</div><p class="selection-desc">หน้ามืดง่าย หัวใจเต้นผิดจังหวะ</p></div></label></div>
+                                        <div class="col-12"><label class="selection-card border-success" style="background-color:#f0fff4;"><input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"><div><div class="selection-title text-success">ไม่มีภาวะแทรกซ้อน</div><p class="selection-desc">สุขภาพแข็งแรง ปกติดี</p></div></label></div>
                                     </div>
                                 </div>
                             </div>
@@ -289,65 +145,125 @@
                         <div id="step3" style="display:none;">
                             <div class="row justify-content-center">
                                 <div class="col-lg-10">
-                                    <h3 class="mb-2 fw-bold text-primary">เลือกประเภทการออกกำลังกายที่สนใจ</h3>
-                                    <p class="text-muted mb-4">เลือกประเภทที่คุณชอบ เพื่อให้ระบบแนะนำท่าที่เหมาะสม</p>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="favorites" value="Aerobic">
-                                                <div>
-                                                    <div class="selection-title">การเดิน / วิ่ง / ปั่นจักรยาน (Aerobic)</div>
-                                                    <p class="selection-desc">การเคลื่อนไหวต่อเนื่อง ช่วยเพิ่มอัตราการเต้นของหัวใจ</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="favorites" value="Resistance">
-                                                <div>
-                                                    <div class="selection-title">การยกน้ำหนัก / แรงต้าน (Resistance)</div>
-                                                    <p class="selection-desc">สร้างความแข็งแรงของกล้ามเนื้อ โดยใช้น้ำหนักตัวหรืออุปกรณ์</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="favorites" value="StretchingExercise">
-                                                <div>
-                                                    <div class="selection-title">การยืดเหยียด (Stretching)</div>
-                                                    <p class="selection-desc">เพิ่มความยืดหยุ่น ลดความตึงเครียดของกล้ามเนื้อ</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="favorites" value="WaterActivity">
-                                                <div>
-                                                    <div class="selection-title">กิจกรรมทางน้ำ (Water Activity)</div>
-                                                    <p class="selection-desc">ออกกำลังกายในน้ำ ลดแรงกระแทก เหมาะกับผู้มีปัญหาข้อต่อ</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicExercise">
-                                                <div>
-                                                    <div class="selection-title">แอโรบิกลงน้ำหนัก (Weight Bearing)</div>
-                                                    <p class="selection-desc">กิจกรรมที่ต้องรับน้ำหนักตัว เช่น เต้นแอโรบิก เดินเร็ว</p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="selection-card">
-                                                <input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicExercise">
-                                                <div>
-                                                    <div class="selection-title">แอโรบิกไม่ลงน้ำหนัก (Non-Weight)</div>
-                                                    <p class="selection-desc">กิจกรรมที่ไม่ต้องรับน้ำหนักตัวมาก เช่น ปั่นจักรยานนั่งพิง</p>
-                                                </div>
-                                            </label>
-                                        </div>
+                                    <h3 class="mb-2 fw-bold text-primary">กิจกรรมที่สนใจ</h3>
+                                    <p class="text-muted mb-4">เลือกประเภทที่คุณชอบ (อ้างอิงจากฐานข้อมูล)</p>
+                                    <div class="row g-3">
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Running"><div><div class="selection-title">วิ่ง (Running)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Walking"><div><div class="selection-title">เดิน (Walking)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bicycling"><div><div class="selection-title">ปั่นจักรยาน (Bicycling)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Dancing"><div><div class="selection-title">เต้นรำ (Dancing)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WaterActivity"><div><div class="selection-title">กิจกรรมทางน้ำ (WaterActivity)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Aerobic"><div><div class="selection-title">แอโรบิกทั่วไป (Aerobic)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicExercise"><div><div class="selection-title">แอโรบิกลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicExercise"><div><div class="selection-title">แอโรบิกไม่ลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicSport"><div><div class="selection-title">กีฬาแอโรบิกลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicSport"><div><div class="selection-title">กีฬาแอโรบิกไม่ลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Resistance"><div><div class="selection-title">แรงต้านทั่วไป (Resistance)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="StretchingExercise"><div><div class="selection-title">ยืดเหยียด (StretchingExercise)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingResistanceExercise"><div><div class="selection-title">แรงต้านลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingResistanceExercise"><div><div class="selection-title">แรงต้านไม่ลงน้ำหนัก</div></div></label></div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="step4" style="display:none;">
+                            <div class="row justify-content-center">
+                                <div class="col-xl-9 col-lg-10">
+
+                                    <div class="text-center mb-5 animate__animated animate__fadeIn">
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small fw-semibold">
+                                                <i class="bi bi-shield-check me-1"></i> Medical Intelligence Report
+                                            </span>
+                                        </div>
+                                        <h2 class="fw-extrabold text-dark tracking-tight mb-2" style="font-size: 1.85rem; letter-spacing: -0.03em;">ผลการประเมินสภาวะร่างกายและกิจกรรม</h2>
+                                        <p class="text-muted small mb-0">
+                                            <i class="bi bi-info-circle-fill text-warning me-1"></i> การประมวลผลแบบจำลองเรียลไทม์ (ยังไม่ได้บันทึกลงระบบ)
+                                        </p>
+                                    </div>
+
+                                    <div class="d-flex flex-column gap-4">
+
+                                        <div class="card border-0 shadow-sm rounded-4 bg-white animate__animated animate__fadeIn">
+                                            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-2.5 me-3">
+                                                        <i class="bi bi-exclamation-octagon-fill fs-4 d-block"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="fw-bold text-dark mb-0" style="font-size: 1.15rem;">ข้อจำกัดและสภาวะโรคร่วมที่ต้องพิจารณาก่อน</h5>
+                                                        <small class="text-muted">Clinical Conditions & Safety Warnings First</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="card-body p-4">
+                                                <hr class="opacity-10 mt-0 mb-4">
+                                                <div class="row g-4">
+
+                                                    <div class="col-md-4 border-end border-light">
+                                                        <div class="px-2">
+                                                            <div class="d-flex align-items-center mb-3">
+                                                                <span class="badge bg-warning bg-opacity-15 text-warning-emphasis p-2 rounded-2 me-2">
+                                                                    <i class="bi bi-exclamation-triangle-fill fs-6 d-block text-warning"></i>
+                                                                </span>
+                                                                <span class="fw-bold text-dark small">ข้อควรระวังสำคัญ</span>
+                                                            </div>
+                                                            <ul class="result-list ps-3 mb-0 text-secondary small fw-medium" id="warnList" style="line-height: 1.6; font-size: 0.85rem; text-align: justify;"></ul>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-4 border-end border-light">
+                                                        <div class="px-2">
+                                                            <div class="d-flex align-items-center mb-3">
+                                                                <span class="badge bg-info bg-opacity-10 text-info-emphasis p-2 rounded-2 me-2">
+                                                                    <i class="bi bi-activity fs-6 d-block text-info"></i>
+                                                                </span>
+                                                                <span class="fw-bold text-dark small">โรคร่วมที่ตรวจพบ</span>
+                                                            </div>
+                                                            <ul class="result-list ps-3 mb-0 text-secondary small" id="comorbList" style="line-height: 1.6; font-size: 0.85rem;"></ul>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-4">
+                                                        <div class="px-2">
+                                                            <div class="d-flex align-items-center mb-3">
+                                                                <span class="badge bg-danger bg-opacity-10 text-danger-emphasis p-2 rounded-2 me-2">
+                                                                    <i class="bi bi-virus fs-6 d-block text-danger"></i>
+                                                                </span>
+                                                                <span class="fw-bold text-dark small">ภาวะแทรกซ้อน</span>
+                                                            </div>
+                                                            <ul class="result-list ps-3 mb-0 text-secondary small" id="compliList" style="line-height: 1.6; font-size: 0.85rem;"></ul>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: linear-gradient(145deg, #ffffff, #fcfdfd);">
+                                            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="bg-success bg-opacity-10 text-success rounded-3 p-2.5 me-3">
+                                                            <i class="bi bi-person-walking fs-4 d-block"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h5 class="fw-bold text-dark mb-0" style="font-size: 1.15rem;">กิจกรรมและท่าออกกำลังกายเฉพาะบุคคลที่ปลอดภัย</h5>
+                                                            <small class="text-muted">Prescribed Safe Exercises & Activities</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="card-body px-4 pb-4 pt-2">
+                                                <hr class="opacity-10 my-3">
+                                                <ul class="result-list p-0 mb-0" id="exList" style="list-style: none;"></ul>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -357,111 +273,40 @@
 
                 <div class="button-area">
                     <div class="row g-3">
-                        <div class="col-6">
-                            <button type="button" class="btn-cancel" id="btnBack" onclick="handleBack()">ยกเลิก</button>
-                        </div>
-                        <div class="col-6">
-                            <button type="button" class="btn-next" id="btnNext" onclick="handleNext()">ถัดไป</button>
-                        </div>
+                        <div class="col-6"><button type="button" class="btn-cancel" id="btnBack" onclick="handleBack()">ยกเลิก</button></div>
+                        <div class="col-6"><button type="button" class="btn-next" id="btnNext" onclick="handleNext()">ถัดไป</button></div>
                     </div>
                 </div>
-
             </form>
         </div>
     </div>
 
+    <div class="modal fade" id="existingDataModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-clock-history"></i> พบข้อมูลสุขภาพล่าสุด</h5>
+                </div>
+                <div class="modal-body">
+                    <p>ระบบพบข้อมูลการตรวจล่าสุดของคุณเมื่อวันที่ <strong id="modalDate" class="text-primary">--/--/----</strong></p>
+                    <p class="mb-0">ข้อมูลสุขภาพของคุณ (เช่น น้ำหนัก, ค่าน้ำตาล) มีการเปลี่ยนแปลงหรือไม่?</p>
+                    <small class="text-muted">*หากข้อมูลไม่เปลี่ยน ผลการวิเคราะห์และแผนการออกกำลังกายจะเหมือนเดิม</small>
+                </div>
+                <div class="modal-footer justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-pencil"></i> ต้องการแก้ไขข้อมูล
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="skipToPlan()">
+                        <i class="bi bi-arrow-right-circle"></i> ข้อมูลคงเดิม (ไปเลือกแผนเลย)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // 1. คำนวณ BMI
-        const weightInput = document.getElementById('weight');
-        const heightInput = document.getElementById('height');
-        const bmiOutput = document.getElementById('bmi_result');
 
-        function calculateBMI() {
-            const w = parseFloat(weightInput.value);
-            const h = parseFloat(heightInput.value) / 100;
-            if (w > 0 && h > 0) {
-                const bmi = (w / (h * h)).toFixed(2);
-                bmiOutput.value = bmi;
-            } else { bmiOutput.value = ""; }
-        }
-        weightInput.addEventListener('input', calculateBMI);
-        heightInput.addEventListener('input', calculateBMI);
-
-        // 2. Logic เปลี่ยนหน้า (Step 1 -> 2 -> 3)
-        let currentStep = 1;
-
-        function updateUI() {
-            // ซ่อนทุกหน้า -> แสดงหน้าปัจจุบัน
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'none';
-            document.getElementById('step3').style.display = 'none';
-            document.getElementById('step' + currentStep).style.display = 'block';
-
-            // ปุ่ม
-            const btnBack = document.getElementById('btnBack');
-            const btnNext = document.getElementById('btnNext');
-
-            if (currentStep === 1) {
-                btnBack.innerText = 'ยกเลิก';
-                btnNext.innerText = 'ถัดไป';
-                btnNext.onclick = handleNext;
-            } else if (currentStep === 2) {
-                btnBack.innerText = 'ย้อนกลับ';
-                btnNext.innerText = 'ถัดไป';
-                btnNext.onclick = handleNext;
-            } else if (currentStep === 3) {
-                btnBack.innerText = 'ย้อนกลับ';
-                btnNext.innerText = 'บันทึกและประมวลผล';
-                btnNext.onclick = submitForm;
-            }
-            
-            // เลื่อนจอขึ้นบน
-            document.querySelector('.form-scroll-area').scrollTop = 0;
-        }
-
-        function handleNext() {
-            if (currentStep === 1) {
-                // Validate Page 1
-                const inputs = document.getElementById('step1').querySelectorAll('input[required], select[required]');
-                let valid = true;
-                inputs.forEach(input => {
-                    if (!input.value) { valid = false; input.style.borderColor = 'red'; }
-                    else { input.style.borderColor = '#dee2e6'; }
-                });
-                if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-            }
-
-            if (currentStep < 3) {
-                currentStep++;
-                updateUI();
-            }
-        }
-
-        function handleBack() {
-            if (currentStep > 1) {
-                currentStep--;
-                updateUI();
-            } else {
-                window.history.back();
-            }
-        }
-
-        function submitForm() {
-            document.getElementById('healthForm').submit();
-        }
-
-        // 3. Logic Checkbox
-        function toggleNoOther(checkbox) {
-            if (checkbox.checked) {
-                document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => el.checked = false);
-            }
-        }
-        document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
-            el.addEventListener('change', () => {
-                if(el.checked) document.getElementById('chkNoOther').checked = false;
-            });
-        });
-    </script>
+    <!-- JS ที่แยกออกมา -->
+    <script src="{{ url_for('static', filename='js/rec_1.js') }}"></script>
 </body>
 </html>

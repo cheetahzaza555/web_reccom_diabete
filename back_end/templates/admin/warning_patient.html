@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiaBalance Admin | จัดการคำเตือนสภาวะผู้ป่วย</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-blue: #2B5CB3;
+            --light-bg: #F4F7FC;
+            --text-dark: #333333;
+            --text-muted: #666666;
+            --white: #ffffff;
+            --border-color: #E2E8F0;
+            --danger: #E53E3E;
+            --warning: #D97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+
+        .admin-layout { display: flex; width: 100%; min-height: 100vh; }
+        .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .header-section h1 { font-size: 28px; font-weight: 600; }
+
+        .toolbar-section {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: center;
+            width: 100%;
+        }
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-family: 'Prompt', sans-serif;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .btn-add-patient-warning {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+            font-family: 'Prompt', sans-serif;
+            white-space: nowrap;
+        }
+        .btn-add-patient-warning:hover { background-color: #1e458a; }
+
+        .table-card {
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border-color);
+            width: 100%; 
+            overflow-x: auto;
+        }
+        .warning-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .warning-table th {
+            background-color: #F8FAFC;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .warning-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .warning-table tr:hover { background-color: #F8FAFC; }
+
+        .action-buttons { display: flex; gap: 8px; justify-content: center; }
+        .btn-edit {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #FFFDF5;
+            color: var(--warning);
+            cursor: pointer;
+            border: 1px solid #FEF3C7;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-edit:hover { background-color: var(--warning); color: var(--white); border-color: var(--warning); }
+
+        .btn-delete {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #FFF5F5;
+            color: var(--danger);
+            cursor: pointer;
+            border: 1px solid #FED7D7;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
+        
+        .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
+        .swal2-textarea { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
+    </style>
+</head>
+<body>
+
+    <!-- 📥 รับข้อมูล JSON จาก Flask Backend (โครงสร้าง: [{id: "Warning1", description: "ท่านเป็นเบาหวานชนิดที่ 1..."}, ...]) -->
+    <div id="patient-warning-data-container" style="display: none;" 
+         data-json="{% if warnings %}{{ warnings | tojson | safe | forceescape }}{% else %}[]{% endif %}">
+    </div>
+
+    <div class="admin-layout">
+        {% include 'includes/navbar_admin.html' %}
+
+        <div class="main-content">
+            <div class="header-section">
+                <div>
+                    <h1>จัดการคำเตือนเกี่ยวกับสภาวะผู้ป่วย</h1>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">แสดงและจัดการคำเตือนเกี่ยวกับสภาวะของผู้ป่วย</p>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหารหัสคำเตือน หรือรายละเอียดข้อความ...">
+                </div>
+
+                <button class="btn-add-patient-warning" onclick="openAddPatientWarningModal()">
+                    <i class="fa-solid fa-user-shield"></i> เพิ่มคำเตือนสภาวะผู้ป่วย
+                </button>
+            </div>
+
+            <div class="table-card">
+                <table class="warning-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">ไอดี</th>
+                            <th style="width: 70%;">รายละเอียดคำเตือน</th>
+                            <th style="width: 15%; text-align: center;">จัดการข้อมูล</th>
+                        </tr>
+                    </thead>
+                    <tbody id="warningTableBody">
+                        <!-- Dynamic Content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('patient-warning-data-container');
+        const warningData = JSON.parse(container.getAttribute('data-json') || '[]');
+
+        // 📊 ฟังก์ชันแสดงผลตาราง
+        function renderTable(data) {
+            const tableBody = document.getElementById('warningTableBody');
+            
+            if (!data || !data.length) {
+                tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลคำเตือนสภาวะผู้ป่วย</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            data.forEach(item => {
+                const descText = item.description || '-';
+                // ป้องกัน Escape Character สำหรับ SweetAlert
+                const safeDesc = descText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+                html += `
+                <tr>
+                    <td><strong style="color: var(--primary-black);">ex:${item.id}</strong></td>
+                    <td style="line-height: 1.6;">${descText}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="openEditPatientWarningModal('${item.id}', '${safeDesc}')">
+                                <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                            </button>
+                            <button class="btn-delete" onclick="deletePatientWarning('${item.id}', '${safeDesc}')">
+                                <i class="fa-solid fa-trash-can"></i> ลบ
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        // 🔍 ฟังก์ชัน ค้นหา
+        function filterContent() {
+            const searchVal = document.getElementById('searchBar').value.toLowerCase();
+            const filtered = warningData.filter(item => {
+                return item.id.toLowerCase().includes(searchVal) || 
+                       (item.description && item.description.toLowerCase().includes(searchVal));
+            });
+            renderTable(filtered);
+        }
+
+        document.getElementById('searchBar').addEventListener('input', filterContent);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTable(warningData);
+        });
+
+        // 🟢 เพิ่มคำเตือนสภาวะผู้ป่วยใหม่
+        function openAddPatientWarningModal() {
+            Swal.fire({
+                title: 'เพิ่มคำเตือนสภาวะผู้ป่วยใหม่',
+                html: `
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">รหัสคำเตือน (เช่น Warning1)</label></div>
+                    <input id="swal-warning-id" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น Warning1">
+                    
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">รายละเอียดคำเตือนภาษาไทย (ex:description)</label></div>
+                    <textarea id="swal-warning-desc" class="swal2-textarea" style="margin:0; width:100%; height:130px;" placeholder="กรอกรายละเอียดคำเตือน เช่น ท่านเป็นเบาหวานชนิดที่ 1..."></textarea>
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#2B5CB3',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'บันทึก',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+                preConfirm: () => {
+                    const id = document.getElementById('swal-warning-id').value.trim();
+                    const description = document.getElementById('swal-warning-desc').value.trim();
+                    
+                    if (!id) { Swal.showValidationMessage('กรุณาระบุรหัสคำเตือน'); return false; }
+                    if (!description) { Swal.showValidationMessage('กรุณากรอกข้อความรายละเอียดคำเตือน'); return false; }
+                    
+                    return { id: id, description: description };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                    
+                    fetch("/admin/api/patient_warning/update", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(result.value)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire('สำเร็จ!', 'เพิ่มข้อมูลคำเตือนสภาวะผู้ป่วยเรียบร้อยแล้ว', 'success').then(() => location.reload());
+                        } else { throw new Error(data.message); }
+                    })
+                    .catch(err => Swal.fire('ล้มเหลว!', err.message, 'error'));
+                }
+            });
+        }
+
+        // 🟡 แก้ไขคำเตือน (อัปเดตเฉพาะ ex:description)
+        function openEditPatientWarningModal(id, currentDesc) {
+            Swal.fire({
+                title: `แก้ไขคำเตือน ex:${id}`,
+                html: `
+                    <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">รายละเอียดคำเตือน (ex:description)</label></div>
+                    <textarea id="swal-edit-desc" class="swal2-textarea" style="margin:0; width:100%; height:150px;">${currentDesc}</textarea>
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#2B5CB3',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'อัปเดตข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+                preConfirm: () => {
+                    const description = document.getElementById('swal-edit-desc').value.trim();
+                    if (!description) { Swal.showValidationMessage('กรุณากรอกข้อความรายละเอียดคำเตือน'); return false; }
+                    return { id: id, description: description };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                    
+                    fetch("/admin/api/patient_warning/update", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(result.value)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire('สำเร็จ!', 'อัปเดตข้อความคำเตือนเรียบร้อยแล้ว', 'success').then(() => location.reload());
+                        } else { throw new Error(data.message); }
+                    })
+                    .catch(err => Swal.fire('เกิดข้อผิดพลาด!', err.message, 'error'));
+                }
+            });
+        }
+
+        // 🔴 ลบข้อมูลคำเตือน
+        function deletePatientWarning(warningId, warningDesc) {
+            Swal.fire({
+                title: 'ยืนยันการลบคำเตือน ex:' + warningId + ' ?',
+                text: `คุณต้องการลบ " ${warningDesc || warningId}" ใช่หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E53E3E',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'ยืนยัน ลบข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+                    fetch("/admin/api/patient_warning/delete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ warning_id: warningId })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire('ลบสำเร็จ!', data.message, 'success').then(() => location.reload());
+                        } else { throw new Error(data.message); }
+                    })
+                    .catch(err => Swal.fire('ไม่สามารถลบได้!', err.message, 'error'));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

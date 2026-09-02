@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiaBalance Admin | จัดการสิทธิ์ผู้ใช้</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-blue: #2B5CB3;
+            --light-bg: #F4F7FC;
+            --text-dark: #333333;
+            --text-muted: #666666;
+            --white: #ffffff;
+            --border-color: #E2E8F0;
+            
+            /* 🌟 ปรับชุดสีสำหรับ Badge สิทธิ์ให้เข้มและคมชัดขึ้น */
+            --user-badge-bg: #7bcaf5;
+            --user-badge-text: #2B6CB0;     /* สีน้ำเงินเข้ม */
+            --doctor-badge-bg: #82fae2;
+            --doctor-badge-text: #234E52;   /* สีเขียวหัวเป็ดเข้ม */
+            --admin-badge-bg: #fa3131;
+            --admin-badge-text: #C53030;    /* สีแดงเข้ม */
+            
+            --danger: #E53E3E;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+
+        
+        .admin-layout { display: flex; width: 100%; min-height: 100vh; }
+        .main-content { margin-left: 0; flex-grow: 1; padding: 40px; padding-left: 40px; width: 100%; }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .header-section h1 { font-size: 28px; font-weight: 600; }
+
+        .table-card {
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border-color);
+            width: 100%; 
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .user-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .user-table th {
+            background-color: #F8FAFC;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .user-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .user-table tr:hover { background-color: #F8FAFC; }
+
+        /* ตัวเลือกสิทธิ์ (Role Dropdown Select) */
+        .role-select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--white);
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .role-select:focus { border-color: var(--primary-blue); }
+
+        /* 🌟 สไตล์ปรับปรุงใหม่สำหรับคอลัมน์สิทธิ์ปัจจุบัน (เห็นชัด 100%) */
+        .badge { 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            display: inline-flex; 
+            align-items: center;
+            gap: 6px;
+        }
+        .badge-user { background-color: var(--user-badge-bg); color: var(--user-badge-text); }
+        .badge-doctor { background-color: var(--doctor-badge-bg); color: var(--doctor-badge-text); }
+        .badge-admin { background-color: var(--admin-badge-bg); color: var(--white); } /* แอดมินพื้นหลังแดงตัวอักษรขาวให้อ่านง่าย */
+
+        /* ปุ่มลบผู้ใช้สไตล์เรียบหรูแต่อ่านง่าย */
+        .btn-delete {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #FFF5F5;
+            color: var(--danger);
+            cursor: pointer;
+            border: 1px solid #FED7D7;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
+        
+        /* สไตล์ปรับฟอนต์ให้กล่อง SweetAlert ใช้ Sarabun */
+        .swal2-popup { font-family: 'Sarabun', sans-serif !important; border-radius: 16px !important; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        {% include 'includes/navbar_admin.html' %}
+
+        <div class="main-content">
+            <div class="header-section">
+                <div>
+                    <h1>จัดการสิทธิ์การใช้งานระบบ</h1>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">ปรับเปลี่ยนตำแหน่งกลุ่มผู้ใช้ (Role) และระงับสิทธิ์บัญชี</p>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>ไอดีคนไข้</th>
+                            <th>ชื่อ - นามสกุล</th>
+                            <th>ชื่อผู้ใช้ (Username)</th>
+                            <th>สิทธิ์ปัจจุบัน</th>
+                            <th>ปรับเปลี่ยนระดับสิทธิ์</th>
+                            <th style="text-align: center;">ลบบัญชี</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in patients %}
+                        <tr>
+                            <td><strong>#{{ user.id }}</strong></td>
+                            <td>คุณ {{ user.firstname }} {{ user.lastname }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>
+                                {% if user.role == 'admin' %}
+                                <span class="badge badge-admin"><i class="fa-solid fa-user-shield"></i> Admin</span>
+                                {% else %}
+                                <span class="badge badge-user"><i class="fa-solid fa-user"></i> ผู้ป่วยทั่วไป</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <select class="role-select" onchange="changeRole('{{ user.id }}', this.value, this)">
+                                    <option value="user" {% if user.role == 'user' %}selected{% endif %}>ผู้ป่วยทั่วไป (User)</option>
+                                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>แอดมิน (Admin)</option>
+                                </select>
+                            </td>
+                            <td style="text-align: center;">
+                                <button class="btn-delete" onclick="deleteUser('{{ user.id }}')">
+                                    <i class="fa-solid fa-trash-can"></i> ลบผู้ใช้
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                ไม่พบข้อมูลผู้ใช้งานในระบบ
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ฟังก์ชันเปลี่ยนสิทธิ์ด้วย SweetAlert2
+        function changeRole(userId, newRole, selectElement) {
+            // เก็บค่าเดิมไว้ก่อน เผื่อผู้ใช้กด "ยกเลิก" จะได้เด้ง Dropdown กลับค่าเก่า
+            const previousRole = selectElement.getAttribute('data-current') || selectElement.value;
+            
+            let roleText = newRole === 'admin' ? 'แอดมิน (Admin)'  : 'ผู้ป่วยทั่วไป (User)';
+
+            Swal.fire({
+                title: 'ยืนยันการเปลี่ยนสิทธิ์?',
+                text: `คุณต้องการเปลี่ยนสิทธิ์ของไอดี #${userId} เป็น "${roleText}" ใช่หรือไม่?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2B5CB3',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'ใช่, เปลี่ยนเลย!',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // เปิด Loading บอกแอดมินระหว่างยิง API
+                    Swal.fire({
+                        title: 'กำลังบันทึกข้อมูล...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    // ยิง Fetch ไปหา Flask หลังบ้าน
+                    fetch(window.location.origin + "/admin/update-role", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ user_id: userId, new_role: newRole })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            Swal.fire({
+                                title: 'สำเร็จ!',
+                                text: 'อัปเดตระดับสิทธิ์ผู้ใช้เรียบร้อยแล้ว',
+                                icon: 'success',
+                                confirmButtonColor: '#2B5CB3'
+                            }).then(() => {
+                                selectElement.setAttribute('data-current', newRole);
+                                location.reload(); // รีเฟรชเพื่อเปลี่ยนการ์ดสีสิทธิ์ปัจจุบัน
+                            });
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            title: 'เกิดข้อผิดพลาด!',
+                            text: 'ไม่สามารถเปลี่ยนสิทธิ์ได้: ' + err.message,
+                            icon: 'error',
+                            confirmButtonColor: '#E53E3E'
+                        });
+                        selectElement.value = previousRole; // รีเซ็ต Dropdown หน้าเว็บกลับค่าเดิม
+                    });
+                } else {
+                    selectElement.value = previousRole; // รีเซ็ต Dropdown หน้าเว็บกลับค่าเดิมเมื่อกดยกเลิก
+                }
+            });
+        }
+
+        // ฟังก์ชันลบผู้ใช้ด้วย SweetAlert2
+        function deleteUser(userId) {
+            Swal.fire({
+                title: 'คุณแน่ใจใช่ไหมที่จะลบ?',
+                text: `บัญชีไอดี #${userId} จะถูกลบออกจากคลังข้อมูล GraphDB ทั้งหมดและไม่สามารถกู้คืนได้!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E53E3E',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'ใช่, ลบออกไปเลย!',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'กำลังลบข้อมูล...',
+                        icon: 'info',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // แจ้งเตือนจำลองการทำงานก่อนเขียน SPARQL DELETE จริงในอนาคต
+                        Swal.fire(
+                            'ส่งคำขอสำเร็จ!',
+                            `ระบบจำลองการส่งคำขอคำสั่งลบไอดี ${userId} ไปที่เซิร์ฟเวอร์เรียบร้อย`,
+                            'success'
+                        );
+                    });
+                }
+            });
+        }
+
+        // หยอดสถานะปัจจุบันลงแอตทริบิวต์เพื่อใช้อ้างอิงตอนรีเซ็ตค่า
+        document.querySelectorAll('.role-select').forEach(select => {
+            select.setAttribute('data-current', select.value);
+        });
+    </script>
+</body>
+</html>

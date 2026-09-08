@@ -39,9 +39,6 @@
             width: 100%;
         }
 
-        /* กำหนดให้เนื้อหาฝั่งขวาขยับหลบ Sidebar 260px 
-           (อย่าลืมเช็คว่าในไฟล์ navbar_admin.html ตั้งความกว้างไว้เท่าไหร่ให้แก้ให้ตรงกันนะครับ)
-        */
         .main-content {
             flex-grow: 1;
             padding: 40px;
@@ -182,11 +179,12 @@
                         <div class="stat-value">{{ stats.total_exercises }} ชิ้น</div>
                     </div>
                 </div>
+                <!-- 🧩 เปลี่ยนจาก METs เป็น กฎ SWRL -->
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fa-solid fa-database"></i></div>
+                    <div class="stat-icon"><i class="fa-solid fa-puzzle-piece"></i></div>
                     <div class="stat-info">
-                        <div class="stat-label">ข้อมูล METs ในคลัง</div>
-                        <div class="stat-value">{{ stats.total_mets }} รายการ</div>
+                        <div class="stat-label">กฎ SWRL ที่ใช้งาน</div>
+                        <div class="stat-value">{{ stats.total_rules }} ข้อ</div>
                     </div>
                 </div>
             </div>

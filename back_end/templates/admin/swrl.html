@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiaBalance Admin | จัดการกฎ SWRL Rules Engine</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-blue: #2B5CB3;
+            --primary-hover: #1e458a;
+            --light-bg: #F4F7FC;
+            --text-dark: #333333;
+            --text-muted: #666666;
+            --white: #ffffff;
+            --border-color: #E2E8F0;
+            --success: #10B981;
+            --danger: #E53E3E;
+            --warning: #D97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: var(--light-bg); 
+            color: var(--text-dark); 
+            display: flex; 
+            min-height: 100vh; 
+            font-family: 'Prompt', sans-serif; 
+        } 
+
+        .admin-layout { display: flex; width: 100%; min-height: 100vh; }
+        .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .header-section h1 { font-size: 28px; font-weight: 600; color: var(--text-dark); }
+        .header-section p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+        .toolbar-section {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: center;
+            width: 100%;
+        }
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-family: 'Prompt', sans-serif;
+            font-size: 14px;
+            outline: none;
+            background-color: var(--white);
+        }
+
+        /* ➕ ปุ่มเพิ่มกฎใหม่ */
+        .btn-add-rule {
+            background-color: var(--primary-blue);
+            color: var(--white);
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Prompt', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(43, 92, 179, 0.2);
+            white-space: nowrap;
+        }
+        .btn-add-rule:hover { background-color: var(--primary-hover); }
+
+        .table-card {
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border-color);
+            width: 100%; 
+            overflow-x: auto;
+        }
+        .rule-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .rule-table th {
+            background-color: #F8FAFC;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .rule-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .rule-table tr:hover { background-color: #F8FAFC; }
+
+        /* 🎛️ ปุ่มลบ */
+        .btn-delete {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #FFF5F5;
+            color: var(--danger);
+            cursor: pointer;
+            border: 1px solid #FED7D7;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
+
+        .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
+
+        /* 🏷️ รูปแบบกล่องแสดง SWRL Rule แบบเต็ม */
+        .swrl-rule-box {
+            background-color: #F8FAFC;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            color: #1E293B;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Container เก็บข้อมูล JSON SWRL Rules -->
+    <div id="swrl-data-container" style="display: none;" 
+         data-json="{% if swrl_rules %}{{ swrl_rules | tojson | safe | forceescape }}{% else %}[]{% endif %}">
+    </div>
+
+    <div class="admin-layout">
+        {% include 'includes/navbar_admin.html' %}
+
+        <div class="main-content">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div>
+                    <h1>กฎ SWRL Rules Engine</h1>
+                    <p>แสดงรายการและจัดการกฎทางการแพทย์</p>
+                </div>
+            </div>
+
+            <!-- Toolbar Section -->
+            <div class="toolbar-section">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อกฎ หรือคำอธิบาย...">
+                </div>
+                <!-- ปุ่มเพิ่มกฎใหม่ -->
+                <button class="btn-add-rule" onclick="openAddRuleModal()">
+                    <i class="fa-solid fa-plus"></i> เพิ่มกฎใหม่
+                </button>
+            </div>
+
+            <!-- Table Card -->
+            <div class="table-card">
+                <table class="rule-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">ชื่อกฎ</th>
+                            <th style="width: 25%;">รายละเอียด / คำอธิบาย</th>
+                            <th style="width: 45%;">เงื่อนไข</th>
+                            <th style="width: 15%; text-align: center;">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rulesTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 📥 ดึงข้อมูล SWRL Rules จาก Data Attribute
+        const container = document.getElementById('swrl-data-container');
+        const swrlRulesData = JSON.parse(container.getAttribute('data-json') || '[]');
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('rulesTableBody');
+            
+            if (!data || !data.length) {
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลกฎ SWRL ในระบบ</td></tr>`;
+                return;
+            }
+
+            const sortedData = [...data].sort((a, b) => {
+                const labelA = a.rule_label || '';
+                const labelB = b.rule_label || '';
+                return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            let html = "";
+            sortedData.forEach(rule => {
+                let swrlFullExpression = rule.full_rule || rule.swrl_text || rule.swrl_string || "";
+                
+                if (!swrlFullExpression && rule.conditions && rule.conditions.length > 0) {
+                    swrlFullExpression = rule.conditions.join(' ^ ');
+                }
+
+                if (!swrlFullExpression) {
+                    swrlFullExpression = "- ไม่พบรายละเอียดกฎ SWRL -";
+                }
+
+                const safeUri = encodeURIComponent(rule.rule_uri || '');
+                const safeLabel = (rule.rule_label || '-').replace(/'/g, "\\'");
+
+                html += `
+                <tr>
+                    <td><strong style="color: #1E1B4B; font-size: 15px;">${rule.rule_label || '-'}</strong></td>
+                    <td style="color: var(--text-muted);">${rule.comment || '-'}</td>
+                    <td>
+                        <div class="swrl-rule-box">${swrlFullExpression}</div>
+                    </td>
+                    <td style="text-align: center;">
+                        <button class="btn-delete" onclick="deleteRule('${safeUri}', '${safeLabel}')">
+                            <i class="fa-solid fa-trash-can"></i> ลบ
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        // 🔍 ฟังก์ชันกรองข้อมูลการค้นหา
+        function filterContent() {
+            const searchVal = document.getElementById('searchBar').value.toLowerCase();
+
+            const filtered = swrlRulesData.filter(item => {
+                const labelMatch = (item.rule_label || '').toLowerCase().includes(searchVal);
+                const commentMatch = (item.comment || '').toLowerCase().includes(searchVal);
+                return labelMatch || commentMatch;
+            });
+            renderTable(filtered);
+        }
+
+        // ➕ ฟังก์ชันเปิด Modal สำหรับเพิ่มกฎ SWRL
+        function openAddRuleModal() {
+            Swal.fire({
+                title: 'เพิ่มกฎ SWRL ใหม่',
+                html: `
+                    <div style="text-align: left; font-size: 14px;">
+                        <label style="font-weight: 600; display: block; margin-bottom: 4px;">ชื่อกฎ (Rule Label):</label>
+                        <input id="swal-rule-label" class="swal2-input" placeholder="เช่น S1, Warning_Rule_01" style="width: 100%; margin: 0 0 16px 0;">
+                        
+                        <label style="font-weight: 600; display: block; margin-bottom: 4px;">คำอธิบายกฎ (Comment):</label>
+                        <input id="swal-rule-comment" class="swal2-input" placeholder="เช่น ตรวจสอบความดันและค่าน้ำตาล" style="width: 100%; margin: 0 0 16px 0;">
+
+                        <label style="font-weight: 600; display: block; margin-bottom: 4px;">กฎ SWRL Expression:</label>
+                        <textarea id="swal-rule-expression" class="swal2-textarea" placeholder="ex:Patient(?x) ^ ex:diabetType(?x, ex:T1DM) -> ex:hasPatientWarning(?x, ex:Warning1)" style="width: 100%; height: 100px; margin: 0; font-family: monospace; font-size: 13px;"></textarea>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกกฎ',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#2B5CB3',
+                cancelButtonColor: '#666666',
+                preConfirm: () => {
+                    const label = document.getElementById('swal-rule-label').value.trim();
+                    const comment = document.getElementById('swal-rule-comment').value.trim();
+                    const expression = document.getElementById('swal-rule-expression').value.trim();
+
+                    if (!label || !expression) {
+                        Swal.showValidationMessage('กรุณากรอกชื่อกฎ และกฎ SWRL Expression ให้ครบถ้วน');
+                        return false;
+                    }
+                    return { rule_label: label, comment: comment, swrl_expression: expression };
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังบันทึกกฎ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                    try {
+                        const response = await fetch('/admin/api/swrl/rules/add', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(result.value)
+                        });
+                        const resResult = await response.json();
+
+                        if (resResult.success) {
+                            Swal.fire('สำเร็จ!', resResult.message || 'บันทึกกฎ SWRL ใหม่เรียบร้อยแล้ว', 'success')
+                                .then(() => location.reload());
+                        } else {
+                            Swal.fire('เกิดข้อผิดพลาด!', resResult.message || 'ไม่สามารถบันทึกกฎได้', 'error');
+                        }
+                    } catch (err) {
+                        Swal.fire('ข้อผิดพลาด!', 'เกิดปัญหาในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
+                    }
+                }
+            });
+        }
+
+        // 🗑️ ฟังก์ชันลบกฎ SWRL
+        function deleteRule(encodedRuleUri, ruleLabel) {
+            const ruleUri = decodeURIComponent(encodedRuleUri);
+            Swal.fire({
+                title: 'ยืนยันการลบกฎ?',
+                text: `คุณแน่ใจหรือไม่ว่าต้องการลบกฎ "${ruleLabel}" ออกจาก GraphDB?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E53E3E',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'ใช่, ลบออกทันที',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                    try {
+                        const response = await fetch('/admin/api/swrl/rules/delete', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ rule_uri: ruleUri })
+                        });
+                        const resResult = await response.json();
+
+                        if (resResult.success) {
+                            Swal.fire('ลบสำเร็จ!', resResult.message || 'ลบกฎออกจาก GraphDB เรียบร้อยแล้ว', 'success')
+                                .then(() => location.reload());
+                        } else {
+                            Swal.fire('ลบไม่สำเร็จ!', resResult.message || 'เกิดข้อผิดพลาดในการลบ', 'error');
+                        }
+                    } catch (err) {
+                        Swal.fire('ข้อผิดพลาด!', 'เกิดปัญหาในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
+                    }
+                }
+            });
+        }
+
+        // 🟢 Event Listeners & โหลดข้อมูลเริ่มต้น
+        document.getElementById('searchBar').addEventListener('input', filterContent);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTable(swrlRulesData);
+        });
+    </script>
+</body>
+</html>

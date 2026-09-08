@@ -278,11 +278,12 @@
 
                         <label style="font-weight: 600; display: block; margin-bottom: 4px;">กฎ SWRL Expression:</label>
                         <textarea id="swal-rule-expression" class="swal2-textarea" placeholder="ex:Patient(?x) ^ ex:diabetType(?x, ex:T1DM) -> ex:hasPatientWarning(?x, ex:Warning1)" style="width: 100%; height: 100px; margin: 0; font-family: monospace; font-size: 13px;"></textarea>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">💡 ทุกคำที่ไม่ใช่ตัวแปร (?x) ต้องมี <code>ex:</code> นำหน้าเสมอ ไม่งั้นจะถูกตีความผิดแบบเงียบๆ</p>
                     </div>
                 `,
                 focusConfirm: false,
                 showCancelButton: true,
-                confirmButtonText: 'บันทึกกฎ',
+                confirmButtonText: 'ตรวจสอบแล้วบันทึก',
                 cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#2B5CB3',
                 cancelButtonColor: '#666666',
@@ -298,26 +299,58 @@
                     return { rule_label: label, comment: comment, swrl_expression: expression };
                 }
             }).then(async (result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({ title: 'กำลังบันทึกกฎ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                if (!result.isConfirmed) return;
 
-                    try {
-                        const response = await fetch('/admin/api/swrl/rules/add', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(result.value)
-                        });
-                        const resResult = await response.json();
+                // ✅ [NEW] ขั้น Preview ก่อนบันทึกจริง — เช็คว่า argument แต่ละตัว
+                // ถูกตีความเป็น individual/literal/variable ตรงกับที่ตั้งใจไหม
+                // (โดยเฉพาะจับกรณีลืมใส่ 'ex:' ที่เคยทำให้กฎพังแบบเงียบๆ มาก่อน)
+                Swal.fire({ title: 'กำลังตรวจสอบกฎ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                        if (resResult.success) {
-                            Swal.fire('สำเร็จ!', resResult.message || 'บันทึกกฎ SWRL ใหม่เรียบร้อยแล้ว', 'success')
-                                .then(() => location.reload());
-                        } else {
-                            Swal.fire('เกิดข้อผิดพลาด!', resResult.message || 'ไม่สามารถบันทึกกฎได้', 'error');
-                        }
-                    } catch (err) {
-                        Swal.fire('ข้อผิดพลาด!', 'เกิดปัญหาในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
+                let previewData;
+                try {
+                    const previewRes = await fetch('/admin/api/swrl/rules/preview', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ swrl_expression: result.value.swrl_expression })
+                    });
+                    previewData = await previewRes.json();
+                } catch (err) {
+                    Swal.fire('ข้อผิดพลาด!', 'ไม่สามารถตรวจสอบกฎก่อนบันทึกได้ (preview ล้มเหลว)', 'error');
+                    return;
+                }
+
+                if (previewData.has_warnings) {
+                    const warningList = (previewData.warnings || []).map(w => `<li style="text-align:left; margin-bottom:6px;">${w}</li>`).join('');
+                    const confirmAnyway = await Swal.fire({
+                        title: '⚠️ พบจุดที่น่าสงสัยในกฎ',
+                        html: `<ul style="padding-left: 18px; font-size: 13px;">${warningList}</ul><p style="margin-top:12px; font-size:13px;">ยืนยันจะบันทึกต่อไหม? (ถ้าไม่แน่ใจ กด "แก้ไขก่อน" แล้วเติม ex: หรือ quote ให้ครบ)</p>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'บันทึกต่อ (รับความเสี่ยง)',
+                        cancelButtonText: 'แก้ไขก่อน',
+                        confirmButtonColor: '#D97706'
+                    });
+                    if (!confirmAnyway.isConfirmed) return;
+                }
+
+                Swal.fire({ title: 'กำลังบันทึกกฎ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                try {
+                    const response = await fetch('/admin/api/swrl/rules/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(result.value)
+                    });
+                    const resResult = await response.json();
+
+                    if (resResult.success) {
+                        Swal.fire('สำเร็จ!', resResult.message || 'บันทึกกฎ SWRL ใหม่เรียบร้อยแล้ว', 'success')
+                            .then(() => location.reload());
+                    } else {
+                        Swal.fire('เกิดข้อผิดพลาด!', resResult.message || 'ไม่สามารถบันทึกกฎได้', 'error');
                     }
+                } catch (err) {
+                    Swal.fire('ข้อผิดพลาด!', 'เกิดปัญหาในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
                 }
             });
         }
@@ -343,7 +376,7 @@
                         const response = await fetch('/admin/api/swrl/rules/delete', {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ rule_uri: ruleUri })
+                            body: JSON.stringify({ rule_label: ruleLabel })
                         });
                         const resResult = await response.json();
 

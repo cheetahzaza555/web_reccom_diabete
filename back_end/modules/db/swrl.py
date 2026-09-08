@@ -171,6 +171,79 @@ def get_all_swrl_rules():
 # ⚙️ Helper Functions สำหรับสร้าง SPARQL / RDF
 # =========================================================
 
+def preview_swrl_rule(swrl_expression):
+    """
+    ✅ [NEW] Dry-run: แกะ swrl_expression ออกมาดูว่าแต่ละ argument จะถูกตีความ
+    เป็น individual/literal/variable แบบไหน โดย 'ไม่เขียนอะไรลง GraphDB'
+    ใช้เช็คก่อนกด save จริงทุกครั้ง เพื่อจับกรณีลืมใส่ 'ex:' หรือลืม quote
+    ก่อนที่จะไปเป็นบั๊กเงียบๆ ในกฎจริง
+    """
+    prefix_ex = "http://example.org/diabetes#"
+    if "->" in swrl_expression:
+        body_part, head_part = swrl_expression.split("->", 1)
+    else:
+        body_part, head_part = swrl_expression, ""
+
+    body_atoms_str = [a.strip() for a in body_part.split("^") if a.strip()]
+    head_atoms_str = [a.strip() for a in head_part.split("^") if a.strip()]
+
+    def preview_atom(atom_str):
+        atom_str = atom_str.strip()
+        warnings = []
+
+        def resolve_arg_preview(arg):
+            arg = arg.strip()
+            if arg.startswith('?'):
+                return arg, "variable"
+            elif arg.startswith("ex:"):
+                return f"{prefix_ex}{arg[3:]}", "individual"
+            elif arg.startswith("http://") or arg.startswith("https://"):
+                return arg, "individual"
+            elif arg.startswith('"') and arg.endswith('"'):
+                return arg, "literal (string)"
+            elif re.match(r'^-?\d+(\.\d+)?$', arg):
+                return arg, "literal (decimal)"
+            elif not arg:
+                warnings.append(
+                    "พบ argument ว่างเปล่า (อาจพิมพ์ comma เกิน หรือเว้นวรรคผิดตำแหน่ง) "
+                    "ถ้าบันทึกแบบนี้ Pellet อาจ error ทันที ('subject cannot be null')"
+                )
+                return "(ว่างเปล่า ❌)", "EMPTY — ห้ามบันทึก"
+            else:
+                warnings.append(
+                    f"'{arg}' ไม่มี 'ex:'/quote นำหน้า -> จะถูกตีความเป็น individual "
+                    f"'ex:{arg}' โดยอัตโนมัติ (ถ้าตั้งใจให้เป็นข้อความ ให้ใส่ quote)"
+                )
+                return f"{prefix_ex}{arg}", "individual (auto-guessed ⚠️)"
+
+        builtin_match = re.match(r'^(swrlb:\w+)\((.+)\)$', atom_str)
+        if builtin_match:
+            args_raw = [a.strip() for a in builtin_match.group(2).split(',')]
+            parsed = [resolve_arg_preview(a) for a in args_raw]
+            return {"atom": atom_str, "kind": "builtin", "args": parsed, "warnings": warnings}
+
+        atom_match = re.match(r'^([\w:-]+)\((.+)\)$', atom_str)
+        if atom_match:
+            pred_raw = atom_match.group(1)
+            args_raw = [a.strip() for a in atom_match.group(2).split(',')]
+            parsed = [resolve_arg_preview(a) for a in args_raw]
+            kind = "class_atom" if len(args_raw) == 1 else "property_atom"
+            return {"atom": atom_str, "predicate": pred_raw, "kind": kind, "args": parsed, "warnings": warnings}
+
+        return {"atom": atom_str, "kind": "UNPARSEABLE ❌", "args": [], "warnings": [f"อ่านรูปแบบ '{atom_str}' ไม่ออก เช็ค syntax วงเล็บ/comma ให้ดี"]}
+
+    body_preview = [preview_atom(a) for a in body_atoms_str]
+    head_preview = [preview_atom(a) for a in head_atoms_str]
+    all_warnings = [w for a in body_preview + head_preview for w in a["warnings"]]
+
+    return {
+        "body": body_preview,
+        "head": head_preview,
+        "has_warnings": len(all_warnings) > 0,
+        "warnings": all_warnings
+    }
+
+
 def _execute_sparql_update(sparql_query):
     """Helper function สำหรับส่งคำสั่ง SPARQL UPDATE ไปยัง GraphDB WRITE Endpoint"""
     sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
@@ -184,15 +257,34 @@ def _execute_sparql_update(sparql_query):
         return False, str(e)
 
 
+def _sparql_node_ref(node):
+    """Return a valid SPARQL reference for an IRI or blank node."""
+    return node if node.startswith("_:") else f"<{node}>"
+
+
 def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
     """แปลงข้อความ Atom ให้เป็น RDF Triples ปลอดภัยจาก Syntax Error และ Pellet Error"""
     atom_str = atom_str.strip()
     triples = []
-    
+
+    def node_ref(node):
+        return node if node.startswith("_:") else f"<{node}>"
+
+    # ✅ [FIX] เดิม resolve_arg เจอคำที่ไม่มี prefix (ลืมพิมพ์ "ex:" นำหน้า) จะ
+    # เดาแบบเงียบๆ ว่าเป็น STRING LITERAL (xsd:string) ทำให้ atom ที่ควรจะเป็น
+    # ObjectProperty (เช่น hasComplication(?x, NoGeneralComplication)) กลาย
+    # เป็นการเปรียบเทียบกับข้อความ "NoGeneralComplication" แทนที่จะเป็น
+    # individual ex:NoGeneralComplication จริงๆ -> Pellet ไม่ error แต่กฎ
+    # ไม่ match อะไรเลยตลอดไปแบบเงียบๆ (นี่คือสาเหตุที่กฎเคยพังมาก่อน)
+    #
+    # ตอนนี้เปลี่ยน default: ถ้าเจอ bareword ที่ไม่มี prefix/quote และไม่ใช่ตัวเลข
+    # ให้ถือว่าเป็น individual ภายใต้ ex: แทน (เพราะดูจากกฎทั้งหมดในระบบ ไม่มี
+    # ข้อไหนตั้งใจใช้ bareword-ไม่มี-quote เป็น string literal จริงๆเลยสักข้อ
+    # string literal ทุกตัวถูก quote ไว้หมด) พร้อม print คำเตือนให้เห็นตอน save
     def resolve_arg(arg):
         arg = arg.strip()
         if arg.startswith('?'):
-            var_uri = f"urn:swrl:var#{arg[1:]}"
+            var_uri = f"http://example.org/{arg[1:]}"
             triples.append(f"<{var_uri}> a swrl:Variable .")
             return f"<{var_uri}>", "var"
         elif arg.startswith("ex:"):
@@ -201,11 +293,24 @@ def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
             return f"<{arg}>", "individual"
         elif arg.startswith('"') and arg.endswith('"'):
             return f'{arg}^^xsd:string', "literal"
-        elif arg.replace('.', '', 1).isdigit():
+        elif re.match(r'^-?\d+(\.\d+)?$', arg):
             return f'"{arg}"^^xsd:decimal', "literal"
         else:
-            # ข้อความทั่วไปถือเป็น String Literal
-            return f'"{arg}"^^xsd:string', "literal"
+            # ⚠️ [FIX] เช็คก่อนว่า arg ว่างเปล่าไหม (เช่น พิมพ์ comma เกิน/เว้นวรรคผิด
+            # ทำให้เหลือ argument ว่างๆ) ถ้าปล่อยผ่านจะได้ IRI พัง <prefix#> (จบที่ # เฉยๆ)
+            # ซึ่งเป็นสาเหตุที่ทำให้ Pellet error "subject cannot be null" ได้
+            if not arg:
+                raise ValueError(
+                    "พบ argument ว่างเปล่าในกฎ (อาจพิมพ์ comma เกิน หรือเว้นวรรคผิดตำแหน่ง) "
+                    "กรุณาตรวจสอบ syntax ของกฎก่อนบันทึกอีกครั้ง"
+                )
+            # bareword ไม่มี prefix/quote -> เดาว่าเป็น individual ภายใต้ ex:
+            # (ปลอดภัยกว่าเดิมที่เดาเป็น string literal เงียบๆ) แต่ยัง print
+            # เตือนไว้เผื่อผู้ใช้ตั้งใจพิมพ์ผิด/สะกดผิดจริงๆ จะได้เห็นใน log ทันที
+            print(f"⚠️ [SWRL WARN] อาร์กิวเมนต์ '{arg}' ไม่มี 'ex:' หรือ quote นำหน้า "
+                  f"-> ถือว่าเป็น individual 'ex:{arg}' โดยอัตโนมัติ "
+                  f"(ถ้าตั้งใจให้เป็นข้อความ ให้ใส่ quote ครอบ เช่น \"{arg}\")")
+            return f"<{prefix_ex}{arg}>", "individual"
 
     # 1. Builtin Atom -> e.g. swrlb:greaterThan(?w, 120)
     builtin_match = re.match(r'^(swrlb:\w+)\((.+)\)$', atom_str)
@@ -214,15 +319,15 @@ def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
         args_raw = [a.strip() for a in builtin_match.group(2).split(',')]
         
         args_list_uri = f"{atom_uri}_args_1"
-        triples.append(f"<{atom_uri}> a swrl:BuiltinAtom ;")
+        triples.append(f"{node_ref(atom_uri)} a swrl:BuiltinAtom ;")
         triples.append(f"          swrl:builtin <{builtin_name}> ;")
-        triples.append(f"          swrl:arguments <{args_list_uri}> .")
+        triples.append(f"          swrl:arguments {node_ref(args_list_uri)} .")
         
         for i, arg in enumerate(args_raw):
             curr_list = f"{atom_uri}_args_{i+1}"
             next_list = f"<{atom_uri}_args_{i+2}>" if i + 1 < len(args_raw) else "rdf:nil"
             arg_val, _ = resolve_arg(arg)
-            triples.append(f"<{curr_list}> rdf:first {arg_val} ; rdf:rest {next_list} .")
+            triples.append(f"{node_ref(curr_list)} rdf:first {arg_val} ; rdf:rest {next_list} .")
             
         return "\n".join(triples)
 
@@ -242,7 +347,7 @@ def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
         # Class Atom (1 argument) -> e.g. ex:Patient(?p)
         if len(args_raw) == 1:
             arg1_val, _ = resolve_arg(args_raw[0])
-            triples.append(f"<{atom_uri}> a swrl:ClassAtom ;")
+            triples.append(f"{node_ref(atom_uri)} a swrl:ClassAtom ;")
             triples.append(f"          swrl:classPredicate <{pred_uri}> ;")
             triples.append(f"          swrl:argument1 {arg1_val} .")
             
@@ -253,9 +358,9 @@ def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
             
             # ถ้าตัวแปรที่ 2 เป็น Literal (ข้อความ/ตัวเลข) ต้องใช้ DatavaluedPropertyAtom
             if arg2_type == "literal":
-                triples.append(f"<{atom_uri}> a swrl:DatavaluedPropertyAtom ;")
+                triples.append(f"{node_ref(atom_uri)} a swrl:DatavaluedPropertyAtom ;")
             else:
-                triples.append(f"<{atom_uri}> a swrl:IndividualPropertyAtom ;")
+                triples.append(f"{node_ref(atom_uri)} a swrl:IndividualPropertyAtom ;")
                 
             triples.append(f"          swrl:propertyPredicate <{pred_uri}> ;")
             triples.append(f"          swrl:argument1 {arg1_val} ;")
@@ -271,7 +376,7 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
     prefix_ex = "http://example.org/diabetes#"
     
     clean_label = re.sub(r'\W+', '_', rule_label.strip())
-    rule_uri = target_rule_uri or f"{prefix_ex}Rule_{clean_label}"
+    rule_uri = target_rule_uri or f"_:rule_{uuid.uuid4().hex}"
     
     if "->" in swrl_expression:
         body_part, head_part = swrl_expression.split("->", 1)
@@ -281,8 +386,11 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
     body_atoms_str = [a.strip() for a in body_part.split("^") if a.strip()]
     head_atoms_str = [a.strip() for a in head_part.split("^") if a.strip()]
 
+    if not body_atoms_str or not head_atoms_str:
+        raise ValueError("กฎ SWRL ต้องมีทั้ง body และ head คั่นด้วย ->")
+
     insert_triples = [
-        f"<{rule_uri}> a swrl:Imp ;",
+        f"{_sparql_node_ref(rule_uri)} a swrl:Imp ;",
         f'          rdfs:label "{rule_label}" ;',
         f'          rdfs:comment "{comment}" ;',
         f'          swrla:isRuleEnabled "{is_enabled}"^^xsd:boolean .'
@@ -291,27 +399,34 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
     def build_atom_list(rule_part_name, atoms_list):
         if not atoms_list: 
             return
-            
+
+        list_nodes = [
+            f"_:list_{rule_part_name}_{uuid.uuid4().hex}"
+            for _ in atoms_list
+        ]
+
         for i, atom_str in enumerate(atoms_list):
             unique_id = uuid.uuid4().hex
-            atom_uri = f"{prefix_ex}atom_{unique_id}"
-            list_node = f"{prefix_ex}list_{rule_part_name}_{unique_id}"
+            atom_uri = f"_:atom_{unique_id}"
+            list_node = list_nodes[i]
             
             if i == 0:
-                insert_triples.append(f"<{rule_uri}> swrl:{rule_part_name} <{list_node}> .")
+                insert_triples.append(f"{_sparql_node_ref(rule_uri)} swrl:{rule_part_name} {list_node} .")
 
-            insert_triples.append(f"<{list_node}> rdf:first <{atom_uri}> .")
+            insert_triples.append(f"{list_node} a swrl:AtomList .")
+            insert_triples.append(f"{list_node} rdf:first {atom_uri} .")
 
             atom_triples = _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex)
-            if atom_triples:
-                insert_triples.append(atom_triples)
+            if not atom_triples:
+                raise ValueError(f"ไม่สามารถอ่าน atom ของกฎได้: {atom_str}")
+            insert_triples.append(atom_triples)
 
             if i < len(atoms_list) - 1:
-                next_list_node = f"<{prefix_ex}list_{rule_part_name}_{uuid.uuid4().hex}>"
+                next_list_node = list_nodes[i + 1]
             else:
                 next_list_node = "rdf:nil"
                 
-            insert_triples.append(f"<{list_node}> rdf:rest {next_list_node} .")
+            insert_triples.append(f"{list_node} rdf:rest {next_list_node} .")
 
     build_atom_list("body", body_atoms_str)
     build_atom_list("head", head_atoms_str)
@@ -354,26 +469,35 @@ def add_swrl_rule(rule_label, comment, swrl_expression):
 # 🗑️ 2. ฟังก์ชันลบกฎ SWRL (Delete Rule)
 # =========================================================
 
-def delete_swrl_rule(rule_uri):
+def delete_swrl_rule(rule_uri=None, rule_label=None):
     """ลบกฎ SWRL และโหนด Blank Nodes ทั้งหมดที่เชื่อมโยงอยู่ ออกจาก GraphDB"""
     try:
-        if not rule_uri:
-            return {"success": False, "message": "กรุณาระบุ rule_uri ที่ต้องการลบ"}
+        if rule_label:
+            escaped_label = rule_label.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+            rule_ref = "?rule"
+            rule_selector = f'?rule rdfs:label "{escaped_label}" .'
+        elif rule_uri and not rule_uri.startswith("_:"):
+            rule_ref = _sparql_node_ref(rule_uri)
+            rule_selector = f"BIND({rule_ref} AS ?rule)"
+        else:
+            return {"success": False, "message": "กรุณาระบุ rule_uri หรือ rule_label ที่ต้องการลบ"}
 
         sparql_query = f"""
         PREFIX swrl: <http://www.w3.org/2003/11/swrl#>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
         DELETE {{
-            <{rule_uri}> ?p ?o .
+            ?rule ?p ?o .
             ?listNode ?lp ?lo .
             ?atomNode ?ap ?ao .
             ?argsNode ?argsp ?argso .
         }}
         WHERE {{
-            <{rule_uri}> ?p ?o .
+            {rule_selector}
+            ?rule ?p ?o .
             OPTIONAL {{
-                <{rule_uri}> (swrl:body|swrl:head)/rdf:rest* ?listNode .
+                ?rule (swrl:body|swrl:head)/rdf:rest* ?listNode .
                 ?listNode ?lp ?lo .
                 OPTIONAL {{
                     ?listNode rdf:first ?atomNode .
@@ -405,7 +529,7 @@ def update_swrl_rule(rule_uri, rule_label, comment, swrl_expression, is_enabled=
     """แก้ไขรายละเอียดกฎ SWRL ที่มีอยู่แล้ว (ลบโครงสร้างเดิม แล้วเขียนโครงสร้างใหม่ทับ)"""
     try:
         # 1. ลบโครงสร้างเดิมของกฎนี้ออกก่อน
-        del_res = delete_swrl_rule(rule_uri)
+        del_res = delete_swrl_rule(rule_uri=rule_uri)
         if not del_res["success"]:
             return del_res
 
@@ -432,19 +556,20 @@ def toggle_swrl_rule_status(rule_uri, is_enabled):
     """สลับสถานะการเปิดใช้งานกฎ (true / false) ผ่าน swrla:isRuleEnabled"""
     try:
         status_str = "true" if str(is_enabled).lower() in ["true", "1"] else "false"
+        rule_ref = _sparql_node_ref(rule_uri)
 
         sparql_query = f"""
         PREFIX swrla: <http://swrl.stanford.edu/ontologies/3.3/swrla.owl#>
         PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
         DELETE {{
-            <{rule_uri}> swrla:isRuleEnabled ?oldStatus .
+            {rule_ref} swrla:isRuleEnabled ?oldStatus .
         }}
         INSERT {{
-            <{rule_uri}> swrla:isRuleEnabled "{status_str}"^^xsd:boolean .
+            {rule_ref} swrla:isRuleEnabled "{status_str}"^^xsd:boolean .
         }}
         WHERE {{
-            OPTIONAL {{ <{rule_uri}> swrla:isRuleEnabled ?oldStatus . }}
+            OPTIONAL {{ {rule_ref} swrla:isRuleEnabled ?oldStatus . }}
         }}
         """
 

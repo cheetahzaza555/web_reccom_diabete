@@ -12,6 +12,7 @@
 from SPARQLWrapper import POST, SPARQLWrapper, JSON
 from modules.config import GRAPHDB_READ, GRAPHDB_WRITE
 import random
+import re
 
 
 
@@ -745,16 +746,11 @@ def get_patient_warning():
     
     # ใช้ SPARQL ค้นหา Class ที่มีคำว่า WarningAvoidExercise โดยไม่ต้องฟิกซ์ PREFIX ทั้งหมด
     query = """
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX ex: <http://example.org/diabetes#>
 
     SELECT ?subject ?description WHERE {
-        ?subject rdf:type ?type .
-        FILTER(STRENDS(STR(?type), "PatientWarning"))
-        OPTIONAL { 
-            ?subject ?p ?description .
-            FILTER(STRENDS(STR(?p), "description"))
-        }
+        ?subject a ex:PatientWarning .
+        OPTIONAL { ?subject ex:description ?description . }
     }
     """
     sparql.setQuery(query)
@@ -778,12 +774,18 @@ def get_patient_warning():
 
 def save_or_update_warning(warning_id, description=""):
     try:
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", warning_id):
+            return {"success": False, "message": "รหัสคำเตือนต้องเป็นตัวอักษร/ตัวเลข/_/- เท่านั้น"}
+
+        safe_description = (description.replace("\\", "\\\\")
+                            .replace('"', '\\"')
+                            .replace("\r", "\\r")
+                            .replace("\n", "\\n"))
         sparql = SPARQLWrapper(GRAPHDB_WRITE)
         sparql.setMethod(POST)
         
-        # 🟢 ปรับ PREFIX และ Class name ให้ตรงrกับ WarningAvoidExercise
         query = f"""
-        PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
+        PREFIX ex: <http://example.org/diabetes#>
 
         DELETE {{
             ex:{warning_id} ex:description ?oldDesc .
@@ -794,7 +796,7 @@ def save_or_update_warning(warning_id, description=""):
 
         INSERT DATA {{
             ex:{warning_id} a ex:PatientWarning;
-                        ex:description "{description}" .
+                        ex:description "{safe_description}" .
         }}
         """
         sparql.setMethod(POST)
@@ -805,11 +807,14 @@ def save_or_update_warning(warning_id, description=""):
         return {"success": False, "message": str(e)}
     
 def delete_warning(warning_id):
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", warning_id):
+        return {"success": False, "message": "รหัสคำเตือนไม่ถูกต้อง"}
+
     sparql = SPARQLWrapper(GRAPHDB_WRITE)
     sparql.setMethod(POST)
 
     query = f"""
-    PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
+    PREFIX ex: <http://example.org/diabetes#>
 
     DELETE {{
         # 1. ลบ Properties ทั้งหมดของ warning_id นี้

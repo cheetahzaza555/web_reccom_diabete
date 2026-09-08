@@ -425,6 +425,20 @@ def api_get_swrl_rules():
         return render_template('admin/swrl.html', swrl_rules=result["data"]), 200
     return jsonify(result), 500
 
+# 1.5 POST: Preview/Dry-run กฎก่อนบันทึกจริง (ไม่เขียนลง GraphDB)
+@admin_bp.route('/api/swrl/rules/preview', methods=['POST'])
+@admin_required
+def api_preview_swrl_rule():
+    data = request.get_json() or {}
+    swrl_expression = data.get('swrl_expression')
+
+    if not swrl_expression:
+        return jsonify({"success": False, "message": "กรุณาระบุ swrl_expression"}), 400
+
+    result = preview_swrl_rule(swrl_expression)
+    return jsonify({"success": True, **result}), 200
+
+
 # 2. POST: เพิ่มกฎ SWRL ใหม่
 @admin_bp.route('/api/swrl/rules/add', methods=['POST'])
 @admin_required
@@ -480,32 +494,14 @@ def api_update_swrl_rule():
 @admin_required
 def api_delete_swrl_rule():
     # รองรับทั้ง Query Param (?rule_uri=...) และ JSON Body
-    rule_uri = request.args.get('rule_uri') or (request.get_json() or {}).get('rule_uri')
-    
-    if not rule_uri:
-        return jsonify({"success": False, "message": "กรุณาระบุ rule_uri ที่ต้องการลบ"}), 400
-        
-    result = delete_swrl_rule(rule_uri=rule_uri)
-    
-    status_code = 200 if result.get("success") else 400
-    return jsonify(result), status_code
-
-
-# 5. PATCH: สลับสถานะเปิด/ปิดการใช้งานกฎ
-@admin_bp.route('/api/swrl/rules/toggle', methods=['PATCH'])
-@admin_required
-def api_toggle_swrl_rule_status():
     data = request.get_json() or {}
-    
-    # ดึงค่าได้ทั้งจาก Query String หรือ JSON Body
     rule_uri = request.args.get('rule_uri') or data.get('rule_uri')
-    is_enabled = request.args.get('is_enabled') if request.args.get('is_enabled') is not None else data.get('is_enabled')
+    rule_label = request.args.get('rule_label') or data.get('rule_label')
     
-    if not rule_uri or is_enabled is None:
-        return jsonify({"success": False, "message": "กรุณาระบุ rule_uri และ status is_enabled"}), 400
+    if not rule_uri and not rule_label:
+        return jsonify({"success": False, "message": "กรุณาระบุ rule_uri หรือ rule_label ที่ต้องการลบ"}), 400
         
-    result = toggle_swrl_rule_status(rule_uri=rule_uri, is_enabled=is_enabled)
+    result = delete_swrl_rule(rule_uri=rule_uri, rule_label=rule_label)
     
     status_code = 200 if result.get("success") else 400
     return jsonify(result), status_code
-

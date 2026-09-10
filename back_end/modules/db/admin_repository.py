@@ -586,6 +586,12 @@ def get_frequencies():
 
 def save_or_update_frequency(freq_id, description=""):
     try:
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", freq_id):
+            return {"success": False, "message": "รหัส Frequency ไม่ถูกต้อง"}
+        safe_description = (description.replace("\\", "\\\\")
+                            .replace('"', '\\"')
+                            .replace("\r", "\\r")
+                            .replace("\n", "\\n"))
         sparql = SPARQLWrapper(GRAPHDB_WRITE)
         query = f"""
         PREFIX ex: <http://example.org/diabetes#>
@@ -599,7 +605,7 @@ def save_or_update_frequency(freq_id, description=""):
 
         INSERT DATA {{
             ex:{freq_id} a ex:Frequency ;
-                        ex:description "{description}" .
+                        ex:description "{safe_description}" .
         }}
         """
         sparql.setMethod(POST)
@@ -613,6 +619,8 @@ def save_or_update_frequency(freq_id, description=""):
 # 3. ฟังก์ชันลบข้อมูล Frequency
 def delete_frequency(freq_id):
     try:
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", freq_id):
+            return {"success": False, "message": "รหัส Frequency ไม่ถูกต้อง"}
         sparql = SPARQLWrapper(GRAPHDB_WRITE)
         query = f"""
         PREFIX ex: <http://example.org/diabetes#>
@@ -649,16 +657,11 @@ def get_avoidance_page():
     
     # ใช้ SPARQL ค้นหา Class ที่มีคำว่า WarningAvoidExercise โดยไม่ต้องฟิกซ์ PREFIX ทั้งหมด
     query = """
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX ex: <http://example.org/diabetes#>
 
     SELECT ?subject ?description WHERE {
-        ?subject rdf:type ?type .
-        FILTER(STRENDS(STR(?type), "WarningAvoidExercise"))
-        OPTIONAL { 
-            ?subject ?p ?description .
-            FILTER(STRENDS(STR(?p), "description"))
-        }
+        ?subject a ex:WarningAvoidExercise .
+        OPTIONAL { ?subject ex:description ?description . }
     }
     """
     sparql.setQuery(query)
@@ -682,11 +685,16 @@ def get_avoidance_page():
 
 def save_or_update_avoidance(avoid_id, description=""):
     try:
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", avoid_id):
+            return {"success": False, "message": "รหัส Avoid ไม่ถูกต้อง"}
+        safe_description = (description.replace("\\", "\\\\")
+                            .replace('"', '\\"')
+                            .replace("\r", "\\r")
+                            .replace("\n", "\\n"))
         sparql = SPARQLWrapper(GRAPHDB_WRITE)
-        
-        # 🟢 ปรับ PREFIX และ Class name ให้ตรงกับ WarningAvoidExercise
+
         query = f"""
-        PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
+        PREFIX ex: <http://example.org/diabetes#>
 
         DELETE {{
             ex:{avoid_id} ex:description ?oldDesc .
@@ -697,7 +705,7 @@ def save_or_update_avoidance(avoid_id, description=""):
 
         INSERT DATA {{
             ex:{avoid_id} a ex:WarningAvoidExercise ;
-                        ex:description "{description}" .
+                        ex:description "{safe_description}" .
         }}
         """
         sparql.setMethod(POST)
@@ -708,11 +716,14 @@ def save_or_update_avoidance(avoid_id, description=""):
         return {"success": False, "message": str(e)}
     
 def delete_avoidance(avoid_id):
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", avoid_id):
+        return {"success": False, "message": "รหัส Avoid ไม่ถูกต้อง"}
+
     sparql = SPARQLWrapper(GRAPHDB_WRITE)
     sparql.setMethod(POST)
 
     query = f"""
-    PREFIX ex: <http://www.owl-ontologies.com/Ontology1732684725.owl#>
+    PREFIX ex: <http://example.org/diabetes#>
 
     DELETE {{
         # 1. ลบ Properties ทั้งหมดของ avoid_id นี้

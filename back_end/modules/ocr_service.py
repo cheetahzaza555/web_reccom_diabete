@@ -1,11 +1,43 @@
 import os
 import json
+import threading
 from PIL import Image
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv()
+
+_client = None
+_client_lock = threading.Lock()
+_ocr_slots = threading.BoundedSemaphore(
+    max(1, int(os.getenv("OCR_MAX_CONCURRENT", "4")))
+)
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        with _client_lock:
+            if _client is None:
+                api_key = os.getenv("GEMINI_API_KEY")
+                if not api_key:
+                    raise ValueError("ไม่พบ GEMINI_API_KEY ในไฟล์ .env")
+                _client = genai.Client(api_key=api_key.strip())
+    return _client
+
+
+def _prepare_image(image_file):
+    image_file.seek(0)
+    image = Image.open(image_file)
+    image.load()
+
+    # Keep OCR details while limiting upload size and API processing time.
+    image.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
+    if image.mode not in ("RGB", "L"):
+        image = image.convert("RGB")
+
+    return image
 
 def process_ocr_image(image_file):
     
@@ -14,26 +46,8 @@ def process_ocr_image(image_file):
     และสั่งให้ส่งผลลัพธ์กลับมาเป็น JSON โครงสร้างตรงตามที่ระบบต้องการ
     """
     try:
-        # 1. เช็กและดึง API Key ให้ชัวร์ก่อนเริ่มทำงาน
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("ไม่พบ GEMINI_API_KEY ในไฟล์ .env")
-
-        # 2. สร้าง Client ภายในฟังก์ชันพร้อมลบช่องว่างส่วนเกิน (.strip())
-        client = genai.Client(api_key=api_key.strip())
-
-        print("🔍 รายชื่อ Models ที่ API Key นี้ใช้งานได้จริง:\n")
-        try:
-            for model in client.models.list():
-                # กรองเฉพาะโมเดลที่รองรับการอ่านภาพ/ข้อความ (generateContent)
-                if "generateContent" in model.supported_actions:
-                    print(f"✅ {model.name}")
-        except Exception as e:
-            print(f"❌ Error: {e}")
-
-        # 3. เตรียมไฟล์ภาพ
-        image_file.seek(0)
-        image = Image.open(image_file)
+        client = _get_client()
+        image = _prepare_image(image_file)
 
         # 4. ออกแบบ Prompt
         prompt = """
@@ -68,16 +82,17 @@ def process_ocr_image(image_file):
 
         print("🤖 [GEMINI LOG] กำลังส่งรูปภาพไปให้ Gemini ประมวลผล...")
 
-        # 6. เรียกใช้ Gemini API
-        response = client.models.generate_content(
-            model='gemini-3.5-flash-lite',
-            contents=[image, prompt],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=json_schema,
-                temperature=0.1
-            ),
-        )
+        # Limit concurrent upstream calls so traffic spikes do not exhaust workers/API quota.
+        with _ocr_slots:
+            response = client.models.generate_content(
+                model='gemini-3.5-flash-lite',
+                contents=[image, prompt],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=json_schema,
+                    temperature=0.1
+                ),
+            )
 
         # 7. แปลงผลลัพธ์เป็น Dictionary
         data = json.loads(response.text)

@@ -457,7 +457,7 @@ def api_add_swrl_rule():
         comment=comment,
         swrl_expression=swrl_expression
     )
-    
+
     status_code = 200 if result.get("success") else 400
     return jsonify(result), status_code
 
@@ -484,7 +484,7 @@ def api_update_swrl_rule():
         swrl_expression=swrl_expression,
         is_enabled=is_enabled
     )
-    
+
     status_code = 200 if result.get("success") else 400
     return jsonify(result), status_code
 
@@ -502,6 +502,6 @@ def api_delete_swrl_rule():
         return jsonify({"success": False, "message": "กรุณาระบุ rule_uri หรือ rule_label ที่ต้องการลบ"}), 400
         
     result = delete_swrl_rule(rule_uri=rule_uri, rule_label=rule_label)
-    
+
     status_code = 200 if result.get("success") else 400
     return jsonify(result), status_code

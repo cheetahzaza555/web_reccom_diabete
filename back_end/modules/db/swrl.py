@@ -419,6 +419,8 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
             atom_triples = _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex)
             if not atom_triples:
                 raise ValueError(f"ไม่สามารถอ่าน atom ของกฎได้: {atom_str}")
+            if "(" in atom_str and "," in atom_str and "swrl:argument2" not in atom_triples:
+                raise ValueError(f"property atom ขาด argument2: {atom_str}")
             insert_triples.append(atom_triples)
 
             if i < len(atoms_list) - 1:

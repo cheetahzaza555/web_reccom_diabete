@@ -63,4 +63,4 @@ app.register_blueprint(webhook_bp, url_prefix='/line')
 
 if __name__ == '__main__':
     print("🚀 Starting Flask Server (Powered by GraphDB Semantic Web)...")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, use_reloader=False, port=5000)

@@ -6,11 +6,12 @@
     <title>เลือกกิจกรรมการออกกำลังกาย</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; padding-bottom: 90px; }
+        
         .header-section {
             background: #6d8ee6;
             color: white;
@@ -18,27 +19,51 @@
             border-radius: 0 0 30px 30px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+
         .exercise-card {
-            border: none; border-radius: 15px;
-            transition: all 0.3s ease; cursor: pointer;
-            background: white; height: 100%;
-            position: relative; overflow: hidden;
-            display: flex; flex-direction: column;
-            min-height: 320px;
-        }
-        .exercise-card .card-body {
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            justify-content: space-between; 
-            padding: 1.5rem !important; 
+            border: 2px solid transparent;
+            border-radius: 16px;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            background: white;
+            position: relative;
+            user-select: none;
         }
 
         .exercise-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-            border: 2px solid #6d8ee6;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(109, 142, 230, 0.18);
+        }
+
+        /* สถานะเมื่อการ์ดถูกเลือก */
+        .exercise-card.selected {
+            border-color: #4a6fdc;
+            background-color: #f8faff;
+            box-shadow: 0 8px 20px rgba(74, 111, 220, 0.22);
+        }
+
+        /* ป้าย Checkmark มุมขวาบน */
+        .check-badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .exercise-card.selected .check-badge {
+            background: #4a6fdc;
+            border-color: #4a6fdc;
+            color: white;
         }
 
         .exercise-title {
@@ -46,61 +71,98 @@
             margin-bottom: 0.5rem;
             color: #212529;
             display: -webkit-box;
-            -webkit-line-clamp: 2; 
+            -webkit-line-clamp: 2;
             line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            min-height: 3rem; 
+            min-height: 3rem;
             text-align: center;
         }
 
         .icon-wrapper {
-            background-color: #f0f4ff; 
-            width: 70px; height: 70px;
-            border-radius: 50%; display: flex;
-            align-items: center; justify-content: center;
-            margin: 0 auto 15px; color: #6d8ee6; font-size: 2rem;
-        }
-        
-        .badge-category {
-            background-color: #f0f4ff; 
+            background-color: #f0f4ff;
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px auto 15px;
             color: #6d8ee6;
-            padding: 5px 12px; border-radius: 20px;
-            font-size: 0.85rem; font-weight: 600;
-            margin-bottom: 10px; display: inline-block;
-        }
-        
-        .met-badge {
-            background-color: #e2eafc; 
-            color: #4a6fdc; 
-            padding: 5px 12px; border-radius: 8px;
-            font-size: 0.85rem; font-weight: bold;
-        }
-        
-        /* ✅ สไตล์ปุ่มสีฟ้าทึบ ดูเป็นปุ่ม 100% ชัดเจน น่ากด */
-        .btn-solid-blue {
-            background-color: #6d8ee6 !important;
-            color: white !important;
-            border: none;
-            box-shadow: 0 4px 8px rgba(109, 142, 230, 0.3);
-            transition: all 0.3s ease;
-            padding: 12px 0; /* เพิ่ม padding ให้ปุ่มอวบขึ้น ดูน่ากด */
-            font-size: 1.05rem;
-            letter-spacing: 0.5px;
-        }
-        .btn-solid-blue:hover {
-            background-color: #577add !important; /* สีเข้มขึ้นตอนเมาส์ชี้ */
-            box-shadow: 0 6px 15px rgba(109, 142, 230, 0.45);
-            transform: translateY(-2px);
+            font-size: 1.8rem;
+            transition: all 0.2s ease;
         }
 
-        /* สไตล์สำหรับหัวข้อหมวดหมู่ */
+        .exercise-card.selected .icon-wrapper {
+            background-color: #e2eafc;
+            color: #4a6fdc;
+        }
+
+        .met-badge {
+            background-color: #e2eafc;
+            color: #4a6fdc;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .btn-select-indicator {
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 8px 0;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .exercise-card:not(.selected) .btn-select-indicator {
+            background-color: #f0f4ff;
+            color: #6d8ee6;
+            border: 1px solid #d4e0fc;
+        }
+
+        .exercise-card.selected .btn-select-indicator {
+            background-color: #4a6fdc;
+            color: white;
+            border: 1px solid #4a6fdc;
+        }
+
         .category-separator {
             border-left: 5px solid #6d8ee6;
-            padding-left: 15px; margin-top: 30px; margin-bottom: 20px;
+            padding-left: 15px;
+            margin-top: 30px;
+            margin-bottom: 20px;
         }
+
         .category-title {
-            font-weight: bold; color: #2c3e50; margin: 0;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+/* Sticky Bottom Floating Bar */
+        .bottom-action-bar {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            left: 260px; /* เว้นระยะฝั่งซ้ายสำหรับ Desktop */
+            background: #ffffff;
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12), 0 -2px 6px rgba(0, 0, 0, 0.04);
+            padding: 16px 30px;
+            /* ปรับลด z-index ให้อยู่ต่ำกว่า Navbar/Sidebar Drawer (Bootstrap Drawer = 1040+) */
+            z-index: 990; 
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        /* รองรับหน้าจอมือถือ/แท็บเล็ต */
+        @media (max-width: 991.98px) {
+            .bottom-action-bar {
+                left: 0;
+                padding: 12px 16px;
+                /* บน Mobile ให้ z-index ต่ำกว่า เพื่อไม่ให้ทับ Drawer เมนู */
+                z-index: 990; 
+            }
         }
     </style>
 </head>
@@ -110,8 +172,8 @@
 
     <div class="header-section text-center">
         <div class="container">
-            <h1 class="fw-bold"><i class="bi bi-clipboard-check"></i> เลือกแผนการรักษา</h1>
-            <p class="lead mb-0">รายการกิจกรรมที่เหมาะกับสุขภาพของคุณ</p>
+            <h1 class="fw-bold"><i class="bi bi-clipboard-check"></i> เลือกแผนการออกกำลังกาย</h1>
+            <p class="lead mb-0">คลิกเลือกกิจกรรมที่คุณสนใจ (เลือกได้หลายกิจกรรมเพื่อสลับสับเปลี่ยน)</p>
         </div>
     </div>
 
@@ -127,33 +189,33 @@
                     {% for ex in group.list %}
                     <div class="col-md-6 col-lg-4">
                         <div class="card exercise-card shadow-sm p-4 text-center" 
-                            onclick="confirmSelection('{{ ex.id }}', '{{ ex.name }}')">
+                             id="card-{{ ex.id }}"
+                             onclick="toggleSelect('{{ ex.id }}', '{{ ex.name }}')">
                             
-                            <div class="card-body p-0 d-flex flex-column align-items-center">
+                            <!-- ตัวติ๊ก Checkmark -->
+                            <div class="check-badge">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+
+                            <div class="card-body p-0 d-flex flex-column align-items-center justify-content-between">
                                 
-                                <div class="icon-wrapper mt-2">
-                <div class="icon-wrapper mt-2">
-                    {% if 'วิ่ง' in ex.category or 'Run' in ex.category or 'Jog' in ex.name %} 
-                        <i class="bi bi-speedometer2"></i> {% elif 'เดิน' in ex.category or 'Walk' in ex.category %} 
-                        <i class="bi bi-person-walking"></i>
-        
-                    {% elif 'จักรยาน' in ex.category or 'Bicy' in ex.category %} 
-                        <i class="bi bi-bicycle"></i>
-        
-                    {% elif 'เต้น' in ex.category or 'Dancing' in ex.category %} 
-                        <i class="bi bi-music-note-beamed"></i>
-        
-                    {% elif 'น้ำ' in ex.category or 'Water' in ex.category %} 
-                        <i class="bi bi-water"></i>
-        
-                    {% elif 'แอโรบิก' in ex.category or 'Aerobic' in ex.category %} 
-                        <i class="bi bi-heart-pulse"></i>
-        
-                    {% else %} 
-                        <i class="bi bi-activity"></i>
-                {% endif %}
-</div>
-</div>
+                                <div class="icon-wrapper">
+                                    {% if 'วิ่ง' in ex.category or 'Run' in ex.category or 'Jog' in ex.name %} 
+                                        <i class="bi bi-speedometer2"></i>
+                                    {% elif 'เดิน' in ex.category or 'Walk' in ex.category %} 
+                                        <i class="bi bi-person-walking"></i>
+                                    {% elif 'จักรยาน' in ex.category or 'Bicy' in ex.category %} 
+                                        <i class="bi bi-bicycle"></i>
+                                    {% elif 'เต้น' in ex.category or 'Dancing' in ex.category %} 
+                                        <i class="bi bi-music-note-beamed"></i>
+                                    {% elif 'น้ำ' in ex.category or 'Water' in ex.category %} 
+                                        <i class="bi bi-water"></i>
+                                    {% elif 'แอโรบิก' in ex.category or 'Aerobic' in ex.category %} 
+                                        <i class="bi bi-heart-pulse"></i>
+                                    {% else %} 
+                                        <i class="bi bi-activity"></i>
+                                    {% endif %}
+                                </div>
                                 
                                 <h4 class="exercise-title">{{ ex.name }}</h4>
                                 
@@ -163,9 +225,9 @@
                                     </span>
                                 </div>
                                 
-                                <div class="mt-auto w-100">
-                                    <button class="btn btn-solid-blue w-100 rounded-pill fw-bold">
-                                        <i class="bi bi-check2-circle me-1"></i> เลือกกิจกรรมนี้
+                                <div class="w-100">
+                                    <button type="button" class="btn btn-select-indicator">
+                                        <i class="bi bi-plus-circle me-1 action-icon"></i> <span class="action-text">คลิกเพื่อเลือก</span>
                                     </button>
                                 </div>
                             </div>
@@ -187,31 +249,78 @@
         {% endif %}
     </div>
 
+    <!-- Floating Action Bar ด้านล่าง -->
+    <div class="bottom-action-bar">
+        <div class="container-fluid d-flex justify-content-between align-items-center px-4">
+            <div class="d-flex align-items-center">
+                <span class="text-secondary fw-semibold">กิจกรรมที่เลือก:</span>
+                <span class="badge bg-primary bg-opacity-10 text-primary fs-6 px-3 py-1 rounded-pill ms-2 me-1 fw-bold" id="selected-count">0</span>
+                <span class="text-secondary fw-semibold">รายการ</span>
+            </div>
+            <button class="btn btn-primary px-4 py-2 rounded-pill fw-bold shadow-sm" id="btn-submit-plan" onclick="submitMultiplePlan()" disabled>
+                ยืนยันการเลือกและไปต่อ <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         const patientId = "{{ patient_id }}";
+        // เก็บ ID และ Name ของท่าที่ถูกเลือก
+        const selectedExercises = new Map();
 
-        function confirmSelection(exerciseID, exerciseName) {
+        function toggleSelect(id, name) {
+            const card = document.getElementById(`card-${id}`);
+            const btn = card.querySelector('.btn-select-indicator');
+            const actionText = btn.querySelector('.action-text');
+            const actionIcon = btn.querySelector('.action-icon');
+
+            if (selectedExercises.has(id)) {
+                // ยกเลิกการเลือก
+                selectedExercises.delete(id);
+                card.classList.remove('selected');
+                actionText.textContent = 'คลิกเพื่อเลือก';
+                actionIcon.className = 'bi bi-plus-circle me-1 action-icon';
+            } else {
+                // เลือก
+                selectedExercises.set(id, name);
+                card.classList.add('selected');
+                actionText.textContent = 'เลือกแล้ว';
+                actionIcon.className = 'bi bi-check2-circle me-1 action-icon';
+            }
+
+            updateBottomBar();
+        }
+
+        function updateBottomBar() {
+            const count = selectedExercises.size;
+            document.getElementById('selected-count').textContent = count;
+            const submitBtn = document.getElementById('btn-submit-plan');
+            submitBtn.disabled = count === 0;
+        }
+
+        function submitMultiplePlan() {
+            if (selectedExercises.size === 0) return;
+
+            const namesList = Array.from(selectedExercises.values()).map(name => `• ${name}`).join('<br>');
+            const ids = Array.from(selectedExercises.keys()).join(',');
+
             Swal.fire({
-                title: 'ยืนยันการเลือก?',
-                html: `คุณต้องการดูรายละเอียดแผนสำหรับ:<br><h3 class="mt-2" style="color: #6d8ee6;">${exerciseName}</h3>`,
+                title: `ยืนยันการเลือก ${selectedExercises.size} กิจกรรม?`,
+                html: `<div class="text-start p-3 bg-light rounded mt-2" style="max-height: 180px; overflow-y: auto;">${namesList}</div>`,
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#6d8ee6', 
-                confirmButtonText: 'ไปต่อ',
-                cancelButtonText: 'ยกเลิก'
+                confirmButtonColor: '#4a6fdc',
+                confirmButtonText: 'ยืนยันและสร้างแผน',
+                cancelButtonText: 'กลับไปเลือกเพิ่ม'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    goToNextPage(exerciseID); 
+                    // ส่งรายการไอดีท่าทั้งหมด (คั่นด้วย comma) ไปหน้าถัดไป
+                    window.location.href = `/user/select_plan2/${patientId}?exercises=${encodeURIComponent(ids)}`;
                 }
             });
         }
-
-        function goToNextPage(id) {
-            window.location.href = `/user/select_plan2/${patientId}/${id}`;
-        }
-        
     </script>
 </body>
 </html>

@@ -62,7 +62,19 @@
         .today-card .date-number { color: #4f7cff; }
 
         .exercise-icon { font-size: 1.5rem; color: #198754; }
-        .ex-name { font-size: 0.85rem; font-weight: 600; text-align: center; line-height: 1.2; }
+        
+        .ex-name { 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            text-align: center; 
+            line-height: 1.25;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+            padding: 0 4px;
+        }
 
         /* ไม่ให้เคอร์เซอร์เป็นรูปนิ้วมือเวลาชี้ที่ติ๊กถูก */
         .check-btn { font-size: 1.5rem; color: #e9ecef; cursor: default; }
@@ -442,15 +454,21 @@
                                     <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
                                 </div>
                             `;
-                        } else {
-                            contentHtml = `
-                                <div class="text-center">
-                                    <i class="bi bi-person-walking text-primary" style="font-size: 1.5rem;"></i>
-                                    <div class="ex-name mt-1 text-primary" style="font-size: 0.75rem;">ต้องออกกำลังกาย</div>
-                                </div>
-                                <div style="height: 24px;"></div>
-                            `;
-                        }
+} else {
+    // ดึงชื่อท่าออกกำลังกายมาแสดง หากไม่มีให้ fallback เป็น "ต้องออกกำลังกาย"
+    let displayExerciseName = plan.exName || "ต้องออกกำลังกาย";
+
+    contentHtml = `
+        <div class="text-center w-100">
+            <i class="bi bi-person-walking text-primary" style="font-size: 1.4rem;"></i>
+            <div class="ex-name mt-1 text-primary" title="${displayExerciseName}">
+                ${displayExerciseName}
+            </div>
+            <small class="text-muted" style="font-size: 0.65rem;">(${plan.duration} นาที)</small>
+        </div>
+        <div style="height: 12px;"></div>
+    `;
+}
                     } else {
                         contentHtml = `
                             <div class="text-center opacity-50">

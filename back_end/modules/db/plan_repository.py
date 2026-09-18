@@ -8,8 +8,8 @@ import datetime
 from .connection import sparql_read, sparql_write, escape_sparql, safe_get_name
 
 
-def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_target_minutes):
-    print(f"👉 เช็กค่า exercise_id ที่รับมา: '{exercise_id}'")
+def generate_30_days_plan(patient_id, exercise_ids, exact_dates_list, daily_target_minutes):
+    print(f"👉 เช็กค่า exercise_ids ที่รับมา: {exercise_ids}")
     pid = f"Patient{patient_id}"  # ใช้ ID ดั้งเดิม
     start_date = datetime.datetime.today().date()
 
@@ -28,6 +28,8 @@ def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_targe
     """
 
     current_weekly_node = ""
+    exercise_counter = 0  # ✅ เพิ่มตัวแปรนับจำนวนวันออกกำลังกาย สำหรับสลับท่า
+
     for i in range(30):
         current_date = start_date + datetime.timedelta(days=i)
 
@@ -56,7 +58,11 @@ def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_targe
         """
 
         if is_exercise:
-            triples += f"{day_node} ex:hasScheduledExercise ex:{escape_sparql(exercise_id)} .\n"
+            # ✅ ดึงไอดีท่าออกกำลังกายมาสลับใช้งานแบบ Round-Robin
+            current_ex_id = exercise_ids[exercise_counter % len(exercise_ids)]
+            triples += f"{day_node} ex:hasScheduledExercise ex:{escape_sparql(current_ex_id)} .\n"
+            
+            exercise_counter += 1  # ✅ บวกตัวนับขึ้น 1 เพื่อให้วันถัดไปใช้ท่าต่อไปใน List
 
     insert_query = f"""
     PREFIX ex: <http://example.org/diabetes#>

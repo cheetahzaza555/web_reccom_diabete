@@ -149,25 +149,60 @@ def select_plan_page(patient_id):
     return render_template('user/select_plan.html', patient_id=patient_id, exercises=all_recs)
 
 
-@user_bp.route('/select_plan2/<patient_id>/<exercise_id>')
+@user_bp.route('/select_plan2/<patient_id>')
 @login_required
-def select_plan2_page(patient_id, exercise_id):
-    # ✅ ต้องแก้ที่หน้านี้ด้วย ไม่งั้นจะกดไปดูรายละเอียดแผนต่อไม่ได้
+def select_plan2_page(patient_id):
     clean_patient_id = str(patient_id).replace("Patient", "")
     clean_session_id = str(session['user_id']).replace("Patient", "")
 
     if clean_patient_id != clean_session_id:
         return "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้", 403
 
-    exercise_info = get_exercise_details_by_id(exercise_id)
-    return render_template('user/select_plan2.html', patient_id=patient_id, plan=exercise_info)
+    exercise_ids_str = request.args.get('exercises', '')
+    exercise_ids = [ex.strip() for ex in exercise_ids_str.split(',') if ex.strip()]
+    
+    if not exercise_ids:
+        return redirect(url_for('user.select_plan_page', patient_id=patient_id))
+
+    selected_plans = []
+    for ex_id in exercise_ids:
+        # ลองเรียกฟังก์ชันที่มีอยู่ใน modules/db (ถ้า get_exercise_details_by_id ไม่ติด ให้ลอง get_exercise_by_id)
+        plan_data = get_exercise_details_by_id(ex_id)
+        if not plan_data:
+            plan_data = get_exercise_by_id(ex_id)
+            
+        if plan_data:
+            # ตรวจสอบ key ให้มี id ติดไปด้วย
+            if isinstance(plan_data, dict) and 'id' not in plan_data:
+                plan_data['id'] = ex_id
+            selected_plans.append(plan_data)
+
+    print("DEBUG selected_plans:", selected_plans)  # ดูค่าที่พิมพ์ออกมาใน Terminal
+
+    # กำหนด plan ตัวแรกเพื่อไม่ให้หน้า template เดิมพัง
+    first_plan = selected_plans[0] if selected_plans else None
+
+    return render_template(
+        'user/select_plan2.html',
+        patient_id=patient_id,
+        plans=selected_plans,
+        plan=first_plan,  # ส่ง plan ตัวแรกไปด้วย
+        exercise_ids_str=exercise_ids_str
+    )
 
 
 @user_bp.route('/save_schedule', methods=['POST'])
 @login_required
 def save_schedule():
     user_id = session['user_id']
-    exercise_id = request.form.get('exercise_id')  # แนะนำให้เปลี่ยนใน HTML ให้ส่ง id ท่ามาด้วย
+    
+    # ✅ เปลี่ยนมารับค่า exercise_ids แบบพหูพจน์ ที่รวบรวมรหัสทั้งหมดไว้
+    exercise_ids_str = request.form.get('exercise_ids') 
+    if not exercise_ids_str:
+        return "Missing exercise selections", 400
+
+    # แปลงจาก string "12025,17016" เป็น List ['12025', '17016']
+    exercise_ids = [ex.strip() for ex in exercise_ids_str.split(',') if ex.strip()]
 
     exact_dates_str = request.form.getlist('exact_dates')
     if not exact_dates_str:
@@ -176,8 +211,8 @@ def save_schedule():
     exact_dates = [datetime.strptime(d, '%Y-%m-%d').date() for d in exact_dates_str]
     daily_target_minutes = int(request.form.get('daily_target_minutes', 30))
 
-    # สร้างตาราง 30 วันด้วย GraphDB
-    success = generate_30_days_plan(user_id, exercise_id, exact_dates, daily_target_minutes)
+    # ✅ ส่ง List ของ exercise_ids เข้าไปให้ฟังก์ชันสร้างตาราง (ต้องไปปรับฟังก์ชันรับค่าด้วย)
+    success = generate_30_days_plan(user_id, exercise_ids, exact_dates, daily_target_minutes)
 
     if success:
         return redirect(url_for('user.dashboard_page'))

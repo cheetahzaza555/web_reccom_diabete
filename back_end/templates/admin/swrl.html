@@ -204,6 +204,11 @@
         // 📥 ดึงข้อมูล SWRL Rules จาก Data Attribute
         const container = document.getElementById('swrl-data-container');
         const swrlRulesData = JSON.parse(container.getAttribute('data-json') || '[]');
+        function escapeHtml(value) {
+            const node = document.createElement('span');
+            node.textContent = String(value ?? '');
+            return node.innerHTML;
+        }
 
         function renderTable(data) {
             const tableBody = document.getElementById('rulesTableBody');
@@ -231,15 +236,15 @@
                     swrlFullExpression = "- ไม่พบรายละเอียดกฎ SWRL -";
                 }
 
-                const safeUri = encodeURIComponent(rule.rule_uri || '');
-                const safeLabel = (rule.rule_label || '-').replace(/'/g, "\\'");
+                const safeUri = encodeURIComponent(rule.rule_uri || '').replace(/'/g, '%27');
+                const safeLabel = encodeURIComponent(rule.rule_label || '-').replace(/'/g, '%27');
 
                 html += `
                 <tr>
-                    <td><strong style="color: #1E1B4B; font-size: 15px;">${rule.rule_label || '-'}</strong></td>
-                    <td style="color: var(--text-muted);">${rule.comment || '-'}</td>
+                    <td><strong style="color: #1E1B4B; font-size: 15px;">${escapeHtml(rule.rule_label || '-')}</strong></td>
+                    <td style="color: var(--text-muted);">${escapeHtml(rule.comment || '-')}</td>
                     <td>
-                        <div class="swrl-rule-box">${swrlFullExpression}</div>
+                        <div class="swrl-rule-box">${escapeHtml(swrlFullExpression)}</div>
                     </td>
                     <td style="text-align: center;">
                         <button class="btn-delete" onclick="deleteRule('${safeUri}', '${safeLabel}')">
@@ -266,98 +271,12 @@
 
         // ➕ ฟังก์ชันเปิด Modal สำหรับเพิ่มกฎ SWRL
         function openAddRuleModal() {
-            Swal.fire({
-                title: 'เพิ่มกฎ SWRL ใหม่',
-                html: `
-                    <div style="text-align: left; font-size: 14px;">
-                        <label style="font-weight: 600; display: block; margin-bottom: 4px;">ชื่อกฎ (Rule Label):</label>
-                        <input id="swal-rule-label" class="swal2-input" placeholder="เช่น S1, Warning_Rule_01" style="width: 100%; margin: 0 0 16px 0;">
-                        
-                        <label style="font-weight: 600; display: block; margin-bottom: 4px;">คำอธิบายกฎ (Comment):</label>
-                        <input id="swal-rule-comment" class="swal2-input" placeholder="เช่น ตรวจสอบความดันและค่าน้ำตาล" style="width: 100%; margin: 0 0 16px 0;">
-
-                        <label style="font-weight: 600; display: block; margin-bottom: 4px;">กฎ SWRL Expression:</label>
-                        <textarea id="swal-rule-expression" class="swal2-textarea" placeholder="ex:Patient(?x) ^ ex:diabetType(?x, ex:T1DM) -> ex:hasPatientWarning(?x, ex:Warning1)" style="width: 100%; height: 100px; margin: 0; font-family: monospace; font-size: 13px;"></textarea>
-                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">💡 ทุกคำที่ไม่ใช่ตัวแปร (?x) ต้องมี <code>ex:</code> นำหน้าเสมอ ไม่งั้นจะถูกตีความผิดแบบเงียบๆ</p>
-                    </div>
-                `,
-                focusConfirm: false,
-                showCancelButton: true,
-                confirmButtonText: 'ตรวจสอบแล้วบันทึก',
-                cancelButtonText: 'ยกเลิก',
-                confirmButtonColor: '#2B5CB3',
-                cancelButtonColor: '#666666',
-                preConfirm: () => {
-                    const label = document.getElementById('swal-rule-label').value.trim();
-                    const comment = document.getElementById('swal-rule-comment').value.trim();
-                    const expression = document.getElementById('swal-rule-expression').value.trim();
-
-                    if (!label || !expression) {
-                        Swal.showValidationMessage('กรุณากรอกชื่อกฎ และกฎ SWRL Expression ให้ครบถ้วน');
-                        return false;
-                    }
-                    return { rule_label: label, comment: comment, swrl_expression: expression };
-                }
-            }).then(async (result) => {
-                if (!result.isConfirmed) return;
-
-                // ✅ [NEW] ขั้น Preview ก่อนบันทึกจริง — เช็คว่า argument แต่ละตัว
-                // ถูกตีความเป็น individual/literal/variable ตรงกับที่ตั้งใจไหม
-                // (โดยเฉพาะจับกรณีลืมใส่ 'ex:' ที่เคยทำให้กฎพังแบบเงียบๆ มาก่อน)
-                Swal.fire({ title: 'กำลังตรวจสอบกฎ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                let previewData;
-                try {
-                    const previewRes = await fetch('/admin/api/swrl/rules/preview', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ swrl_expression: result.value.swrl_expression })
-                    });
-                    previewData = await previewRes.json();
-                } catch (err) {
-                    Swal.fire('ข้อผิดพลาด!', 'ไม่สามารถตรวจสอบกฎก่อนบันทึกได้ (preview ล้มเหลว)', 'error');
-                    return;
-                }
-
-                if (previewData.has_warnings) {
-                    const warningList = (previewData.warnings || []).map(w => `<li style="text-align:left; margin-bottom:6px;">${w}</li>`).join('');
-                    const confirmAnyway = await Swal.fire({
-                        title: '⚠️ พบจุดที่น่าสงสัยในกฎ',
-                        html: `<ul style="padding-left: 18px; font-size: 13px;">${warningList}</ul><p style="margin-top:12px; font-size:13px;">ยืนยันจะบันทึกต่อไหม? (ถ้าไม่แน่ใจ กด "แก้ไขก่อน" แล้วเติม ex: หรือ quote ให้ครบ)</p>`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'บันทึกต่อ (รับความเสี่ยง)',
-                        cancelButtonText: 'แก้ไขก่อน',
-                        confirmButtonColor: '#D97706'
-                    });
-                    if (!confirmAnyway.isConfirmed) return;
-                }
-
-                Swal.fire({ title: 'กำลังบันทึกกฎ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                try {
-                    const response = await fetch('/admin/api/swrl/rules/add', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(result.value)
-                    });
-                    const resResult = await response.json();
-
-                    if (resResult.success) {
-                        Swal.fire('สำเร็จ!', resResult.message || 'บันทึกกฎ SWRL ใหม่เรียบร้อยแล้ว', 'success')
-                            .then(() => location.reload());
-                    } else {
-                        Swal.fire('เกิดข้อผิดพลาด!', resResult.message || 'ไม่สามารถบันทึกกฎได้', 'error');
-                    }
-                } catch (err) {
-                    Swal.fire('ข้อผิดพลาด!', 'เกิดปัญหาในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
-                }
-            });
+            window.location.href = '/admin/swrl/new';
         }
 
-        // 🗑️ ฟังก์ชันลบกฎ SWRL
         function deleteRule(encodedRuleUri, ruleLabel) {
             const ruleUri = decodeURIComponent(encodedRuleUri);
+            ruleLabel = decodeURIComponent(ruleLabel);
             Swal.fire({
                 title: 'ยืนยันการลบกฎ?',
                 text: `คุณแน่ใจหรือไม่ว่าต้องการลบกฎ "${ruleLabel}" ออกจาก GraphDB?`,

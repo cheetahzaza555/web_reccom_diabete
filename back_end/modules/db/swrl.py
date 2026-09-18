@@ -1,4 +1,6 @@
 import re
+import json
+from decimal import Decimal, InvalidOperation
 from SPARQLWrapper import SPARQLWrapper, JSON , POST
 from modules.config import GRAPHDB_READ, GRAPHDB_WRITE
 import uuid
@@ -325,7 +327,7 @@ def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
         
         for i, arg in enumerate(args_raw):
             curr_list = f"{atom_uri}_args_{i+1}"
-            next_list = f"<{atom_uri}_args_{i+2}>" if i + 1 < len(args_raw) else "rdf:nil"
+            next_list = node_ref(f"{atom_uri}_args_{i+2}") if i + 1 < len(args_raw) else "rdf:nil"
             arg_val, _ = resolve_arg(arg)
             triples.append(f"{node_ref(curr_list)} rdf:first {arg_val} ; rdf:rest {next_list} .")
             
@@ -357,7 +359,12 @@ def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
             arg2_val, arg2_type = resolve_arg(args_raw[1])
             
             # ถ้าตัวแปรที่ 2 เป็น Literal (ข้อความ/ตัวเลข) ต้องใช้ DatavaluedPropertyAtom
-            if arg2_type == "literal":
+            data_properties = {
+                'hasBMI', 'hasSBP', 'hasDBP', 'hasWeight', 'hasHeight',
+                'hasFPG', 'hasLDL', 'hasHDL', 'hasTriglyceride',
+                'hasTotalCholesterol', 'hasKetone', 'hasMicroalbuminurin', 'metValue',
+            }
+            if arg2_type == "literal" or pred_uri.removeprefix(prefix_ex) in data_properties:
                 triples.append(f"{node_ref(atom_uri)} a swrl:DatavaluedPropertyAtom ;")
             else:
                 triples.append(f"{node_ref(atom_uri)} a swrl:IndividualPropertyAtom ;")
@@ -391,8 +398,8 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
 
     insert_triples = [
         f"{_sparql_node_ref(rule_uri)} a swrl:Imp ;",
-        f'          rdfs:label "{rule_label}" ;',
-        f'          rdfs:comment "{comment}" ;',
+        f'          rdfs:label {json.dumps(rule_label, ensure_ascii=False)} ;',
+        f'          rdfs:comment {json.dumps(comment, ensure_ascii=False)} ;',
         f'          swrla:isRuleEnabled "{is_enabled}"^^xsd:boolean .'
     ]
 
@@ -419,7 +426,7 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
             atom_triples = _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex)
             if not atom_triples:
                 raise ValueError(f"ไม่สามารถอ่าน atom ของกฎได้: {atom_str}")
-            if "(" in atom_str and "," in atom_str and "swrl:argument2" not in atom_triples:
+            if not atom_str.startswith('swrlb:') and "(" in atom_str and "," in atom_str and "swrl:argument2" not in atom_triples:
                 raise ValueError(f"property atom ขาด argument2: {atom_str}")
             insert_triples.append(atom_triples)
 
@@ -583,3 +590,212 @@ def toggle_swrl_rule_status(rule_uri, is_enabled):
     except Exception as e:
         print(f"❌ Error toggling SWRL status: {e}")
         return {"success": False, "message": str(e)}
+
+
+# Form options, validation and SWRL compilation
+EX = 'http://example.org/diabetes#'
+CATEGORIES = {'patient': 'ข้อมูลผู้ป่วย', 'physical': 'ผลตรวจสุขภาพ',
+              'lab': 'ผลตรวจเลือด', 'complication': 'ภาวะแทรกซ้อน'}
+NUMBERS = {
+    'bmi': ('physical', 'ค่า BMI', 'kg/m²', 'hasBMI'),
+    'sbp': ('physical', 'ความดันตัวบน', 'mmHg', 'hasSBP'),
+    'dbp': ('physical', 'ความดันตัวล่าง', 'mmHg', 'hasDBP'),
+    'weight': ('physical', 'น้ำหนัก', 'kg', 'hasWeight'),
+    'height': ('physical', 'ส่วนสูง', 'cm', 'hasHeight'),
+    'fpg': ('lab', 'น้ำตาลขณะอดอาหาร', 'mg/dL', 'hasFPG'),
+    'ldl': ('lab', 'LDL', 'mg/dL', 'hasLDL'),
+    'hdl': ('lab', 'HDL', 'mg/dL', 'hasHDL'),
+    'tri': ('lab', 'ไตรกลีเซอไรด์', 'mg/dL', 'hasTriglyceride'),
+    'chol': ('lab', 'คอเลสเตอรอลรวม', 'mg/dL', 'hasTotalCholesterol'),
+}
+OPERATORS = {'gte': 'greaterThanOrEqual', 'gt': 'greaterThan',
+             'lte': 'lessThanOrEqual', 'lt': 'lessThan', 'eq': 'equal'}
+OP_LABELS = {'gte': 'ตั้งแต่', 'gt': 'มากกว่า', 'lte': 'ไม่เกิน', 'lt': 'น้อยกว่า', 'eq': 'เท่ากับ'}
+OUTPUTS = {'warning': 'hasPatientWarning', 'exercise': 'recommendedExercise', 'avoid': 'avoidExercise',
+           'intensity': 'intensityOfExercise', 'frequency': 'exerciseFrequency'}
+INTENSITY_MET = {
+    EX + 'Light': ('MET < 3', [('lessThan', '3')]),
+    EX + 'Moderate': ('3 ≤ MET ≤ 6', [('greaterThanOrEqual', '3'), ('lessThanOrEqual', '6')]),
+    EX + 'Vigorous': ('MET > 6', [('greaterThan', '6')]),
+}
+OBJECT_INPUTS = {'type': ('patient', 'ประเภทเบาหวาน', 'diabetType'),
+                 'special': ('complication', 'ภาวะแทรกซ้อนในผลตรวจสุขภาพ', 'hasSpecialComplication'),
+                 'comorbidity': ('complication', 'โรคร่วม (ผลประเมิน)', 'hasComorbidity'),
+                 'complication': ('complication', 'ภาวะแทรกซ้อน (ผลประเมิน)', 'hasComplication')}
+
+
+def get_builder_catalog():
+    client = SPARQLWrapper(GRAPHDB_READ)
+    client.setTimeout(30)
+    client.setReturnFormat(JSON)
+    client.setQuery('''
+        PREFIX ex: <http://example.org/diabetes#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX swrl: <http://www.w3.org/2003/11/swrl#>
+        SELECT DISTINCT ?kind ?item ?label ?description ?parent WHERE {
+          {
+            VALUES (?kind ?class) {
+                ("type" ex:DiabetType) ("type" ex:DiabeteType) ("type" ex:DiabetesType)
+                ("special" ex:Complication) ("complication" ex:Complication)
+                ("comorbidity" ex:Comorbidity) ("warning" ex:PatientWarning)
+                ("avoid" ex:WarningAvoidExercise) ("intensity" ex:Intensity) ("frequency" ex:Frequency)
+            }
+            ?item rdf:type/rdfs:subClassOf* ?class .
+          } UNION {
+            VALUES (?kind ?property) {
+                ("type" ex:diabetType) ("special" ex:hasSpecialComplication)
+                ("comorbidity" ex:hasComorbidity) ("complication" ex:hasComplication)
+                ("warning" ex:hasPatientWarning) ("avoid" ex:avoidExercise)
+                ("intensity" ex:intensityOfExercise) ("frequency" ex:exerciseFrequency)
+            }
+            { ?subject ?property ?item }
+            UNION { ?atom swrl:propertyPredicate ?property ; swrl:argument2 ?item }
+          } UNION {
+            BIND("exercise" AS ?kind)
+            { ?item rdfs:subClassOf* ex:Exercise }
+            UNION { ?item rdf:type ex:KindOfExercise }
+            UNION { ?activity ex:hasKindOfExercise ?item }
+            OPTIONAL { ?item rdfs:subClassOf ?parent }
+          }
+            FILTER(isIRI(?item))
+            FILTER NOT EXISTS { ?item rdf:type swrl:Variable }
+            OPTIONAL { ?item rdfs:label ?label }
+            OPTIONAL { ?item ex:description ?description }
+        }
+    ''')
+    groups = {key: {} for key in (*OBJECT_INPUTS, *OUTPUTS)}
+    for row in client.query().convert()['results']['bindings']:
+        kind, uri = row['kind']['value'], row['item']['value']
+        if kind not in groups or not uri.startswith(EX) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_-]*', uri[len(EX):]):
+            continue
+        candidates = [row[k] for k in ('description', 'label') if row.get(k, {}).get('value')]
+        best = max(candidates, key=lambda v: (v.get('xml:lang', '').startswith('th'), v.get('xml:lang', '') == ''), default={})
+        label = best.get('value', uri[len(EX):])
+        rank = (best.get('xml:lang', '').startswith('th'), bool(candidates), label)
+        if uri not in groups[kind] or rank > groups[kind][uri][0]:
+            groups[kind][uri] = (rank, {'value': uri, 'label': label, 'parent': row.get('parent', {}).get('value', '')})
+    groups = {key: sorted((v[1] for v in items.values()), key=lambda v: v['label']) for key, items in groups.items()}
+    for item in groups['intensity']:
+        item['met_label'] = INTENSITY_MET.get(item['value'], ('ยังไม่ได้กำหนดช่วง MET', []))[0]
+    fields = {key: {'category': category, 'label': label, 'unit': unit}
+              for key, (category, label, unit, _) in NUMBERS.items()}
+    for key, (category, label, _) in OBJECT_INPUTS.items():
+        fields[key] = {'category': category, 'label': label, 'options': groups[key], 'multiple': key != 'type'}
+    # A negative named finding is selectable only when it exists in the graph;
+    # it is still matched as a positive assertion, never inferred from missing data.
+    for key, label in [('ketone', 'ผลตรวจคีโตน'), ('micro', 'ผลไมโครอัลบูมินในปัสสาวะ')]:
+        fields[key] = {'category': 'lab', 'label': label, 'options': [
+            {'value': 'Negative', 'label': 'Negative'}, {'value': 'Positive', 'label': 'Positive'}]}
+    return {'categories': CATEGORIES, 'fields': fields, 'results': {key: groups[key] for key in OUTPUTS}}
+
+
+def compile_builder_rule(data, catalog):
+    if not isinstance(data, dict):
+        raise ValueError('รูปแบบข้อมูลไม่ถูกต้อง')
+    name = data.get('name')
+    if not isinstance(name, str) or not name.strip() or len(name) > 250:
+        raise ValueError('กรุณาระบุชื่อกฎไม่เกิน 250 ตัวอักษร')
+    conditions = data.get('conditions')
+    if not isinstance(conditions, list) or not 1 <= len(conditions) <= 30:
+        raise ValueError('กรุณาเลือกเงื่อนไข 1–30 ข้อ')
+    outcomes = data.get('outputs', [{'action': data.get('action'), 'result': data.get('result')}])
+    if not isinstance(outcomes, list) or not 1 <= len(outcomes) <= 30:
+        raise ValueError('กรุณาเลือกผลลัพธ์ 1–30 รายการ')
+
+    def selected(options, value):
+        item = next((item for item in options if item['value'] == value), None)
+        if not item:
+            raise ValueError('รายการที่เลือกไม่มีในระบบแล้ว กรุณาโหลดหน้าใหม่และเลือกอีกครั้ง')
+        uri = item['value']
+        if not uri.startswith(EX) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_-]*', uri[len(EX):]):
+            raise ValueError('รหัสรายการไม่ถูกต้อง')
+        return 'ex:' + uri[len(EX):], item['label']
+
+    body, summary = ['ex:Patient(?p)'], []
+
+    def numeric(value):
+        if not isinstance(value, (str, int, float)) or isinstance(value, bool) or len(str(value)) > 30:
+            raise ValueError('กรุณาระบุตัวเลขที่ถูกต้อง')
+        try:
+            number = Decimal(str(value))
+        except InvalidOperation:
+            raise ValueError('กรุณาระบุตัวเลขที่ถูกต้อง') from None
+        if not number.is_finite() or number < 0 or number > 1000000 or number.as_tuple().exponent < -10:
+            raise ValueError('ตัวเลขต้องอยู่ระหว่าง 0 ถึง 1,000,000 และทศนิยมไม่เกิน 10 ตำแหน่ง')
+        return number
+
+    def link(atom):
+        if atom not in body:
+            body.append(atom)
+
+    for i, condition in enumerate(conditions):
+        if not isinstance(condition, dict):
+            raise ValueError('เงื่อนไขไม่ถูกต้อง')
+        field, op, value = (condition.get(key) for key in ('field', 'op', 'value'))
+        if not isinstance(field, str) or field not in catalog['fields']:
+            raise ValueError('ไม่รู้จักข้อมูลที่เลือกเป็นเงื่อนไข')
+        if field in OBJECT_INPUTS:
+            if op != 'eq':
+                raise ValueError('ข้อมูลประเภทนี้รองรับเฉพาะรายการที่บันทึกว่ามี ไม่รองรับการเดาว่าไม่มี')
+            term, label = selected(catalog['fields'][field]['options'], value)
+            if field == 'type':
+                body.append(f'ex:diabetType(?p, {term})')
+                summary.append(f'เป็น {label}')
+            elif field == 'special':
+                link('ex:hasPhysicalExam(?p, ?pe)')
+                body.append(f'ex:hasSpecialComplication(?pe, {term})')
+                summary.append(f'มี {label}')
+            else:
+                body.append(f'ex:{OBJECT_INPUTS[field][2]}(?p, {term})')
+                summary.append(f'{OBJECT_INPUTS[field][1]}: {label}')
+        elif field in ('ketone', 'micro'):
+            if op != 'eq' or value not in ('Negative', 'Positive'):
+                raise ValueError('ผลตรวจต้องเป็น Negative หรือ Positive')
+            link('ex:hasLabExam(?p, ?le)')
+            prop = 'hasKetone' if field == 'ketone' else 'hasMicroalbuminurin'
+            body.append(f'ex:{prop}(?le, "{value}")')
+            summary.append(f'{catalog["fields"][field]["label"]}: {value}')
+        else:
+            if not isinstance(op, str) or op not in OPERATORS:
+                raise ValueError('เงื่อนไขเปรียบเทียบไม่ถูกต้อง')
+            number = numeric(value)
+            category, label, unit, prop = NUMBERS[field]
+            subject = '?pe' if category == 'physical' else '?le'
+            link(f'ex:{"hasPhysicalExam" if category == "physical" else "hasLabExam"}(?p, {subject})')
+            body.append(f'ex:{prop}({subject}, ?v{i})')
+            body.append(f'swrlb:{OPERATORS[op]}(?v{i}, {format(number, "f")})')
+            summary.append(f'{label} {OP_LABELS[op]} {number} {unit}' + (' ขึ้นไป' if op == 'gte' else ''))
+    head, descriptions = [], []
+    for index, outcome in enumerate(outcomes):
+        if not isinstance(outcome, dict) or not isinstance(outcome.get('action'), str) or outcome['action'] not in OUTPUTS or outcome['action'] == 'intensity':
+            raise ValueError('กรุณาเลือกประเภทผลลัพธ์')
+        action = outcome['action']
+        target, label = selected(catalog['results'].get(action, []), outcome.get('result'))
+        if action == 'exercise':
+            intensity, intensity_label = selected(catalog['results'].get('intensity', []), outcome.get('intensity'))
+            if outcome['intensity'] not in INTENSITY_MET:
+                raise ValueError('ความหนักที่เลือกยังไม่ได้กำหนดช่วง MET กรุณาเลือก Light, Moderate หรือ Vigorous')
+            met_label, met_conditions = INTENSITY_MET[outcome['intensity']]
+            favorites = outcome.get('use_favorites', True)
+            if not isinstance(favorites, bool):
+                raise ValueError('การเลือกกิจกรรมที่ชอบไม่ถูกต้อง')
+            exercise, met, favorite = f'?e{index}', f'?met{index}', f'?fe{index}'
+            link(f'ex:Exercise({exercise})')
+            if target != 'ex:Exercise':
+                link(f'{target}({exercise})')
+            if favorites:
+                link(f'ex:favoriteExercise(?p, {favorite})')
+                link(f'ex:KindOfExercise({favorite})')
+                link(f'ex:hasKindOfExercise({exercise}, {favorite})')
+            link(f'ex:metValue({exercise}, {met})')
+            for comparison, threshold in met_conditions:
+                link(f'swrlb:{comparison}({met}, {threshold})')
+            head.extend([f'ex:recommendedExercise(?p, {exercise})', f'ex:intensityOfExercise(?p, {intensity})'])
+            descriptions.append(f'แนะนำหมวด {label} {met_label} ความหนัก {intensity_label}' + (' เฉพาะหมวดที่ผู้ป่วยชอบ' if favorites else ''))
+        else:
+            head.append(f'ex:{OUTPUTS[action]}(?p, {target})')
+            descriptions.append(f'{action}: {label}')
+    expression = ' ^ '.join(body) + ' -> ' + ' ^ '.join(dict.fromkeys(head))
+    comment = 'ถ้าผู้ป่วย' + ' และ'.join(summary) + ' ให้' + ' และ'.join(descriptions)
+    return {'rule_label': name.strip(), 'comment': comment, 'swrl_expression': expression}

@@ -425,6 +425,35 @@ def api_get_swrl_rules():
         return render_template('admin/swrl.html', swrl_rules=result["data"]), 200
     return jsonify(result), 500
 
+@admin_bp.route('/swrl/new', methods=['GET'])
+@admin_required
+def new_swrl_rule():
+    try:
+        catalog = get_builder_catalog()
+    except Exception:
+        return render_template('admin/rule_builder.html', catalog=None,
+                               load_error='โหลดรายการจากฐานข้อมูลไม่สำเร็จ กรุณาลองใหม่'), 503
+    return render_template('admin/rule_builder.html', catalog=catalog, load_error=None)
+
+
+@admin_bp.route('/api/swrl/rules/builder', methods=['POST'])
+@admin_required
+def save_builder_rule():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(success=False, message='รูปแบบข้อมูลไม่ถูกต้อง'), 400
+    try:
+        catalog = get_builder_catalog()
+    except Exception:
+        return jsonify(success=False, message='ตรวจสอบรายการจากฐานข้อมูลไม่ได้ กรุณาลองใหม่'), 503
+    try:
+        compiled = compile_builder_rule(data, catalog)
+    except ValueError as exc:
+        return jsonify(success=False, message=str(exc)), 400
+    result = add_swrl_rule(**compiled)
+    return jsonify(result), 200 if result.get('success') else 400
+
+
 # 1.5 POST: Preview/Dry-run กฎก่อนบันทึกจริง (ไม่เขียนลง GraphDB)
 @admin_bp.route('/api/swrl/rules/preview', methods=['POST'])
 @admin_required

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DiaBalance | เพิ่มกฎ</title></head><body>
+{% include 'includes/navbar_admin.html' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rule-builder.css') }}">
+{% if load_error %}<main><div class="card"><p role="alert">{{ load_error }}</p><a href="">ลองโหลดอีกครั้ง</a> · <a href="/admin/swrl">กลับหน้าจัดการกฎ</a></div></main>
+{% else %}
+    <main>
+      <div class="intro">
+        <h1>เพิ่มกฎใหม่</h1>
+        <p class="muted">ถ้าผู้ป่วยตรงกับเงื่อนไขที่เลือก ให้ระบบแสดงผลลัพธ์ที่กำหนด</p>
+      </div>
+      <form id="builder" novalidate>
+        <div class="card">
+          <label for="name">ชื่อกฎ</label>
+          <input id="name" required maxlength="250" aria-describedby="name-hint" />
+          <div class="hint" id="name-hint">ตั้งชื่อกฎได้เอง หรือใช้ชื่อที่ระบบสร้างจากเงื่อนไขที่เลือก</div>
+        </div>
+        <div class="layout">
+          <section aria-label="ตั้งค่ากฎ">
+            <div class="card">
+              <div class="title">
+                <span class="number">1</span>
+                <div>
+                  <h2>ถ้าผู้ป่วย…</h2>
+                  <div class="muted">
+                    เลือกข้อมูลและเงื่อนไขที่ต้องการ ผู้ป่วยต้องตรงทุกข้อ
+                  </div>
+                </div>
+              </div>
+              <div class="condition-count" id="condition-count"></div>
+              <div id="conditions"></div>
+              <button type="button" class="btn add" id="add">
+                ＋ เพิ่มเงื่อนไข
+              </button>
+              <div class="hint">
+                เลือกได้จากข้อมูลผู้ป่วย ผลตรวจสุขภาพ ผลตรวจเลือด และภาวะแทรกซ้อน หากไม่จำกัดประเภทเบาหวาน ไม่ต้องเพิ่มเงื่อนไขประเภทเบาหวาน
+              </div>
+            </div>
+            <div class="flow-arrow" aria-hidden="true">↓</div>
+            <div class="card">
+              <div class="title"><span class="number">2</span><h2>ให้แสดง…</h2></div>
+              <p class="muted">เพิ่มได้หลายรายการ เช่น แนะนำการออกกำลังกาย พร้อมความถี่และข้อควรหลีกเลี่ยง</p>
+              <div id="outputs"></div>
+              <button type="button" class="btn add" id="add-output">＋ เพิ่มผลลัพธ์</button>
+              <div class="hint">รายการจากฐานข้อมูลปัจจุบัน หากไม่มีรายการให้เลือก ให้เพิ่มในหน้าจัดการคลังข้อมูลก่อน</div>
+            </div>
+            <div class="footer">
+              <span class="muted">ลองปรับเงื่อนไข แล้วดูสรุปทางด้านขวา</span
+              ><button type="button" class="btn" id="reset">
+                ล้างแบบฟอร์ม
+              </button>
+            </div>
+          </section>
+          <aside class="summary" aria-label="ตรวจสอบกฎ">
+            <div class="card">
+              <div class="title">
+                <span class="number">✓</span>
+                <h2>กฎนี้จะทำงานอย่างไร?</h2>
+              </div>
+              <div class="preview" aria-live="polite">
+                <p id="preview-sentence"></p>
+              </div>
+              <hr />
+              <details id="test-panel">
+              <summary class="small-title">ลองกับข้อมูลตัวอย่าง (ไม่จำเป็นต้องทำ)</summary>
+              <p class="muted">ตรวจเฉพาะเงื่อนไขผู้ป่วย กิจกรรมที่เข้าเกณฑ์ MET และความชอบต้องประมวลผลจริงด้วยระบบแนะนำ</p>
+              <div id="test-fields" class="test-grid"></div>
+              <button type="button" class="btn full" id="test">
+                ดูว่ากฎนี้จะแสดงผลไหม
+              </button>
+              <div class="status" id="test-status" role="status"></div>
+              </details>
+              <button type="submit" class="btn primary full" id="save-rule">
+                บันทึกและเปิดใช้งานกฎ
+              </button>
+              <div class="status" id="save-status" role="status"></div>
+              <div class="hint">
+                เมื่อบันทึกสำเร็จ กฎจะใช้ในการประมวลผลคำแนะนำครั้งถัดไป
+              </div>
+            </div>
+            <p class="muted note">
+              โรคร่วมและภาวะแทรกซ้อนในผลประเมิน เช่น NoComorbidity ต้องมีข้อเท็จจริงหรือผลอนุมานนั้นอยู่จริง ระบบไม่ถือว่าข้อมูลที่ขาดแปลว่าไม่มีโรค
+            </p>
+          </aside>
+        </div>
+      </form>
+    </main>
+
+<script id="builder-catalog" type="application/json">{{ catalog | tojson }}</script>
+<script src="{{ url_for('static', filename='js/rule-builder.js') }}"></script>
+{% endif %}
+</body></html>

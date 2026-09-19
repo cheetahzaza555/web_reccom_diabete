@@ -4,7 +4,7 @@ import calendar
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from modules.db.patient_repository import  process_patient_streak_on_complete, get_patient_streak
-from modules.db.plan_repository import update_schedule_status
+from modules.db.plan_repository import update_schedule_status, update_daily_exercise_plan
 from utils.security import login_required  # 🛡️ ยามเฝ้าประตูสำหรับผู้ใช้ทั่วไป
 
 from modules.logic import process_patient_realtime
@@ -77,12 +77,16 @@ def dashboard_page():
     # 2. 🔥 เพิ่มการดึงข้อมูล Streak จาก GraphDB
     streak_info = get_patient_streak(user_id)
 
+    # [เพิ่มใหม่] 🌟 ดึงข้อมูลท่าออกกำลังกายที่เหมาะสมกับผู้ใช้ (เอาไว้ใช้เป็นตัวเลือกตอนเปลี่ยนท่าใน Modal)
+    recommended_exercises = get_all_recommendations(f"Patient{user_id}")
+
     # 3. 🔥 ส่ง streak_info ไปยังหน้า HTML template (user/index.html)
     return render_template(
         'user/index.html', 
         schedule=schedule_data, 
         info=current_date_info,
-        streak_info=streak_info  # <--- เพิ่มจุดนี้
+        streak_info=streak_info ,
+        recommended_exercises=recommended_exercises
     )
 
 @user_bp.route('/recommendations')
@@ -389,3 +393,124 @@ def handle_ocr_api():
     except Exception as e:
         print(f"OCR Backend Error: {str(e)}")
         return jsonify({"success": False, "message": "เกิดข้อผิดพลาดในการประมวลผลภาพถ่าย"}), 500
+
+@user_bp.route('/api/update_plan_day', methods=['POST'])
+@login_required
+def api_update_plan_day():
+    user_id = session.get('user_id')
+    data = request.json or {}
+    
+    day_node_id = data.get('day_id')
+    is_exercise = data.get('is_exercise', True)
+    new_exercise_id = data.get('exercise_id')
+    duration = int(data.get('duration', 30))
+
+    if not day_node_id:
+        return jsonify({"status": "error", "message": "Missing day_id"}), 400
+
+    # ตรวจสอบความปลอดภัย IDOR ป้องกันการแอบแก้ไขตารางของคนอื่น
+    expected_owner = f"Patient{user_id}_"
+    if expected_owner not in day_node_id:
+        return jsonify({"status": "error", "message": "ไม่มีสิทธิ์เข้าถึงตารางนี้"}), 403
+
+    # ตรวจสอบว่าท่าที่เลือกมา อยู่ในรายการที่ระบบแนะนำให้ผู้ป่วยจริงหรือไม่ (ป้องกันการ Inject รหัสท่ามั่วๆ)
+    if is_exercise and new_exercise_id:
+        valid_recs = get_all_recommendations(f"Patient{user_id}")
+        allowed_ids = [str(r.get('id')) for r in valid_recs]
+        
+        if str(new_exercise_id) not in allowed_ids:
+            return jsonify({
+                "status": "error", 
+                "message": "ท่าออกกำลังกายนี้ไม่อยู่ในรายการที่ระบบประเมินว่าเหมาะสมกับคุณ"
+            }), 400
+
+    # สั่งอัปเดตลง GraphDB
+    success = update_daily_exercise_plan(day_node_id, is_exercise, new_exercise_id, duration)
+    
+    if success:
+        return jsonify({"status": "success", "message": "อัปเดตตารางเรียบร้อยแล้ว"})
+    
+    return jsonify({"status": "error", "message": "บันทึกข้อมูลไม่สำเร็จ"}), 500
+
+@user_bp.route('/edit_schedule')
+@login_required
+def edit_schedule_page():
+    user_id = session['user_id']
+    raw_schedule = get_dashboard_schedule(user_id)
+    
+    if not raw_schedule:
+        return redirect(url_for('user.dashboard_page'))
+
+    # ดึงเฉพาะท่าที่แนะนำสำหรับผู้ป่วยคนนี้
+    recommended_exercises = get_all_recommendations(f"Patient{user_id}")
+
+    return render_template(
+        'user/edit_schedule.html',
+        schedule=raw_schedule,
+        recommended_exercises=recommended_exercises
+    )
+
+
+@user_bp.route('/save_edited_schedule', methods=['POST'])
+@login_required
+def save_edited_schedule():
+    user_id = session.get('user_id')
+    days_data = request.json.get('days', [])
+
+    if not days_data:
+        return jsonify({'status': 'error', 'message': 'ไม่มีข้อมูลส่งมา'}), 400
+
+    # ดึงรายการท่าที่อนุญาตเพื่อความปลอดภัย
+    valid_recs = get_all_recommendations(f"Patient{user_id}")
+    allowed_ids = [str(r.get('id')) for r in valid_recs]
+    expected_owner = f"Patient{user_id}_"
+
+    for item in days_data:
+        day_node_id = item.get('day_id')
+        is_exercise = item.get('is_exercise', False)
+        ex_id = item.get('exercise_id')
+        duration = int(item.get('duration', 30))
+
+        # เช็กความปลอดภัย IDOR
+        if not day_node_id or expected_owner not in day_node_id:
+            continue
+
+        # เช็กว่าท่าที่เลือกอยู่ในรายการแนะนำหรือไม่
+        if is_exercise and ex_id and str(ex_id) not in allowed_ids:
+            return jsonify({'status': 'error', 'message': 'พบท่าที่ไม่อยู่ในรายการแนะนำ'}), 400
+
+        update_daily_exercise_plan(day_node_id, is_exercise, ex_id, duration)
+
+    return jsonify({'status': 'success', 'message': 'บันทึกการแก้ไขตารางเรียบร้อยแล้ว'})
+
+@user_bp.route('/api/save_custom_schedule', methods=['POST'])
+@login_required
+def api_save_custom_schedule():
+    user_id = session.get('user_id')
+    data = request.json or {}
+    days_data = data.get('days', [])
+    daily_target = data.get('daily_target', 30)
+
+    if not days_data:
+        return jsonify({'status': 'error', 'message': 'ไม่มีข้อมูลตาราง'}), 400
+
+    # ดึงตารางเดิมของผู้ป่วยมา เพื่อนำ ID ของโหนดวัน (dayNode) มาจับคู่กับวันที่ส่งมา
+    existing_schedule = get_dashboard_schedule(user_id)
+    date_to_node_map = {item['date_obj'].isoformat(): item['id'] for item in existing_schedule}
+
+    for item in days_data:
+        date_str = item.get('date')
+        is_exercise = item.get('is_exercise', False)
+        ex_id = item.get('exercise_id')
+
+        day_node_id = date_to_node_map.get(date_str)
+        if day_node_id:
+            # อัปเดตท่าที่ผู้ใช้เลือกเฉพาะวันนั้นลง GraphDB
+            update_daily_exercise_plan(
+                day_node_id=day_node_id,
+                is_exercise=is_exercise,
+                new_exercise_id=ex_id,
+                duration=daily_target if is_exercise else 0
+            )
+
+    return jsonify({'status': 'success', 'message': 'อัปเดตตารางตามที่คุณเลือกเรียบร้อยแล้ว'})

@@ -76,11 +76,9 @@
             padding: 0 4px;
         }
 
-        /* ไม่ให้เคอร์เซอร์เป็นรูปนิ้วมือเวลาชี้ที่ติ๊กถูก */
         .check-btn { font-size: 1.5rem; color: #e9ecef; cursor: default; }
         .check-btn.completed { color: #198754; }
 
-        /* ✅ สไตล์สำหรับวันที่พลาด */
         .day-missed {
             background-color: #fff5f5 !important;
             border-color: #f5c2c7 !important;
@@ -96,7 +94,6 @@
         .nav-arrow:hover:not(:disabled) { background: #4f7cff; color: white; transform: scale(1.1); }
         .nav-arrow:disabled { color: #dee2e6; background: #f8f9fa; cursor: not-allowed; box-shadow: none; }
 
-        /* ✅ ปุ่มดูวิธีเชื่อมต่อการแจ้งเตือน LINE */
         .btn-line-info {
             border: 2px solid #06C755;
             border-radius: 30px;
@@ -158,10 +155,8 @@
     <div class="container py-4 px-3 px-md-4 d-flex flex-column">
 
         {% if schedule %}
-            <!-- ส่วนหัว: ชื่อเดือน, วันที่ และ กลุ่มปุ่มจัดการ -->
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-3 gap-3">
                 
-                <!-- ฝั่งซ้าย: ชื่อเดือน และ วันที่ -->
                 <div>
                     <h2 class="fw-bold mb-0 text-dark" id="monthTitle">กำลังโหลด...</h2>
                     <p class="text-muted mb-0 mt-2">
@@ -169,15 +164,18 @@
                     </p>
                 </div>
                 
-                <!-- ฝั่งขวา: กลุ่มปุ่ม (เปิดการแจ้งเตือน + ลบตาราง) -->
                 <div class="d-flex align-items-center gap-2">
-                    <!-- ปุ่มดูวิธีเชื่อมต่อการแจ้งเตือน LINE (expand/collapse) -->
                     <button type="button" class="btn-line-info" id="lineInfoBtn" onclick="toggleLineQR()">
                         <i class="bi bi-line"></i>
                         <span>รับการแจ้งเตือนผ่าน LINE</span>
                         <i class="bi bi-chevron-down"></i>
                     </button>
                     
+                    <!-- ปุ่มนำทางไปหน้าแก้ไขตาราง -->
+                    <a href="/user/edit_schedule" class="btn btn-outline-primary d-flex align-items-center justify-content-center" style="height: 40px; padding: 0 16px; border-radius: 8px; font-weight: 600;">
+                        <i class="bi bi-pencil-square me-1"></i> แก้ไขตาราง
+                    </a>
+
                     <!-- ปุ่มลบตาราง -->
                     <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center" onclick="confirmClearPlan()" style="height: 40px; padding: 0 16px; border-radius: 8px;">
                         <i class="bi bi-trash me-1"></i> ลบตาราง
@@ -185,7 +183,7 @@
                 </div>
             </div>
 
-            <!-- 🌟 กล่อง QR Code (ซ่อนไว้เป็นค่าเริ่มต้น) -->
+            <!-- กล่อง QR Code -->
             <div id="lineQrSection" class="card border-0 shadow-sm mb-4" style="display: none; background-color: #f6fffa; border-left: 5px solid #06C755 !important;">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -203,7 +201,6 @@
                             <p class="mb-1 text-dark">1. สแกน QR Code เพื่อเพิ่มเพื่อน DiaBalance</p>
                             <p class="mb-2 text-dark">2. พิมพ์รหัสของคุณส่งไปในแชทเพื่อยืนยันตัวตน:</p>
 
-                            <!-- ⚠️ รหัสผู้ใช้ -->
                             <h3 class="fw-bold text-dark bg-white px-3 py-2 rounded d-inline-block shadow-sm border mt-1">
                                 #{{ session['user_id'] }}
                             </h3>
@@ -215,11 +212,10 @@
                 </div>
             </div>
 
-            <!-- กล่อง Streak (วันต่อเนื่อง) -->
+            <!-- กล่อง Streak -->
             <div class="card border-0 shadow-sm mb-3" style="background: white; border-radius: 16px;">
                 <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-between">
                     
-                    <!-- ฝั่งซ้าย: ไอคอนไฟ + ตัวเลข Streak -->
                     <div class="d-flex align-items-center">
                         <div class="streak-icon-box me-3 d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 60px; height: 60px;">
                             <i class="bi bi-fire text-danger" style="font-size: 2.2rem; filter: drop-shadow(0px 2px 4px rgba(255,107,107,0.4));"></i>
@@ -241,7 +237,6 @@
                         </div>
                     </div>
 
-                    <!-- ฝั่งขวา: Badge สถิติสูงสุด -->
                     <div class="d-none d-md-block text-end">
                         <span class="badge bg-white text-danger px-3 py-2 rounded-pill shadow-sm fw-bold">
                             <i class="bi bi-trophy-fill me-1"></i> สถิติสูงสุด: 
@@ -254,7 +249,7 @@
                 </div>
             </div>
 
-            <!-- กล่องเป้าหมายประจำสัปดาห์ -->
+            <!-- กล่องเป้าหมายสัปดาห์ -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-1">
@@ -305,7 +300,7 @@
                      data-year="{{ day.year }}"
                      data-istoday="{{ 'true' if day.is_today else 'false' }}"
                      data-isexercise="{{ 'true' if day.is_exercise_day else 'false' }}"
-                     data-exname="{{ day.exercise_name }}"
+                     data-exname="{{ day.exercise_name or '' }}"
                      data-completed="{{ 'true' if day.completed else 'false' }}"
                      data-duration="{{ day.duration_minutes }}"
                      data-status="{{ day.status }}"></div>
@@ -386,7 +381,6 @@
                 renderCalendar(monthsArray[currentIndex]);
             }
 
-            // ✅ เรียกคำนวณ Streak ใหม่ทันทีหลังดึงข้อมูล rawData
             calculateStreak();
         }
 
@@ -437,13 +431,12 @@
                         contentHtml = `
                             <div class="text-center">
                                 <i class="bi bi-x-circle-fill missed-icon"></i>
-                                <div class="ex-name mt-1 text-danger" style="font-size: 0.75rem;"> ไม่ได้ออกกำลังกาย </div>
+                                <div class="ex-name mt-1 text-danger" style="font-size: 0.75rem;">ไม่ได้ออกกำลังกาย</div>
                             </div>
                             <div style="height: 24px;"></div>
                         `;
                     } else if (plan.isExercise) {
                         if (plan.completed) {
-                            // ✅ แก้ไข UI เมื่อทำกิจกรรมสำเร็จ ให้คลีนและแสดงเวลา (นาที) ชัดเจน
                             contentHtml = `
                                 <div class="text-center">
                                     <i class="bi bi-activity exercise-icon text-success"></i>
@@ -454,21 +447,19 @@
                                     <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
                                 </div>
                             `;
-} else {
-    // ดึงชื่อท่าออกกำลังกายมาแสดง หากไม่มีให้ fallback เป็น "ต้องออกกำลังกาย"
-    let displayExerciseName = plan.exName || "ต้องออกกำลังกาย";
-
-    contentHtml = `
-        <div class="text-center w-100">
-            <i class="bi bi-person-walking text-primary" style="font-size: 1.4rem;"></i>
-            <div class="ex-name mt-1 text-primary" title="${displayExerciseName}">
-                ${displayExerciseName}
-            </div>
-            <small class="text-muted" style="font-size: 0.65rem;">(${plan.duration} นาที)</small>
-        </div>
-        <div style="height: 12px;"></div>
-    `;
-}
+                        } else {
+                            let displayExerciseName = plan.exName || "ต้องออกกำลังกาย";
+                            contentHtml = `
+                                <div class="text-center w-100">
+                                    <i class="bi bi-person-walking text-primary" style="font-size: 1.4rem;"></i>
+                                    <div class="ex-name mt-1 text-primary" title="${displayExerciseName}">
+                                        ${displayExerciseName}
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.65rem;">(${plan.duration} นาที)</small>
+                                </div>
+                                <div style="height: 12px;"></div>
+                            `;
+                        }
                     } else {
                         contentHtml = `
                             <div class="text-center opacity-50">
@@ -625,7 +616,7 @@
                         tempStreak++;
                     } 
                     else if (!plan.isExercise && plan.status !== 'Missed') {
-                        // วันพักผ่อนไม่ลบ streak
+                        // วันพักผ่อนไม่ตัด streak
                     } 
                     else if (plan.status === 'Missed' || (plan.isExercise && !plan.completed && planDate < todayObj)) {
                         tempStreak = 0; 

@@ -269,3 +269,43 @@ def update_schedule_status(plan_id, new_status):
     """
     # รันคำสั่ง SPARQL UPDATE ผ่านตัวเชื่อมต่อ GraphDB ของคุณ
     # execute_sparql_update(sparql_query)
+
+def update_daily_exercise_plan(day_node_id, is_exercise, new_exercise_id=None, duration=30):
+    """
+    อัปเดตสลับวันพัก/วันออกกำลังกาย และเปลี่ยนท่าออกกำลังกายใน GraphDB
+    """
+    status = "Pending" if is_exercise else "Rest"
+    target_mins = duration if is_exercise else 0
+
+    exercise_insert = ""
+    if is_exercise and new_exercise_id:
+        exercise_insert = f"ex:{day_node_id} ex:hasScheduledExercise ex:{escape_sparql(new_exercise_id)} ."
+
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    DELETE {{
+        ex:{day_node_id} ex:planStatus ?oldStatus .
+        ex:{day_node_id} ex:durationMinutes ?oldDur .
+        ex:{day_node_id} ex:hasScheduledExercise ?oldEx .
+    }}
+    INSERT {{
+        ex:{day_node_id} ex:planStatus "{status}" .
+        ex:{day_node_id} ex:durationMinutes "{target_mins}"^^xsd:integer .
+        {exercise_insert}
+    }}
+    WHERE {{
+        ex:{day_node_id} a ex:DailyPlan .
+        OPTIONAL {{ ex:{day_node_id} ex:planStatus ?oldStatus }}
+        OPTIONAL {{ ex:{day_node_id} ex:durationMinutes ?oldDur }}
+        OPTIONAL {{ ex:{day_node_id} ex:hasScheduledExercise ?oldEx }}
+    }}
+    """
+    try:
+        sparql_write.setQuery(query)
+        sparql_write.query()
+        return True
+    except Exception as e:
+        print(f"❌ Error updating daily exercise plan: {e}")
+        return False

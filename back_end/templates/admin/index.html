@@ -159,6 +159,7 @@
         {% include 'includes/navbar_admin.html' %}
 
         <div class="main-content">
+            {% include 'includes/admin_breadcrumb.html' %}
             <div class="welcome-header">
                 <h1>ยินดีต้อนรับ, {{ username if username else 'admin' }}</h1>
                 <p>ภาพรวมของข้อมูลทั้งหมดในระบบ</p>

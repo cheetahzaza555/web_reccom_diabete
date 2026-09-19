@@ -349,6 +349,21 @@
           : "กฎนี้จะไม่แสดงผล เพราะข้อมูลตัวอย่างไม่ตรงกับกลุ่มผู้ป่วยหรือเงื่อนไขบางข้อ";
       };
       let saving = false;
+      async function showSaveMessage(success, message) {
+        const title = success ? 'เพิ่มกฎสำเร็จ' : 'เพิ่มกฎไม่สำเร็จ';
+        if (window.Swal) {
+          try {
+            await window.Swal.fire({
+              icon: success ? 'success' : 'error', title, text: message,
+              confirmButtonText: success ? 'กลับหน้ารวมกฎ' : 'กลับไปแก้ไข',
+              confirmButtonColor: '#3366cc', allowOutsideClick: false,
+              allowEscapeKey: false,
+            });
+            return;
+          } catch (_) { /* Keep feedback available if the dialog library fails. */ }
+        }
+        window.alert(title + '\n' + message);
+      }
       $('builder').onsubmit = async event => {
         event.preventDefault();
         if (saving || !validateRule()) return;
@@ -362,6 +377,7 @@
         const controls = Array.from($('builder').querySelectorAll('input,select,button'));
         const disabled = controls.map(input => input.disabled);
         controls.forEach(input => input.disabled = true);
+        $('save-status').dataset.state = 'loading';
         $('save-status').textContent = 'กำลังตรวจสอบรายการล่าสุดและบันทึกกฎ…';
         try {
           const response = await fetch('/admin/api/swrl/rules/builder', {
@@ -370,12 +386,20 @@
           if (response.redirected) throw new Error('เซสชันหมดอายุหรือไม่มีสิทธิ์ กรุณาเข้าสู่ระบบแอดมินอีกครั้ง');
           const result = await response.json();
           if (!response.ok || !result.success) throw new Error(result.message || 'ไม่สามารถบันทึกกฎได้');
-          window.location.href = '/admin/swrl';
         } catch (error) {
-          $('save-status').textContent = error instanceof TypeError ? 'การเชื่อมต่อขัดข้อง กรุณาตรวจรายการกฎก่อนลองบันทึกอีกครั้ง' : error.message;
-          saving = false;
+          const message = error instanceof TypeError || error instanceof SyntaxError ? 'ไม่สามารถยืนยันผลการบันทึกได้ กรุณาตรวจหน้ารวมกฎก่อนลองบันทึกอีกครั้ง' : error.message;
+          $('save-status').dataset.state = 'error';
+          $('save-status').textContent = message;
+          await showSaveMessage(false, message);
           controls.forEach((input,i) => input.disabled = disabled[i]);
+          saving = false;
+          return;
         }
+        const message = 'บันทึกกฎ “' + payload.name + '” เรียบร้อยแล้ว กฎจะใช้ในการประมวลผลคำแนะนำครั้งถัดไป';
+        $('save-status').dataset.state = 'success';
+        $('save-status').textContent = message;
+        await showSaveMessage(true, message);
+        window.location.href = '/admin/swrl';
       };
       document.addEventListener('DOMContentLoaded', () => {
         const link = document.querySelector('.sidebar a[href="/admin/swrl"]');

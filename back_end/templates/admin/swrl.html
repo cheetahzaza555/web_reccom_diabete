@@ -3,283 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DiaBalance Admin | จัดการกฎ SWRL Rules Engine</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SweetAlert2 -->
+    <title>DiaBalance Admin | จัดการกฎ</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <style>
-        :root {
-            --primary-blue: #2B5CB3;
-            --primary-hover: #1e458a;
-            --light-bg: #F4F7FC;
-            --text-dark: #333333;
-            --text-muted: #666666;
-            --white: #ffffff;
-            --border-color: #E2E8F0;
-            --success: #10B981;
-            --danger: #E53E3E;
-            --warning: #D97706;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background-color: var(--light-bg); 
-            color: var(--text-dark); 
-            display: flex; 
-            min-height: 100vh; 
-            font-family: 'Prompt', sans-serif; 
-        } 
-
-        .admin-layout { display: flex; width: 100%; min-height: 100vh; }
-        .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
-
-        .header-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-        }
-        .header-section h1 { font-size: 28px; font-weight: 600; color: var(--text-dark); }
-        .header-section p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
-
-        .toolbar-section {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 20px;
-            align-items: center;
-            width: 100%;
-        }
-        .search-wrapper {
-            position: relative;
-            flex-grow: 1;
-        }
-        .search-wrapper i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-        .search-input {
-            width: 100%;
-            padding: 10px 14px 10px 40px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            font-family: 'Prompt', sans-serif;
-            font-size: 14px;
-            outline: none;
-            background-color: var(--white);
-        }
-
-        /* ➕ ปุ่มเพิ่มกฎใหม่ */
-        .btn-add-rule {
-            background-color: var(--primary-blue);
-            color: var(--white);
-            padding: 10px 18px;
-            border-radius: 8px;
-            border: none;
-            font-family: 'Prompt', sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.2s;
-            box-shadow: 0 2px 4px rgba(43, 92, 179, 0.2);
-            white-space: nowrap;
-        }
-        .btn-add-rule:hover { background-color: var(--primary-hover); }
-
-        .table-card {
-            background-color: var(--white);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
-            border: 1px solid var(--border-color);
-            width: 100%; 
-            overflow-x: auto;
-        }
-        .rule-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .rule-table th {
-            background-color: #F8FAFC;
-            color: var(--text-muted);
-            font-weight: 600;
-            padding: 16px;
-            font-size: 14px;
-            border-bottom: 2px solid var(--border-color);
-        }
-        .rule-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-        .rule-table tr:hover { background-color: #F8FAFC; }
-
-        /* 🎛️ ปุ่มลบ */
-        .btn-delete {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            background-color: #FFF5F5;
-            color: var(--danger);
-            cursor: pointer;
-            border: 1px solid #FED7D7;
-            font-weight: 600;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
-
-        .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
-
-        /* 🏷️ รูปแบบกล่องแสดง SWRL Rule แบบเต็ม */
-        .swrl-rule-box {
-            background-color: #F8FAFC;
-            border: 1px solid #CBD5E1;
-            border-radius: 8px;
-            padding: 12px 14px;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 13px;
-            color: #1E293B;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-    </style>
 </head>
 <body>
+    {% include 'includes/navbar_admin.html' %}
+    <style>
+body {background:#fff;color:#333;font-family:'Kanit',sans-serif;}
+.rules-page {max-width:1500px;padding:36px 40px 56px;margin:0 auto;min-width:0;}
+.rules-page *, .rules-page *::before, .rules-page *::after {box-sizing:border-box;}
+.rules-breadcrumb {display:flex;gap:10px;align-items:center;color:#718096;font-size:14px;margin-bottom:20px;}
+.rules-breadcrumb a {color:#3366cc;text-decoration:none;}
+.rules-breadcrumb a:hover {text-decoration:underline;}
+.rules-header {display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:30px;}
+.rules-header h1 {font-size:28px;font-weight:600;margin:0 0 8px;color:#29364b;}
+.rules-header p {font-size:14px;color:#6b7280;margin:0;line-height:1.7;}
+.rules-add {display:inline-flex;align-items:center;justify-content:center;gap:9px;flex-shrink:0;padding:12px 20px;border-radius:8px;background:#3366cc;color:#fff;text-decoration:none;font-size:14px;font-weight:500;box-shadow:0 3px 8px #3366cc20;}
+.rules-add:hover {background:#2952a3;color:#fff;}
+.rules-panel {border:1px solid #e2e8f0;border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 4px 16px #23334b04;}
+.rules-panel-heading {display:flex;justify-content:space-between;align-items:center;gap:24px;padding:24px;}
+.rules-panel-title {display:flex;align-items:center;gap:12px;min-width:0;}
+.rules-icon {display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;background:#edf3ff;color:#3366cc;border-radius:12px;font-size:20px;}
+.rules-panel-title h2 {font-size:17px;font-weight:500;margin:0 0 4px;}
+.rules-total {display:inline-block;font-size:12px;color:#3366cc;background:#edf3ff;border-radius:20px;padding:2px 9px;margin-left:5px;vertical-align:middle;}
+.rules-panel-title p {font-size:12px;color:#758095;margin:0;}
+.rules-search {position:relative;flex:0 1 380px;min-width:220px;}
+.rules-search > i {position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#8793a5;pointer-events:none;}
+.rules-search input {font:inherit;font-size:13px;width:100%;min-height:44px;border:1px solid #dce3ed;background:#f8fafc;border-radius:8px;padding:10px 40px;color:#333;}
+.rules-search input::-webkit-search-cancel-button {appearance:none;}
+.rules-search button {position:absolute;right:6px;top:6px;width:32px;height:32px;border:0;background:transparent;color:#637186;font-size:22px;cursor:pointer;}
+.rules-list-caption {display:flex;justify-content:space-between;gap:12px;background:#f8fafc;border-top:1px solid #edf0f5;border-bottom:1px solid #edf0f5;padding:11px 24px;font-size:12px;color:#758095;}
+.rule-item {padding:22px 24px;border-bottom:1px solid #edf0f5;}
+.rule-item:last-child {border-bottom:0;}
+.rule-item-heading {display:flex;align-items:flex-start;gap:14px;}
+.rule-index {display:grid;place-items:center;flex-shrink:0;min-width:36px;height:36px;padding:0 6px;border:1px solid #e3eaf5;border-radius:9px;background:#f8faff;color:#6b83ac;font-size:12px;}
+.rule-text {flex:1;min-width:0;}
+.rule-text h3 {font-size:16px;font-weight:500;color:#273c60;margin:1px 0 7px;line-height:1.65;overflow-wrap:anywhere;}
+.rule-description {font-size:13px;color:#6b7280;line-height:1.8;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;}
+.rule-description-empty {color:#9aa3af;}
+.rule-delete {display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;padding:7px 10px;border:1px solid #fee2e2;border-radius:7px;color:#d14b4b;background:#fff;font:inherit;font-size:12px;cursor:pointer;}
+.rule-delete:hover {background:#fff1f1;border-color:#f5bebe;}
+.rule-details {margin:14px 0 0 50px;min-width:0;}
+.rule-details summary {width:fit-content;max-width:100%;color:#3366cc;font-size:13px;cursor:pointer;padding:4px 0;}
+.rule-details[open] summary {margin-bottom:12px;}
+.rule-expression {font-family:Consolas,monospace;font-size:13px;line-height:1.85;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;color:#334155;padding:16px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
+.rules-empty {text-align:center;padding:52px 24px;color:#758095;}
+.rules-empty i {display:block;font-size:30px;color:#9eacc2;margin-bottom:14px;}
+.rules-empty h3 {font-size:17px;color:#475569;margin:0 0 8px;}
+.rules-empty p {font-size:13px;margin:0;}
+.rules-sr-only {position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+.rules-page :is(a,button,input,summary):focus-visible {outline:3px solid #a8c5ff;outline-offset:3px;}
+.swal2-popup {font-family:'Kanit',sans-serif;border-radius:16px;}
+@media(max-width:1150px){.rules-panel-heading{align-items:stretch;flex-direction:column;gap:18px;}.rules-search{flex:auto;min-width:0;}}
+@media(max-width:768px){body{margin-left:0;}.rules-page{padding:80px 16px 32px;}.rules-header{align-items:flex-start;flex-direction:column;gap:16px;}.rules-header h1{font-size:25px;}.rules-panel-heading,.rule-item{padding:18px 16px;}.rules-list-caption{padding:10px 16px;}.rule-index{display:none;}.rule-details{margin-left:0;}.rule-delete span{display:none;}.rule-delete{width:36px;min-height:36px;}.rule-item-heading{gap:10px;}}
 
-    <!-- Container เก็บข้อมูล JSON SWRL Rules -->
-    <div id="swrl-data-container" style="display: none;" 
-         data-json="{% if swrl_rules %}{{ swrl_rules | tojson | safe | forceescape }}{% else %}[]{% endif %}">
-    </div>
-
-    <div class="admin-layout">
-        {% include 'includes/navbar_admin.html' %}
-
-        <div class="main-content">
-            <!-- Header Section -->
-            <div class="header-section">
-                <div>
-                    <h1>กฎ SWRL Rules Engine</h1>
-                    <p>แสดงรายการและจัดการกฎทางการแพทย์</p>
+    </style>
+    <main class="rules-page">
+        {% include 'includes/admin_breadcrumb.html' %}
+        <header class="rules-header">
+            <div><h1>จัดการกฎ</h1><p>ดูเงื่อนไขและผลลัพธ์ที่ใช้ในการแนะนำ เพิ่มกฎใหม่ หรือจัดการกฎที่มีอยู่</p></div>
+            <a class="rules-add" href="{{ url_for('admin.new_swrl_rule') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มกฎใหม่</a>
+        </header>
+        <section class="rules-panel" aria-labelledby="rules-list-title">
+            <div class="rules-panel-heading">
+                <div class="rules-panel-title"><span class="rules-icon"><i class="bi bi-diagram-3" aria-hidden="true"></i></span><div><h2 id="rules-list-title">รายการกฎทั้งหมด <span class="rules-total">{{ swrl_rules | length }}</span></h2><p>เลือก “ดูเงื่อนไขและผลลัพธ์” เพื่ออ่านกฎฉบับเต็ม</p></div></div>
+                <div class="rules-search">
+                    <label class="rules-sr-only" for="searchBar">ค้นหากฎ</label>
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" id="searchBar" placeholder="ค้นหาชื่อกฎ คำอธิบาย หรือเงื่อนไข…" autocomplete="off">
+                    <button type="button" id="clear-search" aria-label="ล้างคำค้น" hidden>×</button>
                 </div>
             </div>
-
-            <!-- Toolbar Section -->
-            <div class="toolbar-section">
-                <div class="search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อกฎ หรือคำอธิบาย...">
-                </div>
-                <!-- ปุ่มเพิ่มกฎใหม่ -->
-                <button class="btn-add-rule" onclick="openAddRuleModal()">
-                    <i class="fa-solid fa-plus"></i> เพิ่มกฎใหม่
-                </button>
-            </div>
-
-            <!-- Table Card -->
-            <div class="table-card">
-                <table class="rule-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 15%;">ชื่อกฎ</th>
-                            <th style="width: 25%;">รายละเอียด / คำอธิบาย</th>
-                            <th style="width: 45%;">เงื่อนไข</th>
-                            <th style="width: 15%; text-align: center;">จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rulesTableBody">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
+            <div class="rules-list-caption"><span id="result-count" role="status" aria-live="polite"></span><span>เรียงตามชื่อกฎ</span></div>
+            <div id="rules-list"></div>
+            <noscript><p class="rules-empty">กรุณาเปิด JavaScript เพื่อแสดงและจัดการรายการกฎ</p></noscript>
+        </section>
+    </main>
+    <script id="swrl-data" type="application/json">{{ swrl_rules | tojson }}</script>
     <script>
-        // 📥 ดึงข้อมูล SWRL Rules จาก Data Attribute
-        const container = document.getElementById('swrl-data-container');
-        const swrlRulesData = JSON.parse(container.getAttribute('data-json') || '[]');
-        function escapeHtml(value) {
-            const node = document.createElement('span');
-            node.textContent = String(value ?? '');
-            return node.innerHTML;
-        }
-
-        function renderTable(data) {
-            const tableBody = document.getElementById('rulesTableBody');
-            
-            if (!data || !data.length) {
-                tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลกฎ SWRL ในระบบ</td></tr>`;
-                return;
-            }
-
-            const sortedData = [...data].sort((a, b) => {
-                const labelA = a.rule_label || '';
-                const labelB = b.rule_label || '';
-                return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: 'base' });
-            });
-
-            let html = "";
-            sortedData.forEach(rule => {
-                let swrlFullExpression = rule.full_rule || rule.swrl_text || rule.swrl_string || "";
-                
-                if (!swrlFullExpression && rule.conditions && rule.conditions.length > 0) {
-                    swrlFullExpression = rule.conditions.join(' ^ ');
-                }
-
-                if (!swrlFullExpression) {
-                    swrlFullExpression = "- ไม่พบรายละเอียดกฎ SWRL -";
-                }
-
-                const safeUri = encodeURIComponent(rule.rule_uri || '').replace(/'/g, '%27');
-                const safeLabel = encodeURIComponent(rule.rule_label || '-').replace(/'/g, '%27');
-
-                html += `
-                <tr>
-                    <td><strong style="color: #1E1B4B; font-size: 15px;">${escapeHtml(rule.rule_label || '-')}</strong></td>
-                    <td style="color: var(--text-muted);">${escapeHtml(rule.comment || '-')}</td>
-                    <td>
-                        <div class="swrl-rule-box">${escapeHtml(swrlFullExpression)}</div>
-                    </td>
-                    <td style="text-align: center;">
-                        <button class="btn-delete" onclick="deleteRule('${safeUri}', '${safeLabel}')">
-                            <i class="fa-solid fa-trash-can"></i> ลบ
-                        </button>
-                    </td>
-                </tr>`;
-            });
-            
-            tableBody.innerHTML = html;
-        }
-
-        // 🔍 ฟังก์ชันกรองข้อมูลการค้นหา
-        function filterContent() {
-            const searchVal = document.getElementById('searchBar').value.toLowerCase();
-
-            const filtered = swrlRulesData.filter(item => {
-                const labelMatch = (item.rule_label || '').toLowerCase().includes(searchVal);
-                const commentMatch = (item.comment || '').toLowerCase().includes(searchVal);
-                return labelMatch || commentMatch;
-            });
-            renderTable(filtered);
-        }
-
-        // ➕ ฟังก์ชันเปิด Modal สำหรับเพิ่มกฎ SWRL
-        function openAddRuleModal() {
-            window.location.href = '/admin/swrl/new';
-        }
-
         function deleteRule(encodedRuleUri, ruleLabel) {
             const ruleUri = decodeURIComponent(encodedRuleUri);
             ruleLabel = decodeURIComponent(ruleLabel);
             Swal.fire({
                 title: 'ยืนยันการลบกฎ?',
-                text: `คุณแน่ใจหรือไม่ว่าต้องการลบกฎ "${ruleLabel}" ออกจาก GraphDB?`,
+                text: `ต้องการลบกฎ “${ruleLabel}” หรือไม่? กฎนี้จะไม่ถูกใช้ในการประมวลผลครั้งถัดไป`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E53E3E',
@@ -299,7 +106,7 @@
                         });
                         const resResult = await response.json();
 
-                        if (resResult.success) {
+                        if (response.ok && resResult.success) {
                             Swal.fire('ลบสำเร็จ!', resResult.message || 'ลบกฎออกจาก GraphDB เรียบร้อยแล้ว', 'success')
                                 .then(() => location.reload());
                         } else {
@@ -312,12 +119,73 @@
             });
         }
 
-        // 🟢 Event Listeners & โหลดข้อมูลเริ่มต้น
-        document.getElementById('searchBar').addEventListener('input', filterContent);
-
-        window.addEventListener('DOMContentLoaded', () => {
-            renderTable(swrlRulesData);
+(() => {
+    const rules = JSON.parse(document.getElementById('swrl-data').textContent).sort((a, b) =>
+        (a.rule_label || '').localeCompare(b.rule_label || '', undefined, {numeric: true, sensitivity: 'base'}));
+    const list = document.getElementById('rules-list');
+    const search = document.getElementById('searchBar');
+    const clear = document.getElementById('clear-search');
+    const count = document.getElementById('result-count');
+    function element(tag, className, text) {
+        const node = document.createElement(tag);
+        node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+    function expression(rule) {
+        return rule.full_rule || rule.swrl_text || rule.swrl_string || (rule.conditions || []).join(' ^ ');
+    }
+    function render() {
+        const query = search.value.trim().toLocaleLowerCase();
+        const filtered = rules.filter(rule => [rule.rule_label, rule.comment, expression(rule)]
+            .some(value => String(value || '').toLocaleLowerCase().includes(query)));
+        clear.hidden = !search.value;
+        count.textContent = query ? `พบ ${filtered.length} จาก ${rules.length} กฎ` : `ทั้งหมด ${rules.length} กฎ`;
+        list.replaceChildren();
+        if (!filtered.length) {
+            const empty = element('div', 'rules-empty');
+            const icon = element('i', query ? 'bi bi-search' : 'bi bi-journal-plus');
+            icon.setAttribute('aria-hidden', 'true');
+            empty.append(icon,
+                element('h3', '', query ? 'ไม่พบกฎที่ตรงกับคำค้น' : 'ยังไม่มีกฎในระบบ'),
+                element('p', '', query ? 'ลองเปลี่ยนคำค้น หรือล้างคำค้นเพื่อดูรายการทั้งหมด' : 'เริ่มสร้างเงื่อนไขและผลลัพธ์ด้วยปุ่ม “เพิ่มกฎใหม่” ด้านบน'));
+            list.append(empty);
+            return;
+        }
+        const fragment = document.createDocumentFragment();
+        filtered.forEach((rule, index) => {
+            const title = rule.rule_label || 'กฎที่ไม่มีชื่อ';
+            const article = element('article', 'rule-item');
+            const heading = element('div', 'rule-item-heading');
+            const number = element('span', 'rule-index', String(index + 1).padStart(2, '0'));
+            number.setAttribute('aria-hidden', 'true');
+            const text = element('div', 'rule-text');
+            text.append(element('h3', '', title), element('p', rule.comment ? 'rule-description' : 'rule-description rule-description-empty', rule.comment || 'ยังไม่มีคำอธิบาย กดดูรายละเอียดกฎด้านล่าง'));
+            const remove = element('button', 'rule-delete');
+            remove.type = 'button';
+            remove.setAttribute('aria-label', 'ลบกฎ ' + title);
+            const icon = element('i', 'bi bi-trash3');
+            icon.setAttribute('aria-hidden', 'true');
+            remove.append(icon, element('span', '', 'ลบ'));
+            remove.addEventListener('click', () => deleteRule(encodeURIComponent(rule.rule_uri || ''), encodeURIComponent(rule.rule_label || '-')));
+            heading.append(number, text, remove);
+            const details = element('details', 'rule-details');
+            const summary = element('summary', '', 'ดูเงื่อนไข');
+            const code = element('code', '', expression(rule) || 'ไม่พบรายละเอียดกฎ');
+            const pre = element('pre', 'rule-expression');
+            pre.append(code);
+            details.append(summary, pre);
+            article.append(heading, details);
+            fragment.append(article);
         });
+        list.append(fragment);
+    }
+    search.addEventListener('input', render);
+    clear.addEventListener('click', () => { search.value = ''; render(); search.focus(); });
+    render();
+})();
+
+
     </script>
 </body>
 </html>

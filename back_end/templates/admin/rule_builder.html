@@ -3,9 +3,10 @@
 <title>DiaBalance | เพิ่มกฎ</title></head><body>
 {% include 'includes/navbar_admin.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/rule-builder.css') }}">
-{% if load_error %}<main><div class="card"><p role="alert">{{ load_error }}</p><a href="">ลองโหลดอีกครั้ง</a> · <a href="/admin/swrl">กลับหน้าจัดการกฎ</a></div></main>
+{% if load_error %}<main>{% include 'includes/admin_breadcrumb.html' %}<div class="card"><p role="alert">{{ load_error }}</p><a href="">ลองโหลดอีกครั้ง</a> · <a href="/admin/swrl">กลับหน้าจัดการกฎ</a></div></main>
 {% else %}
     <main>
+      {% include 'includes/admin_breadcrumb.html' %}
       <div class="intro">
         <h1>เพิ่มกฎใหม่</h1>
         <p class="muted">ถ้าผู้ป่วยตรงกับเงื่อนไขที่เลือก ให้ระบบแสดงผลลัพธ์ที่กำหนด</p>
@@ -88,6 +89,7 @@
     </main>
 
 <script id="builder-catalog" type="application/json">{{ catalog | tojson }}</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="{{ url_for('static', filename='js/rule-builder.js') }}"></script>
 {% endif %}
 </body></html>

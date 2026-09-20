@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, json, render_template, jsonify, request, session, redirect, url_for
 import calendar
 from werkzeug.security import check_password_hash, generate_password_hash
+from modules.db.connection import sparql_read
 
 from modules.db.patient_repository import  process_patient_streak_on_complete, get_patient_streak
 from modules.db.plan_repository import update_schedule_status, update_daily_exercise_plan
@@ -443,6 +444,28 @@ def edit_schedule_page():
 
     # ดึงเฉพาะท่าที่แนะนำสำหรับผู้ป่วยคนนี้
     recommended_exercises = get_all_recommendations(f"Patient{user_id}")
+
+    # 🔥 เพิ่มส่วนนี้: ยิง SPARQL เพื่อดึง YoutubeID ของแต่ละท่ามาใส่ให้ครบ
+    for rec in recommended_exercises:
+        ex_id = rec.get('id')
+        if ex_id:
+            query = f"""
+            PREFIX ex: <http://example.org/diabetes#>
+            SELECT ?yt WHERE {{
+                ex:{ex_id} ex:hasYoutubeID ?yt .
+            }} LIMIT 1
+            """
+            try:
+                sparql_read.setQuery(query)
+                res = sparql_read.query().convert()
+                bindings = res["results"]["bindings"]
+                if bindings:
+                    rec['youtube_id'] = bindings[0]["yt"]["value"]
+                else:
+                    rec['youtube_id'] = ""
+            except Exception as e:
+                print(f"Error fetching YouTube ID for {ex_id}: {e}")
+                rec['youtube_id'] = ""
 
     return render_template(
         'user/edit_schedule.html',

@@ -161,7 +161,7 @@
 
     </div>
 
-    <!-- Modal เลือกท่าเฉพาะสำหรับวันนั้น -->
+<!-- Modal เลือกท่าเฉพาะสำหรับวันนั้น พร้อมวิดีโอตัวอย่าง -->
     <div class="modal fade" id="assignDayModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
@@ -184,13 +184,36 @@
 
                     <div id="modalExerciseGroup" class="mb-3">
                         <label class="form-label fw-bold">เลือกท่าออกกำลังกาย (เฉพาะท่าที่ระบบแนะนำ)</label>
-                        <select class="form-select" id="modalExerciseSelect">
+                        <select class="form-select" id="modalExerciseSelect" onchange="updateVideoPreview()">
                             {% for rec in recommended_exercises %}
-                                <option value="{{ rec.id }}" data-name="{{ rec.name }}" data-met="{{ rec.met }}">
+                                <option value="{{ rec.id }}" 
+                                        data-name="{{ rec.name }}" 
+                                        data-met="{{ rec.met }}"
+                                        data-youtube="{{ rec.youtube_id or '' }}">
                                     {{ rec.name }} ({{ rec.met }} METs)
                                 </option>
                             {% endfor %}
                         </select>
+
+                        <div id="videoPreviewContainer" class="mt-3">
+                            <label class="form-label small fw-bold text-muted mb-1">
+                                <i class="bi bi-play-btn-fill text-primary me-1"></i> ตัวอย่างท่าออกกำลังกาย
+                            </label>
+                            
+                            <div id="mediaBox" class="ratio ratio-16x9 rounded overflow-hidden shadow-sm border bg-light d-flex justify-content-center align-items-center" style="display: none;">
+                                <iframe id="youtubePreviewFrame" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="display: none; width: 100%; height: 100%;"></iframe>
+                                
+                                <video id="mp4PreviewVideo" autoplay loop muted playsinline style="display: none; max-width: 100%; max-height: 100%; object-fit: contain;">
+                                    <source src="" type="video/mp4">
+                                    เบราว์เซอร์ของคุณไม่รองรับการแสดงผลวิดีโอ
+                                </video>
+                            </div>
+
+                            <div id="noVideoAlert" class="alert alert-light text-muted small text-center p-3 mt-2 border rounded" style="display: none;">
+                                <i class="bi bi-info-circle me-1"></i> ไม่มีภาพหรือวิดีโอตัวอย่างสำหรับท่านี้
+                            </div>
+                        </div>
+
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
@@ -329,9 +352,70 @@
             document.getElementById('dailyTargetDisplay').innerText = dailyTarget;
         }
 
+        function updateVideoPreview() {
+            const exSelect = document.getElementById('modalExerciseSelect');
+            const iframe = document.getElementById('youtubePreviewFrame');
+            const mp4Video = document.getElementById('mp4PreviewVideo');
+            const mediaBox = document.getElementById('mediaBox');
+            const noVideoBox = document.getElementById('noVideoAlert');
+
+            if (!exSelect || exSelect.options.length === 0) return;
+
+            const selectedOption = exSelect.options[exSelect.selectedIndex];
+            const youtubeId = selectedOption ? selectedOption.dataset.youtube : '';
+            const exId = selectedOption ? selectedOption.value : ''; 
+
+            // เคลียร์การแสดงผลก่อน
+            iframe.style.display = 'none';
+            mp4Video.style.display = 'none';
+            noVideoBox.style.display = 'none';
+            mediaBox.style.display = 'block';
+
+            if (youtubeId && youtubeId.trim() !== '' && youtubeId.trim() !== 'None') {
+                // 1. ถ้ามี YouTube ID -> แสดง iframe
+                iframe.src = `https://www.youtube-nocookie.com/embed/${youtubeId.trim()}?rel=0`;
+                iframe.style.display = 'block';
+                mp4Video.pause(); // หยุดเล่น MP4 เผื่อเล่นค้างอยู่
+            } else if (exId && exId.trim() !== '') {
+                // 2. ถ้าไม่มี YouTube ID -> ให้ดึงไฟล์ MP4 มาแสดง
+                iframe.src = '';
+                
+                // ⚠️ ปรับโฟลเดอร์เก็บวิดีโอของคุณได้ที่นี่ (ตัวอย่าง: /static/videos/exercises/...)
+                mp4Video.src = `/static/images/exercises/${exId.trim()}.mp4`;
+                mp4Video.style.display = 'block';
+                
+                // สั่งโหลดและเล่นวิดีโอ
+                mp4Video.load();
+                mp4Video.play().catch(e => {
+                    console.log("เบราว์เซอร์บล็อกการเล่นอัตโนมัติ หรือไม่พบไฟล์วิดีโอ:", e);
+                });
+                
+                // 3. จัดการกรณี Error 404 (ไม่มีไฟล์ MP4 นี้ในโฟลเดอร์)
+                mp4Video.onerror = function() {
+                    mp4Video.style.display = 'none';
+                    mediaBox.style.display = 'none';
+                    noVideoBox.style.display = 'block';
+                };
+            } else {
+                // ไม่มีข้อมูลใดๆ เลย
+                iframe.src = '';
+                mp4Video.pause();
+                mediaBox.style.display = 'none';
+                noVideoBox.style.display = 'block';
+            }
+        }
+
         function openAssignModal(dateStr, dayNum) {
             if (!assignModal) {
                 assignModal = new bootstrap.Modal(document.getElementById('assignDayModal'));
+                
+                // หยุดเล่นวิดีโอทันทีเมื่อปิดหน้าต่าง Modal
+                document.getElementById('assignDayModal').addEventListener('hidden.bs.modal', function () {
+                    const iframe = document.getElementById('youtubePreviewFrame');
+                    const mp4Video = document.getElementById('mp4PreviewVideo');
+                    if (iframe) iframe.src = '';
+                    if (mp4Video) mp4Video.pause();
+                });
             }
 
             document.getElementById('modalTargetDate').value = dateStr;
@@ -350,9 +434,19 @@
             assignModal.show();
         }
 
-        function toggleModalFields() {
+    function toggleModalFields() {
             const isEx = document.getElementById('modalDayType').value === 'exercise';
             document.getElementById('modalExerciseGroup').style.display = isEx ? 'block' : 'none';
+            
+            if (isEx) {
+                updateVideoPreview();
+            } else {
+                // หยุดวิดีโอเมื่อสลับเป็นวันพักผ่อน
+                const iframe = document.getElementById('youtubePreviewFrame');
+                const mp4Video = document.getElementById('mp4PreviewVideo');
+                if (iframe) iframe.src = '';
+                if (mp4Video) mp4Video.pause();
+            }
         }
 
         function applyDayAssignment() {

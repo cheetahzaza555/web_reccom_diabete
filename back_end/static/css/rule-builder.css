@@ -163,6 +163,13 @@
         color: #8895a7;
         font-size: 23px;
         min-height: 45px;
+        width: 36px;
+        flex: 0 0 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        line-height: 1;
       }
       .remove:hover {
         color: #c04747;
@@ -416,7 +423,7 @@ body {font-family:'Kanit',sans-serif;background:#ffffff;margin-left:260px;}
 .swal2-popup {font-family:'Kanit',sans-serif;border-radius:16px;}
 .output-card {border:1px solid var(--border-color);border-radius:10px;padding:16px;margin-top:14px;background:#fff;min-width:0;}
 .output-heading {display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.output-heading .remove {min-height:32px;line-height:1;}
+.output-heading .remove {min-height:45px;}
 .exercise-settings {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;}
 .exercise-settings > div:last-child {grid-column:1/-1;}
 .favorite-choice {display:flex;gap:10px;align-items:center;margin-top:14px;}

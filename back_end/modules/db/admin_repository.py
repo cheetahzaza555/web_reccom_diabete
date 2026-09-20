@@ -13,6 +13,9 @@ from SPARQLWrapper import POST, SPARQLWrapper, JSON
 from modules.config import GRAPHDB_READ, GRAPHDB_WRITE
 import random
 import re
+import json
+from decimal import Decimal, InvalidOperation
+from uuid import uuid4
 
 
 
@@ -279,15 +282,38 @@ def update_user_role_in_graphdb(user_id, new_role):
 
 def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=None, mets=None, youtube_id=None):
     try: 
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("กรุณาระบุชื่อท่าออกกำลังกาย")
+        for identifier in (exercise_type, existing_id):
+            if identifier is not None and (not isinstance(identifier, str) or not re.fullmatch(r'[A-Za-z0-9_-]+', identifier)):
+                raise ValueError("รหัสท่าหรือหมวดหมู่ไม่ถูกต้อง")
+        if not exercise_type:
+            raise ValueError("กรุณาเลือกหมวดหมู่")
+        try:
+            met_value = Decimal(str(mets))
+        except InvalidOperation:
+            raise ValueError("ค่า MET ต้องเป็นตัวเลข")
+        if not met_value.is_finite() or met_value <= 0:
+            raise ValueError("ค่า MET ต้องมากกว่า 0 และเป็นตัวเลขที่มีค่าจำกัด")
+        if youtube_id is not None and not isinstance(youtube_id, str):
+            raise ValueError("รหัสวิดีโอไม่ถูกต้อง")
         sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
         base_prefix = "http://example.org/diabetes#"
         
-        final_id = existing_id if existing_id else f"17{random.randint(100, 999)}"
+        final_id = existing_id if existing_id else f"17{uuid4().hex}"
         subject_uri = f"<{base_prefix}{final_id}>"
         
         # URI ของ Class ย่อยที่เลือก (เช่น ex:Walking)
         class_uri = f"ex:{exercise_type}"
 
+        delete_clause = f"DELETE {{ {subject_uri} ?property ?old . }}" if existing_id else ""
+        where_clause = f"""WHERE {{
+            OPTIONAL {{
+                {subject_uri} ?property ?old .
+                FILTER (?property IN (rdfs:label, ex:metValue, ex:hasYoutubeID, ex:hasKindOfExercise)
+                    || (?property = rdf:type && (?old = ex:Exercise || EXISTS {{ ?old rdfs:subClassOf* ex:Exercise }})))
+            }}
+        }}""" if existing_id else ""
         insert_query = f"""
         PREFIX ex: <{base_prefix}>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -295,16 +321,18 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
         PREFIX owl: <http://www.w3.org/2002/07/owl#>
         PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-        INSERT DATA {{
+        {delete_clause}
+        INSERT {'' if existing_id else 'DATA'} {{
             {subject_uri} rdf:type owl:NamedIndividual .
             {subject_uri} rdf:type ex:Exercise .
             {subject_uri} rdf:type {class_uri} .                  # 🟢 เพิ่ม Class ย่อยตรงนี้
             
             {subject_uri} ex:hasKindOfExercise {class_uri} . # 🟢 เพิ่ม Object Property ตรงนี้
-            {subject_uri} rdfs:label "{name}" .
-            {subject_uri} ex:metValue "{float(mets)}"^^xsd:decimal .
-            {subject_uri} ex:hasYoutubeID "{youtube_id if youtube_id else ''}" .
+            {subject_uri} rdfs:label {json.dumps(name.strip(), ensure_ascii=False)} .
+            {subject_uri} ex:metValue "{format(met_value, 'f')}"^^xsd:decimal .
+            {subject_uri} ex:hasYoutubeID {json.dumps(youtube_id or '', ensure_ascii=False)} .
         }}
+        {where_clause}
         """
 
         sparql_write_client.setQuery(insert_query)

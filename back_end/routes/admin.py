@@ -175,12 +175,7 @@ def update_exercise():
         if not exercise_id or not name or not exercise_type or not mets:
             return jsonify({"success": False, "message": "กรุณากรอกข้อมูลให้ครบถ้วน"}), 400
 
-        # 💡 หลักการแก้ไขของ Ontology (GraphDB) ที่ง่ายและปลอดภัยที่สุดคือ: 
-        # 1. ลบความสัมพันธ์ (Triples) ของเก่าที่ผูกกับ ID นี้ออกทั้งหมดก่อน
-        delete_exercise_from_ontology(exercise_id)
-        
-        # 2. บันทึกไตรภาคชุดใหม่ (8 แถวมาตรฐาน) เข้าไปแทนที่โดยใช้ ID เดิม
-        # ปรับแก้ฟังก์ชัน insert_exercise_to_ontology เล็กน้อย (ตามข้อ 2 ด้านล่าง) ให้รับ ID เดิมไปเซฟซ้ำได้
+        # Validate and replace editable properties in one database update.
         result = insert_exercise_to_ontology_v2(exercise_id, name, exercise_type, mets, youtube_id)
 
         if result.get("success"):
@@ -273,8 +268,8 @@ def api_delete_category():
     if not category_id:
         return jsonify({"success": False, "message": "ไม่พบ รหัสหมวดหมู่"}), 400
 
-    success, message = delete_category_from_ontology(category_id)
-    return jsonify({"success": success, "message": message})
+    result = delete_category_from_ontology(category_id)
+    return jsonify(result), 200 if result.get("success") else 400
 
 @admin_bp.route('/frequencies', methods=['GET'])
 @admin_required

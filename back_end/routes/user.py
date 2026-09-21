@@ -76,7 +76,10 @@ def dashboard_page():
         })
 
     # 2. 🔥 เพิ่มการดึงข้อมูล Streak จาก GraphDB
-    streak_info = get_patient_streak(user_id)
+    try:
+        streak_info = get_patient_streak(user_id)
+    except Exception:
+        streak_info = None
 
     # 3. 🔥 ส่ง streak_info ไปยังหน้า HTML template (user/index.html)
     return render_template(
@@ -189,34 +192,51 @@ def save_schedule():
 @user_bp.route('/update_day_status', methods=['POST'])
 @login_required
 def update_day_status():
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or type(data.get('completed')) is not bool:
+        return jsonify(status='error', message='ข้อมูลสถานะไม่ถูกต้อง'), 400
     day_node_id = data.get('day_id')
     completed = data.get('completed')
     duration = data.get('duration', 0)
     user_id = session.get('user_id')
 
-    if not day_node_id:
+    if not isinstance(day_node_id, str) or not day_node_id:
         return jsonify({'status': 'error', 'message': 'Missing day_id'}), 400
 
-    # ตรวจสอบสิทธิ์ IDOR
-    expected_owner_fragment = f"Patient{user_id}_"
-    if expected_owner_fragment not in day_node_id:
-        return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้'}), 403
+    try:
+        # Verify ownership through the patient's stored plan relationships.
+        # DailyPlan IDs start with DailyPlan_, not Patient_.
+        plans = get_dashboard_schedule(user_id)
+        matching = [p for p in plans if p['id'] == day_node_id]
+        if not matching:
+            return jsonify(status='error', message='ไม่พบรายการนี้ในแผนของคุณ หรือไม่มีสิทธิ์เข้าถึง'), 403
+        from modules.db.streak import today_in_thailand
+        if any(p['date_obj'] != today_in_thailand() for p in matching):
+            return jsonify(status='error', message='บันทึกได้เฉพาะแผนของวันนี้'), 400
+        if any(not p['is_exercise_day'] for p in matching):
+            return jsonify(status='error', message='วันนี้เป็นวันพักตามแผน'), 400
+        before = get_patient_streak(user_id)
+    except Exception:
+        return jsonify(status='error', message='อ่านข้อมูลแผนไม่สำเร็จ กรุณาลองใหม่'), 503
+    if type(duration) is not int or not 0 <= duration <= 1440:
+        return jsonify(status='error', message='ระยะเวลาไม่ถูกต้อง'), 400
 
     # 1. อัปเดตสถานะของวันนั้น
     success = update_daily_plan_status(day_node_id, completed, duration)
 
     if success:
         # 2. 🔥 ถ้าออกกำลังกายเสร็จสมบูรณ์ คำนวณและอัปเดต Streak
-        if completed:
+        try:
             streak_result = process_patient_streak_on_complete(user_id)
-
+        except Exception:
+            return jsonify(status='error', message='บันทึกสถานะแล้ว แต่ปรับปรุง streak ไม่สำเร็จ กรุณาลองใหม่'), 503
+        if completed:
             return jsonify({
                 'status': 'success',
-                'streak_updated': True,
+                'streak_updated': streak_result['current_streak'] > before['current_streak'],
                 'current_streak': streak_result['current_streak'],
                 'max_streak': streak_result['max_streak'],
-                'message': 'บันทึกสำเร็จ! เพิ่ม Streak แล้ว 🔥'
+                'message': 'บันทึกการออกกำลังกายสำเร็จ'
             })
         
         # กรณีอัปเดตสถานะอื่นๆ สำเร็จแต่ไม่ได้นับ Streak

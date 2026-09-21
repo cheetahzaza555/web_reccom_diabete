@@ -144,7 +144,6 @@ async function fetchLastCheckup() {
             const data = await res.json();
 
             if (data && data.found) {
-                console.log("📥 Loaded Data:", data);
 
                 const setVal = (name, val) => {
                     if (!val) return;

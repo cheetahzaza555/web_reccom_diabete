@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, json, render_template, jsonify, request, session, redirect, url_for
 import calendar
+import time
 from werkzeug.security import check_password_hash, generate_password_hash
-from modules.db.connection import sparql_read
 
 from modules.db.patient_repository import  process_patient_streak_on_complete, get_patient_streak
+from modules.db.connection import sparql_read
 from modules.db.plan_repository import update_schedule_status, update_daily_exercise_plan
 from utils.security import login_required  # 🛡️ ยามเฝ้าประตูสำหรับผู้ใช้ทั่วไป
 
@@ -76,9 +77,11 @@ def dashboard_page():
         })
 
     # 2. 🔥 เพิ่มการดึงข้อมูล Streak จาก GraphDB
-    streak_info = get_patient_streak(user_id)
+    try:
+        streak_info = get_patient_streak(user_id)
+    except Exception:
+        streak_info = None
 
-    # [เพิ่มใหม่] 🌟 ดึงข้อมูลท่าออกกำลังกายที่เหมาะสมกับผู้ใช้ (เอาไว้ใช้เป็นตัวเลือกตอนเปลี่ยนท่าใน Modal)
     recommended_exercises = get_all_recommendations(f"Patient{user_id}")
 
     # 3. 🔥 ส่ง streak_info ไปยังหน้า HTML template (user/index.html)
@@ -128,7 +131,7 @@ def analyze():
     # ✅ แก้ IDOR: บังคับใช้ ID ของคนที่ล็อกอินอยู่เท่านั้น
     # ไม่เชื่อค่า data['id'] ที่ client ส่งมาเด็ดขาด ป้องกันการยัดข้อมูลให้คนไข้คนอื่น
     data['id'] = session['user_id']
-
+    print("🔍 DEBUG: กำลังประมวลผลข้อมูลสำหรับ user_id =", data)
     save_raw_patient_data(data)
     recs, warns, comorbs, complis = process_patient_realtime(data['id'], input_data=data)
     return jsonify({"status": "ok", "exercises": recs, "warnings": warns, "comorbs": comorbs, "complis": complis})
@@ -155,15 +158,16 @@ def select_plan_page(patient_id):
 
 
 @user_bp.route('/select_plan2/<patient_id>')
+@user_bp.route('/select_plan2/<patient_id>/<exercise_id>')
 @login_required
-def select_plan2_page(patient_id):
+def select_plan2_page(patient_id, exercise_id=None):
     clean_patient_id = str(patient_id).replace("Patient", "")
     clean_session_id = str(session['user_id']).replace("Patient", "")
 
     if clean_patient_id != clean_session_id:
         return "ไม่มีสิทธิ์เข้าถึงข้อมูลนี้", 403
 
-    exercise_ids_str = request.args.get('exercises', '')
+    exercise_ids_str = request.args.get('exercises', '') or exercise_id or ''
     exercise_ids = [ex.strip() for ex in exercise_ids_str.split(',') if ex.strip()]
     
     if not exercise_ids:
@@ -202,12 +206,14 @@ def save_schedule():
     user_id = session['user_id']
     
     # ✅ เปลี่ยนมารับค่า exercise_ids แบบพหูพจน์ ที่รวบรวมรหัสทั้งหมดไว้
-    exercise_ids_str = request.form.get('exercise_ids') 
+    exercise_ids_str = request.form.get('exercise_ids') or request.form.get('exercise_id')
     if not exercise_ids_str:
         return "Missing exercise selections", 400
 
     # แปลงจาก string "12025,17016" เป็น List ['12025', '17016']
     exercise_ids = [ex.strip() for ex in exercise_ids_str.split(',') if ex.strip()]
+    if not exercise_ids:
+        return "Missing exercise selections", 400
 
     exact_dates_str = request.form.getlist('exact_dates')
     if not exact_dates_str:
@@ -228,34 +234,51 @@ def save_schedule():
 @user_bp.route('/update_day_status', methods=['POST'])
 @login_required
 def update_day_status():
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or type(data.get('completed')) is not bool:
+        return jsonify(status='error', message='ข้อมูลสถานะไม่ถูกต้อง'), 400
     day_node_id = data.get('day_id')
     completed = data.get('completed')
     duration = data.get('duration', 0)
     user_id = session.get('user_id')
 
-    if not day_node_id:
+    if not isinstance(day_node_id, str) or not day_node_id:
         return jsonify({'status': 'error', 'message': 'Missing day_id'}), 400
 
-    # ตรวจสอบสิทธิ์ IDOR
-    expected_owner_fragment = f"Patient{user_id}_"
-    if expected_owner_fragment not in day_node_id:
-        return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้'}), 403
+    try:
+        # Verify ownership through the patient's stored plan relationships.
+        # DailyPlan IDs start with DailyPlan_, not Patient_.
+        plans = get_dashboard_schedule(user_id)
+        matching = [p for p in plans if p['id'] == day_node_id]
+        if not matching:
+            return jsonify(status='error', message='ไม่พบรายการนี้ในแผนของคุณ หรือไม่มีสิทธิ์เข้าถึง'), 403
+        from modules.db.streak import today_in_thailand
+        if any(p['date_obj'] != today_in_thailand() for p in matching):
+            return jsonify(status='error', message='บันทึกได้เฉพาะแผนของวันนี้'), 400
+        if any(not p['is_exercise_day'] for p in matching):
+            return jsonify(status='error', message='วันนี้เป็นวันพักตามแผน'), 400
+        before = get_patient_streak(user_id)
+    except Exception:
+        return jsonify(status='error', message='อ่านข้อมูลแผนไม่สำเร็จ กรุณาลองใหม่'), 503
+    if type(duration) is not int or not 0 <= duration <= 1440:
+        return jsonify(status='error', message='ระยะเวลาไม่ถูกต้อง'), 400
 
     # 1. อัปเดตสถานะของวันนั้น
     success = update_daily_plan_status(day_node_id, completed, duration)
 
     if success:
         # 2. 🔥 ถ้าออกกำลังกายเสร็จสมบูรณ์ คำนวณและอัปเดต Streak
-        if completed:
+        try:
             streak_result = process_patient_streak_on_complete(user_id)
-
+        except Exception:
+            return jsonify(status='error', message='บันทึกสถานะแล้ว แต่ปรับปรุง streak ไม่สำเร็จ กรุณาลองใหม่'), 503
+        if completed:
             return jsonify({
                 'status': 'success',
-                'streak_updated': True,
+                'streak_updated': streak_result['current_streak'] > before['current_streak'],
                 'current_streak': streak_result['current_streak'],
                 'max_streak': streak_result['max_streak'],
-                'message': 'บันทึกสำเร็จ! เพิ่ม Streak แล้ว 🔥'
+                'message': 'บันทึกการออกกำลังกายสำเร็จ'
             })
         
         # กรณีอัปเดตสถานะอื่นๆ สำเร็จแต่ไม่ได้นับ Streak
@@ -374,6 +397,9 @@ def update_settings():
 @user_bp.route('/api/ocr', methods=['POST'])
 @login_required
 def handle_ocr_api():
+    # ⏱️ เริ่มจับเวลาเริ่มต้นของ Request
+    start_total_time = time.time()
+
     # 1. ตรวจสอบว่าฝั่ง JavaScript ส่งไฟล์ภาพมาจริงไหม
     if 'file' not in request.files:
         return jsonify({"success": False, "message": "No file part"}), 400
@@ -383,16 +409,30 @@ def handle_ocr_api():
         return jsonify({"success": False, "message": "No selected file"}), 400
 
     try:
-        # 2. เรียกใช้งานฟังก์ชันแปลงรูปภาพที่คุณ Import มารันประมวลผล
+        # ⏱️ เริ่มจับเวลาเฉพาะช่วงเรียก Gemini OCR
+        start_ocr_time = time.time()
+
+        # 2. เรียกใช้งานฟังก์ชันแปลงรูปภาพประมวลผล
         ocr_result = process_ocr_image(file)
+
+        # ⏱️ สิ้นสุดจับเวลา
+        ocr_duration = time.time() - start_ocr_time
+        total_duration = time.time() - start_total_time
+
+        # 📊 พิมพ์ Debug Log ออก Terminal/Console
+        print("\n================ [OCR DEBUG LOG] ================")
+        print(f"⚡ เวลาที่ Gemini ใช้ประมวลผล: {ocr_duration:.2f} วินาที")
+        print(f"⏱️ เวลาประมวลผลรวมใน Backend: {total_duration:.2f} วินาที")
+        print("=================================================\n")
 
         return jsonify({
             "success": True,
-            "data": ocr_result
+            "data": ocr_result,
+            "execution_time_seconds": round(ocr_duration, 2)  # ส่งค่าเวลาไปที่ Frontend ด้วย
         })
 
     except Exception as e:
-        print(f"OCR Backend Error: {str(e)}")
+        print(f"❌ OCR Backend Error: {str(e)}")
         return jsonify({"success": False, "message": "เกิดข้อผิดพลาดในการประมวลผลภาพถ่าย"}), 500
 
 @user_bp.route('/api/update_plan_day', methods=['POST'])

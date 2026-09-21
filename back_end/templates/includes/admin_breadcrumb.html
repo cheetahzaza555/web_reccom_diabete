@@ -1,0 +1,37 @@
+{% set admin_page_names = {
+    'admin.dashboard_page': 'หน้าหลัก',
+    'admin.users_management_page': 'สิทธิ์บัญชี',
+    'admin.exercises_management_page': 'ท่าออกกำลังกาย',
+    'admin.categories_page': 'หมวดหมู่การออกกำลังกาย',
+    'admin.frequencies_page': 'ความถี่การออกกำลังกาย',
+    'admin.warning_page': 'ข้อควรระวังการออกกำลังกาย',
+    'admin.patient_warnings_page': 'คำเตือนสำหรับผู้ป่วย',
+    'admin.api_get_swrl_rules': 'กฎ SWRL',
+    'admin.new_swrl_rule': 'เพิ่มกฎใหม่',
+    'admin.setting': 'การตั้งค่า'
+} %}
+<style>
+    .admin-breadcrumb {margin:0 0 20px;font-family:inherit;font-size:14px;line-height:1.7;}
+    .admin-breadcrumb ol {display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;list-style:none;margin:0;padding:0;}
+    .admin-breadcrumb li {margin:0;padding:0;min-width:0;overflow-wrap:anywhere;}
+    .admin-breadcrumb a {color:#3366cc;text-decoration:none;}
+    .admin-breadcrumb a:hover {color:#2952a3;text-decoration:underline;}
+    .admin-breadcrumb a:focus-visible {outline:2px solid #3366cc;outline-offset:3px;border-radius:3px;}
+    .admin-breadcrumb [aria-current="page"] {color:#666;}
+    .admin-breadcrumb .admin-breadcrumb-separator {color:#94a3b8;}
+    .admin-settings-breadcrumb {padding:24px 40px 0;}
+    @media(max-width:768px) {.admin-settings-breadcrumb {padding:76px 24px 0;}}
+</style>
+<nav class="admin-breadcrumb" aria-label="เส้นทางนำทาง">
+    <ol>
+        {% if request.endpoint != 'admin.dashboard_page' %}
+        <li><a href="{{ url_for('admin.dashboard_page') }}">หน้าหลัก</a></li>
+        <li class="admin-breadcrumb-separator" aria-hidden="true">›</li>
+        {% endif %}
+        {% if request.endpoint == 'admin.new_swrl_rule' %}
+        <li><a href="{{ url_for('admin.api_get_swrl_rules') }}">กฎ SWRL</a></li>
+        <li class="admin-breadcrumb-separator" aria-hidden="true">›</li>
+        {% endif %}
+        <li aria-current="page">{{ admin_page_names.get(request.endpoint, 'แอดมิน') }}</li>
+    </ol>
+</nav>

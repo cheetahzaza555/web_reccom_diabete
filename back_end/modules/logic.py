@@ -10,11 +10,11 @@ from modules.db import (
     get_thai_text,
     save_results_to_db
 )
-from modules.ontology import onto, ex
+from modules.ontology import load_ontology
 
 
 def process_patient_realtime(patient_id, input_data=None):
-    if not validate_id(patient_id) or not onto:
+    if not validate_id(patient_id):
         return [], [], [], []
 
     # ตัดคำว่า Patient ออกก่อน (กันเหนียว)
@@ -24,12 +24,17 @@ def process_patient_realtime(patient_id, input_data=None):
 
     # ✅ ประกาศตัวแปรทั้งหมดที่อาจถูกสร้างใน onto ไว้ล่วงหน้า
     # เพื่อให้ finally block ลบทิ้งได้ครบ ไม่เหลือค้างใน memory
+    onto = None
     p = None
     pe = None
     le = None
     created_temp_entities = []  # เก็บ entity ใหม่ที่สร้างชั่วคราว (t_obj/sp_obj/f_obj ที่หาไม่เจอใน ontology)
 
     try:
+        # Fetch a fresh snapshot so committed rule changes apply on every run.
+        onto = load_ontology()
+        ex = onto.get_namespace("http://example.org/diabetes#")
+
         # 1. เตรียมตัวแปร
         data = {}
         target_specials = []
@@ -195,7 +200,7 @@ def process_patient_realtime(patient_id, input_data=None):
                 p.favoriteExercise.append(f_obj)
 
         print("🧠 Running Reasoner...")
-        sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
+        sync_reasoner_pellet(onto.world, infer_property_values=True, infer_data_property_values=True)
 
         print("🔍 Extracting Results...")
         recs, warns, comorbs, complis = [], [], [], []
@@ -307,3 +312,5 @@ def process_patient_realtime(patient_id, input_data=None):
                     destroy_entity(entity)
                 except Exception as e:
                     print(f"⚠️ Could not destroy temp entity '{entity}': {e}")
+        if onto is not None:
+            onto.world.close()

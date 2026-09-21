@@ -26,28 +26,33 @@
             line-height: 1.6;
         }
 
-        /* --- Top Bar ให้เหมือนหน้าผลตรวจสุขภาพเป๊ะๆ (แก้เฉพาะหน้านี้) --- */
+        /* --- Header Banner จัดข้อความให้อยู่ตรงกลาง --- */
         .header-banner {
             background-color: #85A2FF;
             color: #FFFFFF;
             font-size: 40px;
             font-family: 'Kanit', sans-serif;
             font-weight: bold;
-            padding: 20px 16px;
+            padding: 20px 0;
             margin-bottom: 40px;
-            height: 100px;
+            min-height: 100px;
             display: flex;
-            align-items: center; /* จัดให้อยู่กึ่งกลางแนวตั้ง */
+            align-items: center;
         }
 
-        /* --- Minimal Cards (ไม่มี Animation) --- */
+        /* --- Minimal Cards --- */
         .minimal-card {
             background: white;
             border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 30px 25px;
             height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
         }
+        
         .icon-circle {
             width: 60px;
             height: 60px;
@@ -60,6 +65,7 @@
             font-size: 24px;
             margin: 0 auto 20px;
         }
+        
         .badge-minimal {
             background-color: #f0f4fc;
             color: var(--primary-dark);
@@ -67,9 +73,10 @@
             padding: 6px 12px;
             border-radius: 8px;
             font-size: 0.8rem;
+            display: inline-block;
         }
 
-        /* --- Symptoms Minimal (ไม่มี Animation) --- */
+        /* --- Symptoms Minimal --- */
         .symptom-box {
             background: white;
             border: 1px solid var(--card-border);
@@ -77,7 +84,12 @@
             padding: 20px 15px;
             text-align: center;
             height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
+        
         .symptom-icon {
             font-size: 28px;
             color: var(--primary-light);
@@ -92,9 +104,11 @@
             padding: 25px;
             height: 100%;
         }
+        
         .myth-section {
             margin-bottom: 15px;
         }
+        
         .fact-section {
             background-color: #f8fafc;
             padding: 15px;
@@ -111,22 +125,27 @@
             font-weight: 500;
             border: none;
         }
+        
         .btn-theme:hover {
             background-color: #7792e3;
             color: white;
         }
+        
         .section-header {
             color: var(--primary-dark);
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             font-size: 1.25rem;
         }
+        
         .cta-box {
             background: white;
             border-radius: 12px;
             padding: 40px 30px;
-            text-align: center;
             border: 1px solid var(--card-border);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
     </style>
 </head>
@@ -134,14 +153,18 @@
 
     {% include 'includes/navbar_user.html' %}
 
+    <!-- ปรับแถบ Header ให้กว้างขนานกับ Container ด้านล่าง -->
     <div class="header-banner">
-        รู้จักเบาหวาน
+        <div class="container">
+            <div>รู้จักเบาหวาน</div>
+        </div>
     </div>
 
     <div class="container mb-5">
         
-        <div class="row g-4 mb-5">
-            <div class="col-12 mb-2">
+        <!-- ประเภทของเบาหวาน -->
+        <div class="row g-4 mb-5 justify-content-center">
+            <div class="col-12 text-center mb-2">
                 <h4 class="section-header"><i class="fas fa-dna me-2 opacity-75"></i>ประเภทของเบาหวาน</h4>
                 <p class="text-muted small">เบาหวานไม่ได้มีแค่แบบเดียว มารู้จักความแตกต่างกัน</p>
             </div>
@@ -158,7 +181,7 @@
             </div>
 
             <div class="col-md-4">
-                <div class="minimal-card text-center";">
+                <div class="minimal-card text-center">
                     <div class="icon-circle"><i class="fas fa-hamburger"></i></div>
                     <h6 class="fw-bold mb-3">เบาหวานชนิดที่ 2</h6>
                     <div class="mb-3"><span class="badge-minimal">พบบ่อยที่สุด</span></div>
@@ -180,52 +203,54 @@
             </div>
         </div>
 
-        <div class="row mb-5 pt-2">
-            <div class="col-12 mb-3">
-                <h4 class="section-header"><i class="fas fa-heartbeat me-2 opacity-75"></i>7 สัญญาณเตือน!</h4>
+        <!-- 7 สัญญาณเตือน (หมายเหตุ: มี 6 การ์ด) -->
+        <div class="row mb-5 pt-2 justify-content-center">
+            <div class="col-12 text-center mb-3">
+                <h4 class="section-header"><i class="fas fa-heartbeat me-2 opacity-75"></i>6 สัญญาณเตือน!</h4>
                 <p class="text-muted small">หากคุณมีอาการเหล่านี้บ่อยครั้ง ควรปรึกษาแพทย์เพื่อตรวจเช็ค</p>
             </div>
             
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-tint"></i></div>
-                    <h6 class="fw-bold mb-1 fs-6">ปัสสาวะบ่อย</h6>
+                    <h6 class="fw-bold mb-0 fs-6">ปัสสาวะบ่อย</h6>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-glass-water"></i></div>
-                    <h6 class="fw-bold mb-1 fs-6">กระหายน้ำมาก</h6>
+                    <h6 class="fw-bold mb-0 fs-6">กระหายน้ำมาก</h6>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-weight-scale"></i></div>
-                    <h6 class="fw-bold mb-1 fs-6">น้ำหนักลด</h6>
+                    <h6 class="fw-bold mb-0 fs-6">น้ำหนักลด</h6>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-eye-slash"></i></div>
-                    <h6 class="fw-bold mb-1 fs-6">ตามัว</h6>
+                    <h6 class="fw-bold mb-0 fs-6">ตามัว</h6>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-battery-quarter"></i></div>
-                    <h6 class="fw-bold mb-1 fs-6">อ่อนเพลีย</h6>
+                    <h6 class="fw-bold mb-0 fs-6">อ่อนเพลีย</h6>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
                     <div class="symptom-icon"><i class="fas fa-band-aid"></i></div>
-                    <h6 class="fw-bold mb-1 fs-6">แผลหายช้า</h6>
+                    <h6 class="fw-bold mb-0 fs-6">แผลหายช้า</h6>
                 </div>
             </div>
         </div>
 
-        <div class="row mb-5 pt-2">
-            <div class="col-12 mb-3">
+        <!-- จริง หรือ หลอก? -->
+        <div class="row mb-5 pt-2 justify-content-center">
+            <div class="col-12 text-center mb-3">
                 <h4 class="section-header"><i class="fas fa-question-circle me-2 opacity-75"></i>จริง หรือ หลอก?</h4>
                 <p class="text-muted small">ความจริงที่คุณอาจเข้าใจผิดเกี่ยวกับโรคเบาหวาน</p>
             </div>
@@ -270,7 +295,8 @@
             </div>
         </div>
 
-        <div class="cta-box mt-2">
+        <!-- CTA Box -->
+        <div class="cta-box text-center mt-2">
             <h5 class="fw-bold mb-2" style="color: var(--primary-dark);">สุขภาพดี เริ่มต้นที่ตัวคุณ!</h5>
             <p class="text-muted small mb-4">เรียนรู้วิธีการออกกำลังกายและดูแลตัวเองอย่างถูกต้องเพื่อควบคุมระดับน้ำตาล</p>
             <a href="/" class="btn btn-theme px-4 py-2">

@@ -184,7 +184,7 @@ def get_all_exercises_for_library():
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-    SELECT ?id ?name  ?mets ?youtube_id (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
+    SELECT ?id ?name ?mets ?youtube_id (GROUP_CONCAT(DISTINCT ?typeUri; separator=",") AS ?allTypes)
     WHERE {
         ?s a ?typeUri .
         ?typeUri rdfs:subClassOf* ex:Exercise . 
@@ -204,6 +204,15 @@ def get_all_exercises_for_library():
 
         exercises = []
 
+        # 🟢 รายชื่อ Class แม่/กลาง ที่เราไม่ต้องการเอานำมาเป็นประเภทหลักแสดงบนหน้าเว็บ
+        general_classes = {
+            'Exercise', 'Aerobic', 
+            'NonWeightBearingAerobicExercise', 
+            'WeightBearingAerobicExercise', 
+            'NonWeightBearingAerobicSport',
+            'Strength', 'Flexibility'
+        }
+
         for r in results["results"]["bindings"]:
             def val(key):
                 return r[key]["value"] if key in r else ""
@@ -211,13 +220,21 @@ def get_all_exercises_for_library():
             types_list = val("allTypes").split(',')
             raw_names = [t.split('#')[-1] for t in types_list]
 
-            chosen_name = _choose_category(raw_names)
+            # 🟢 1. ดึงคลาสเฉพาะ (คลาสลูก) ที่ไม่อยู่ใน general_classes (เช่น 'sleep')
+            specific_classes = [t for t in raw_names if t not in general_classes]
+
+            # 🟢 2. ถ้ามีคลาสเฉพาะ ให้ใช้คลาสนั้น ถ้าไม่มีค่อยกลับไปใช้ _choose_category(raw_names) หรือตัวแรก
+            if specific_classes:
+                chosen_name = specific_classes[0]
+            else:
+                chosen_name = _choose_category(raw_names) if '_choose_category' in globals() else raw_names[0]
+
             img_file = _get_image_for_category(chosen_name)
 
             exercises.append({
                 "id": val("id"),
                 "name": val("name") or val("id"),
-                "original_type": chosen_name,
+                "original_type": chosen_name,  # 👈 ตรงนี้จะได้ค่า "sleep" แล้วครับ!
                 "all_categories": raw_names,
                 "img": f"/static/images/exercises/{img_file}",
                 "mets": float(val("mets")) if val("mets") else 0,

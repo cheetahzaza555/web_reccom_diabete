@@ -1,7 +1,8 @@
 from flask import Blueprint, redirect, render_template, jsonify, request, session, url_for
-from modules.db.admin_repository import delete_exercise_from_ontology, insert_exercise_to_ontology, insert_exercise_to_ontology_v2
+from modules.db.admin_repository import delete_avoidance, delete_category_from_ontology, delete_exercise_from_ontology, delete_frequency, delete_warning, get_all_categories_for_dropdown, get_all_categories_from_ontology, get_avoidance_page, get_frequencies, insert_exercise_to_ontology, insert_exercise_to_ontology_v2, save_or_update_avoidance, save_or_update_avoidance, save_or_update_frequency, save_or_update_warning, update_category_hierarchy_in_ontology, get_patient_warning
 from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db
 from modules.db.exercise_repository import get_all_exercises_for_library
+from modules.db.swrl import *
 from utils.security import admin_required  # 🛡️ เปิดใช้งานยามเฝ้าประตู
 from werkzeug.security import check_password_hash, generate_password_hash
 import random
@@ -105,13 +106,14 @@ def update_user_role():
         return jsonify({"success": False, "message": f"หลังบ้านขัดข้อง: {message}"}), 500
     
 @admin_bp.route("/exercises", methods=["GET"])
-@admin_required  # 🔒 บล็อกถาวร พอล็อกเอาต์แล้วเปิดหน้านี้จะโดนเด้งกลับหน้าแรกทันที
+@admin_required 
 def exercises_management_page():
     return render_template(
         "admin/exercises.html",
         username=session.get("username"),
         role=session.get("role"),
-        exercises=get_all_exercises_for_library()
+        exercises=get_all_exercises_for_library(),
+        categories=get_all_categories_for_dropdown()
     )       
     
 @admin_bp.route('/exercises/add', methods=['POST'])
@@ -173,12 +175,7 @@ def update_exercise():
         if not exercise_id or not name or not exercise_type or not mets:
             return jsonify({"success": False, "message": "กรุณากรอกข้อมูลให้ครบถ้วน"}), 400
 
-        # 💡 หลักการแก้ไขของ Ontology (GraphDB) ที่ง่ายและปลอดภัยที่สุดคือ: 
-        # 1. ลบความสัมพันธ์ (Triples) ของเก่าที่ผูกกับ ID นี้ออกทั้งหมดก่อน
-        delete_exercise_from_ontology(exercise_id)
-        
-        # 2. บันทึกไตรภาคชุดใหม่ (8 แถวมาตรฐาน) เข้าไปแทนที่โดยใช้ ID เดิม
-        # ปรับแก้ฟังก์ชัน insert_exercise_to_ontology เล็กน้อย (ตามข้อ 2 ด้านล่าง) ให้รับ ID เดิมไปเซฟซ้ำได้
+        # Validate and replace editable properties in one database update.
         result = insert_exercise_to_ontology_v2(exercise_id, name, exercise_type, mets, youtube_id)
 
         if result.get("success"):
@@ -224,3 +221,311 @@ def update_admin_settings():
         return jsonify({"status": "success", "message": "อัปเดตข้อมูลผู้ดูแลระบบสำเร็จ"})
     else:
         return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500
+
+@admin_bp.route('/category', methods=['GET'])
+@admin_required
+def categories_page():
+    # ดึงข้อมูลหมวดหมู่จริงจาก GraphDB
+    categories_data = get_all_categories_from_ontology()
+    return render_template('admin/edit_category.html', categories=categories_data)
+
+@admin_bp.route('/api/category/update', methods=['POST'])
+@admin_required
+def api_update_category_hierarchy():
+    """API Endpoint สำหรับแก้ไข/อัปเดตสายตระกูลและชื่อหมวดหมู่"""
+    try:
+        data = request.get_json()
+        
+        category_id = data.get('category_id')          # เช่น "Walking"
+        parent_category_id = data.get('parent_id')     # เช่น "Aerobic"
+        label_th = data.get('label_th')                 # เช่น "การเดิน" (ส่งหรือไม่ส่งก็ได้)
+
+        # Validation ตรวจสอบข้อมูลจำเป็น
+        if not category_id or not parent_category_id:
+            return jsonify({
+                "success": False, 
+                "message": "กรุณาระบุ category_id และ parent_id ให้ครบถ้วน"
+            }), 400
+
+        # เรียกใช้ฟังก์ชัน GraphDB ที่เราเตรียมไว้
+        result = update_category_hierarchy_in_ontology(category_id, parent_category_id, label_th)
+
+        if result.get("success"):
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
+
+    except Exception as e:
+        print(f"❌ API Error: {e}")
+        return jsonify({"success": False, "message": f"เกิดข้อผิดพลาดที่เซิร์ฟเวอร์: {str(e)}"}), 500
+
+@admin_bp.route('/api/categories/delete', methods=['POST'])
+@admin_required
+def api_delete_category():
+    data = request.json
+    category_id = data.get('category_id')
+    
+    if not category_id:
+        return jsonify({"success": False, "message": "ไม่พบ รหัสหมวดหมู่"}), 400
+
+    result = delete_category_from_ontology(category_id)
+    return jsonify(result), 200 if result.get("success") else 400
+
+@admin_bp.route('/frequencies', methods=['GET'])
+@admin_required
+def frequencies_page():
+    frequencies = get_frequencies()
+    return render_template('admin/frequency.html', frequencies=frequencies["data"])
+
+@admin_bp.route('/api/frequency/update', methods=['POST'])
+@admin_required
+def api_save_or_update_frequency():
+    data = request.json or {}
+    
+    freq_id = data.get('freq_id', '').strip()
+    description = data.get('description', '').strip()
+
+    # เช็คแค่ freq_id (เพราะไม่ใช้ label แล้ว)
+    if not freq_id:
+        return jsonify({
+            "success": False, 
+            "message": "กรุณากรอก Frequency ID"
+        }), 400
+
+    result = save_or_update_frequency(
+        freq_id=freq_id,
+        description=description
+    )
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+    
+@admin_bp.route('/api/frequency/delete', methods=['DELETE', 'POST'])
+@admin_required
+def api_delete_frequency():
+    data = request.json or {}
+    
+    freq_id = data.get('freq_id', '').strip()
+
+    if not freq_id:
+        return jsonify({
+            "success": False, 
+            "message": "กรุณาระบุ Frequency ID ที่ต้องการลบ"
+        }), 400
+
+    result = delete_frequency(freq_id=freq_id)
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+@admin_bp.route('/warning', methods=['GET'])
+@admin_required
+def warning_page():
+    data = get_avoidance_page()
+    return render_template('admin/warning_avoid.html', warnings=data["data"])
+
+@admin_bp.route('/api/warning/update', methods=['POST'])
+@admin_required
+def api_update_warning():
+    data = request.json or {}
+    
+    warning_id = data.get('id', '').strip()
+    description = data.get('description', '').strip()
+
+    if not warning_id:
+        return jsonify({
+            "success": False, 
+            "message": "กรุณาระบุ Warning ID"
+        }), 400
+
+    result = save_or_update_avoidance(
+        avoid_id=warning_id,
+        description=description
+    )
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+@admin_bp.route('/api/warning/delete', methods=['POST'])
+@admin_required
+def api_delete_warning():
+    data = request.json or {}
+        
+    avoid_id = data.get('warning_id', '').strip()
+    
+    result = delete_avoidance(avoid_id=avoid_id)
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+@admin_bp.route('/patient_warning', methods=['GET'])
+@admin_required
+def patient_warnings_page():
+    data = get_patient_warning()
+    return render_template('admin/warning_patient.html', warnings=data["data"])
+
+@admin_bp.route('/api/patient_warning/update', methods=['POST'])
+@admin_required
+def api_update_patient_warning():
+    data = request.json or {}
+    
+    warning_id = data.get('id', '').strip()
+    description = data.get('description', '').strip()
+
+    if not warning_id:
+        return jsonify({
+            "success": False, 
+            "message": "กรุณาระบุ Warning ID"
+        }), 400
+
+    result = save_or_update_warning(
+        warning_id=warning_id,
+        description=description
+    )
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+
+@admin_bp.route('/api/patient_warning/delete', methods=['POST'])
+@admin_required
+def api_delete_patient_warning():
+    data = request.json or {}
+        
+    warning_id = data.get('warning_id', '').strip()
+    
+    result = delete_warning(warning_id=warning_id)
+
+    if result.get("success"):
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
+
+@admin_bp.route('/swrl', methods=['GET'])
+@admin_required
+def api_get_swrl_rules():
+    """Endpoint สำหรับดึงกฎ SWRL ไปโชว์บนหน้าเว็บ Admin"""
+    result = get_all_swrl_rules()
+    if result["success"]:
+        return render_template('admin/swrl.html', swrl_rules=result["data"]), 200
+    return jsonify(result), 500
+
+@admin_bp.route('/swrl/new', methods=['GET'])
+@admin_required
+def new_swrl_rule():
+    try:
+        catalog = get_builder_catalog()
+    except Exception:
+        return render_template('admin/rule_builder.html', catalog=None,
+                               load_error='โหลดรายการจากฐานข้อมูลไม่สำเร็จ กรุณาลองใหม่'), 503
+    return render_template('admin/rule_builder.html', catalog=catalog, load_error=None)
+
+
+@admin_bp.route('/api/swrl/rules/builder', methods=['POST'])
+@admin_required
+def save_builder_rule():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(success=False, message='รูปแบบข้อมูลไม่ถูกต้อง'), 400
+    try:
+        catalog = get_builder_catalog()
+    except Exception:
+        return jsonify(success=False, message='ตรวจสอบรายการจากฐานข้อมูลไม่ได้ กรุณาลองใหม่'), 503
+    try:
+        compiled = compile_builder_rule(data, catalog)
+    except ValueError as exc:
+        return jsonify(success=False, message=str(exc)), 400
+    result = add_swrl_rule(**compiled)
+    return jsonify(result), 200 if result.get('success') else 400
+
+
+# 1.5 POST: Preview/Dry-run กฎก่อนบันทึกจริง (ไม่เขียนลง GraphDB)
+@admin_bp.route('/api/swrl/rules/preview', methods=['POST'])
+@admin_required
+def api_preview_swrl_rule():
+    data = request.get_json() or {}
+    swrl_expression = data.get('swrl_expression')
+
+    if not swrl_expression:
+        return jsonify({"success": False, "message": "กรุณาระบุ swrl_expression"}), 400
+
+    result = preview_swrl_rule(swrl_expression)
+    return jsonify({"success": True, **result}), 200
+
+
+# 2. POST: เพิ่มกฎ SWRL ใหม่
+@admin_bp.route('/api/swrl/rules/add', methods=['POST'])
+@admin_required
+def api_add_swrl_rule():
+    data = request.get_json() or {}
+    
+    rule_label = data.get('rule_label')
+    comment = data.get('comment', '')
+    swrl_expression = data.get('swrl_expression')
+    
+    if not rule_label or not swrl_expression:
+        return jsonify({"success": False, "message": "กรุณาระบุ rule_label และ swrl_expression"}), 400
+        
+    result = add_swrl_rule(
+        rule_label=rule_label,
+        comment=comment,
+        swrl_expression=swrl_expression
+    )
+
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
+
+
+# 3. PUT: แก้ไขรายละเอียดกฎ SWRL
+@admin_bp.route('/api/swrl/rules/update', methods=['PUT'])
+@admin_required
+def api_update_swrl_rule():
+    data = request.get_json() or {}
+    
+    rule_uri = data.get('rule_uri')
+    rule_label = data.get('rule_label')
+    comment = data.get('comment', '')
+    swrl_expression = data.get('swrl_expression')
+    is_enabled = data.get('is_enabled', 'true')
+    
+    if not rule_uri or not rule_label or not swrl_expression:
+        return jsonify({"success": False, "message": "ข้อมูลไม่ครบถ้วน (ต้องการ rule_uri, rule_label, swrl_expression)"}), 400
+        
+    result = update_swrl_rule(
+        rule_uri=rule_uri,
+        rule_label=rule_label,
+        comment=comment,
+        swrl_expression=swrl_expression,
+        is_enabled=is_enabled
+    )
+
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
+
+
+# 4. DELETE: ลบกฎ SWRL
+@admin_bp.route('/api/swrl/rules/delete', methods=['DELETE'])
+@admin_required
+def api_delete_swrl_rule():
+    # รองรับทั้ง Query Param (?rule_uri=...) และ JSON Body
+    data = request.get_json() or {}
+    rule_uri = request.args.get('rule_uri') or data.get('rule_uri')
+    rule_label = request.args.get('rule_label') or data.get('rule_label')
+    
+    if not rule_uri and not rule_label:
+        return jsonify({"success": False, "message": "กรุณาระบุ rule_uri หรือ rule_label ที่ต้องการลบ"}), 400
+        
+    result = delete_swrl_rule(rule_uri=rule_uri, rule_label=rule_label)
+
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code

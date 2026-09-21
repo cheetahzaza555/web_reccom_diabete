@@ -9,6 +9,10 @@ from .connection import sparql_read, sparql_write, escape_sparql, safe_get_name
 
 
 def generate_30_days_plan(patient_id, exercise_ids, exact_dates_list, daily_target_minutes):
+    if isinstance(exercise_ids, str):
+        exercise_ids = [exercise_ids]
+    if not exercise_ids:
+        return False
     print(f"👉 เช็กค่า exercise_ids ที่รับมา: {exercise_ids}")
     pid = f"Patient{patient_id}"  # ใช้ ID ดั้งเดิม
     start_date = datetime.datetime.today().date()
@@ -274,6 +278,8 @@ def update_daily_exercise_plan(day_node_id, is_exercise, new_exercise_id=None, d
     """
     อัปเดตสลับวันพัก/วันออกกำลังกาย และเปลี่ยนท่าออกกำลังกายใน GraphDB
     """
+    from .streak import today_in_thailand
+    today = today_in_thailand().isoformat()
     status = "Pending" if is_exercise else "Rest"
     target_mins = duration if is_exercise else 0
 
@@ -297,6 +303,10 @@ def update_daily_exercise_plan(day_node_id, is_exercise, new_exercise_id=None, d
     }}
     WHERE {{
         ex:{day_node_id} a ex:DailyPlan .
+        ex:{day_node_id} ex:planDate ?date .
+        FILTER (?date >= "{today}"^^xsd:date)
+        FILTER NOT EXISTS {{ ex:{day_node_id} ex:planStatus "Completed" }}
+        FILTER NOT EXISTS {{ ex:{day_node_id} ex:planStatus "Missed" }}
         OPTIONAL {{ ex:{day_node_id} ex:planStatus ?oldStatus }}
         OPTIONAL {{ ex:{day_node_id} ex:durationMinutes ?oldDur }}
         OPTIONAL {{ ex:{day_node_id} ex:hasScheduledExercise ?oldEx }}

@@ -8,8 +8,12 @@ import datetime
 from .connection import sparql_read, sparql_write, escape_sparql, safe_get_name
 
 
-def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_target_minutes):
-    print(f"👉 เช็กค่า exercise_id ที่รับมา: '{exercise_id}'")
+def generate_30_days_plan(patient_id, exercise_ids, exact_dates_list, daily_target_minutes):
+    if isinstance(exercise_ids, str):
+        exercise_ids = [exercise_ids]
+    if not exercise_ids:
+        return False
+    print(f"👉 เช็กค่า exercise_ids ที่รับมา: {exercise_ids}")
     pid = f"Patient{patient_id}"  # ใช้ ID ดั้งเดิม
     start_date = datetime.datetime.today().date()
 
@@ -28,6 +32,8 @@ def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_targe
     """
 
     current_weekly_node = ""
+    exercise_counter = 0  # ✅ เพิ่มตัวแปรนับจำนวนวันออกกำลังกาย สำหรับสลับท่า
+
     for i in range(30):
         current_date = start_date + datetime.timedelta(days=i)
 
@@ -56,7 +62,11 @@ def generate_30_days_plan(patient_id, exercise_id, exact_dates_list, daily_targe
         """
 
         if is_exercise:
-            triples += f"{day_node} ex:hasScheduledExercise ex:{escape_sparql(exercise_id)} .\n"
+            # ✅ ดึงไอดีท่าออกกำลังกายมาสลับใช้งานแบบ Round-Robin
+            current_ex_id = exercise_ids[exercise_counter % len(exercise_ids)]
+            triples += f"{day_node} ex:hasScheduledExercise ex:{escape_sparql(current_ex_id)} .\n"
+            
+            exercise_counter += 1  # ✅ บวกตัวนับขึ้น 1 เพื่อให้วันถัดไปใช้ท่าต่อไปใน List
 
     insert_query = f"""
     PREFIX ex: <http://example.org/diabetes#>
@@ -263,3 +273,49 @@ def update_schedule_status(plan_id, new_status):
     """
     # รันคำสั่ง SPARQL UPDATE ผ่านตัวเชื่อมต่อ GraphDB ของคุณ
     # execute_sparql_update(sparql_query)
+
+def update_daily_exercise_plan(day_node_id, is_exercise, new_exercise_id=None, duration=30):
+    """
+    อัปเดตสลับวันพัก/วันออกกำลังกาย และเปลี่ยนท่าออกกำลังกายใน GraphDB
+    """
+    from .streak import today_in_thailand
+    today = today_in_thailand().isoformat()
+    status = "Pending" if is_exercise else "Rest"
+    target_mins = duration if is_exercise else 0
+
+    exercise_insert = ""
+    if is_exercise and new_exercise_id:
+        exercise_insert = f"ex:{day_node_id} ex:hasScheduledExercise ex:{escape_sparql(new_exercise_id)} ."
+
+    query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    DELETE {{
+        ex:{day_node_id} ex:planStatus ?oldStatus .
+        ex:{day_node_id} ex:durationMinutes ?oldDur .
+        ex:{day_node_id} ex:hasScheduledExercise ?oldEx .
+    }}
+    INSERT {{
+        ex:{day_node_id} ex:planStatus "{status}" .
+        ex:{day_node_id} ex:durationMinutes "{target_mins}"^^xsd:integer .
+        {exercise_insert}
+    }}
+    WHERE {{
+        ex:{day_node_id} a ex:DailyPlan .
+        ex:{day_node_id} ex:planDate ?date .
+        FILTER (?date >= "{today}"^^xsd:date)
+        FILTER NOT EXISTS {{ ex:{day_node_id} ex:planStatus "Completed" }}
+        FILTER NOT EXISTS {{ ex:{day_node_id} ex:planStatus "Missed" }}
+        OPTIONAL {{ ex:{day_node_id} ex:planStatus ?oldStatus }}
+        OPTIONAL {{ ex:{day_node_id} ex:durationMinutes ?oldDur }}
+        OPTIONAL {{ ex:{day_node_id} ex:hasScheduledExercise ?oldEx }}
+    }}
+    """
+    try:
+        sparql_write.setQuery(query)
+        sparql_write.query()
+        return True
+    except Exception as e:
+        print(f"❌ Error updating daily exercise plan: {e}")
+        return False

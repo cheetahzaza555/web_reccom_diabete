@@ -11,6 +11,38 @@
 
     <!-- CSS ที่แยกออกมา -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/rec_1.css') }}">
+    
+    <style>
+        /* ตกแต่ง Breadcrumb */
+        .breadcrumb {
+            --bs-breadcrumb-divider: '›'; /* เปลี่ยนตัวคั่นเป็นลูกศร */
+            font-size: 0.9rem;
+        }
+        .breadcrumb-item a {
+            transition: color 0.2s;
+        }
+        .breadcrumb-item a:hover {
+            color: #4f7cff !important;
+        }
+
+/* บังคับให้อนิเมชันหมุนทำงานตลอดเวลา */
+        @keyframes customSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spin-loader {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            vertical-align: -0.125em;
+            border: 0.2em solid currentColor;
+            border-right-color: transparent !important;
+            border-radius: 50%;
+            animation: customSpin 0.75s linear infinite !important; /* สั่งหมุนตลอดเวลา */
+        }
+
+    </style>
 </head>
 <body>
 
@@ -26,6 +58,14 @@
                     <div class="form-content">
 
                         <div id="step1">
+                            <!-- Breadcrumb Step 1 -->
+                            <nav aria-label="breadcrumb" class="mb-3">
+                                <ol class="breadcrumb mb-0 bg-transparent p-0">
+                                    <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                    <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">ผลตรวจสุขภาพ</li>
+                                </ol>
+                            </nav>
+
                             <div class="row gy-4">
                                 <div class="col-lg-6">
                                     <div class="form-section">
@@ -129,6 +169,15 @@
                         <div id="step2" style="display:none;">
                             <div class="row justify-content-center">
                                 <div class="col-lg-10">
+                                    <!-- Breadcrumb Step 2 -->
+                                    <nav aria-label="breadcrumb" class="mb-3">
+                                        <ol class="breadcrumb mb-0 bg-transparent p-0">
+                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                            <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
+                                            <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">โรคแทรกซ้อน</li>
+                                        </ol>
+                                    </nav>
+
                                     <h3 class="mb-2 fw-bold text-primary">โรคแทรกซ้อน</h3>
                                     <p class="text-muted mb-4">เลือกอาการที่คุณมี (ถ้าไม่มีให้เลือกข้อสุดท้าย)</p>
                                     <div class="row">
@@ -145,6 +194,16 @@
                         <div id="step3" style="display:none;">
                             <div class="row justify-content-center">
                                 <div class="col-lg-10">
+                                    <!-- Breadcrumb Step 3 -->
+                                    <nav aria-label="breadcrumb" class="mb-3">
+                                        <ol class="breadcrumb mb-0 bg-transparent p-0">
+                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                            <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
+                                            <li class="breadcrumb-item text-muted">โรคแทรกซ้อน</li>
+                                            <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">กิจกรรมที่สนใจ</li>
+                                        </ol>
+                                    </nav>
+
                                     <h3 class="mb-2 fw-bold text-primary">กิจกรรมที่สนใจ</h3>
                                     <p class="text-muted mb-4">เลือกประเภทที่คุณชอบ (อ้างอิงจากฐานข้อมูล)</p>
                                     <div class="row g-3">
@@ -170,6 +229,17 @@
                         <div id="step4" style="display:none;">
                             <div class="row justify-content-center">
                                 <div class="col-xl-9 col-lg-10">
+
+<!-- Breadcrumb Step 4 (บังคับชิดซ้ายและเรียงลำดับให้ครบ) -->
+<nav aria-label="breadcrumb" class="mb-4 text-start w-100">
+    <ol class="breadcrumb mb-0 bg-transparent p-0 justify-content-start">
+        <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+        <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
+        <li class="breadcrumb-item text-muted">โรคแทรกซ้อน</li>
+        <li class="breadcrumb-item text-muted">กิจกรรมที่สนใจ</li>
+        <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">สรุปผลการวิเคราะห์</li>
+    </ol>
+</nav>
 
                                     <div class="text-center mb-5 animate__animated animate__fadeIn">
                                         <div class="mb-2">
@@ -304,9 +374,13 @@
         </div>
     </div>
 
+    <!-- 1. โหลด Bootstrap Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- JS ที่แยกออกมา -->
+    <!-- 2. โหลด SweetAlert2 (ต้องอยู่ตรงนี้และอยู่ก่อน rec_1.js เสมอ) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- 3. โหลด JS หลักของหน้า -->
     <script src="{{ url_for('static', filename='js/rec_1.js') }}"></script>
 </body>
 </html>

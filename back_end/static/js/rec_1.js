@@ -272,19 +272,28 @@ function updateUI() {
     const btnNext = document.getElementById('btnNext');
     const title = document.getElementById('pageTitle');
 
+    // คืนค่าปุ่มให้กดได้เสมอเมื่อสลับหน้า
+    btnNext.disabled = false;
+
     if (currentStep === 1) {
-        btnBack.innerText = 'ยกเลิก'; btnNext.innerText = 'ถัดไป';
-        btnNext.onclick = handleNext; title.innerText = 'ผลตรวจสุขภาพ (1/3)';
+        btnBack.innerText = 'ยกเลิก'; 
+        btnNext.innerHTML = 'ถัดไป';
+        btnNext.onclick = handleNext; 
+        title.innerText = 'ผลตรวจสุขภาพ (1/3)';
     } else if (currentStep === 2) {
-        btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'ถัดไป';
-        btnNext.onclick = handleNext; title.innerText = 'โรคแทรกซ้อน (2/3)';
+        btnBack.innerText = 'ย้อนกลับ'; 
+        btnNext.innerHTML = 'ถัดไป';
+        btnNext.onclick = handleNext; 
+        title.innerText = 'โรคแทรกซ้อน (2/3)';
     } else if (currentStep === 3) {
-        btnBack.innerText = 'ย้อนกลับ'; btnNext.innerText = 'สร้างตารางออกกำลังกาย';
-        btnNext.onclick = analyzeData; title.innerText = 'กิจกรรมที่ชอบ (3/3)';
+        btnBack.innerText = 'ย้อนกลับ'; 
+        btnNext.innerHTML = 'สร้างตารางออกกำลังกาย';
+        btnNext.onclick = analyzeData; 
+        title.innerText = 'กิจกรรมที่ชอบ (3/3)';
     } else if (currentStep === 4) {
         title.innerText = 'สรุปผลการวิเคราะห์';
         btnBack.innerText = 'แก้ไขข้อมูล';
-        btnNext.innerText = 'ยืนยันและไปเลือกแผน';
+        btnNext.innerHTML = 'ยืนยันและไปเลือกแผน';
         btnNext.onclick = function () {
             if (currentPatientID) {
                 window.location.href = "/user/select_plan/Patient" + currentPatientID;
@@ -357,32 +366,74 @@ async function analyzeData() {
         special: selectedSpecials, favorites: selectedFavorites
     };
 
-    const btn = document.getElementById('btnNext');
-    const originalText = btn.innerText;
-    btn.innerText = '⏳ กำลังประมวลผล...'; btn.disabled = true;
+    const btnNext = document.getElementById('btnNext');
+    
+    // 1. เปลี่ยนปุ่มเป็น Spinner วงล้อหมุนของ Bootstrap
+    btnNext.disabled = true;
+    btnNext.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        กำลังประมวลผล...
+    `;
+
+    // 2. ถ้าโหลด SweetAlert2 มาได้ ให้แสดงป๊อปอัปหมุนกลางจอ
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'กำลังประมวลผล...',
+            html: 'ระบบกำลังวิเคราะห์ข้อมูลสุขภาพของคุณ<br>กรุณารอสักครู่',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    }
 
     try {
         const res = await fetch('/user/analyze', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(data)
         });
+        
         const text = await res.text();
+        
         try {
             const json = JSON.parse(text);
             if (json.status === 'ok') {
+                // ปิดป๊อปอัปโหลด
+                if (typeof Swal !== 'undefined') Swal.close();
+                
+                // สลับไปยัง Step 4 (หน้าสรุปผล)
                 currentStep = 4;
                 updateUI();
                 renderResults(json);
             } else {
-                alert("❌ ระบบแจ้งเตือน: " + json.message);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire("ข้อผิดพลาด", json.message, "error");
+                } else {
+                    alert("ข้อผิดพลาด: " + json.message);
+                }
+                btnNext.disabled = false;
+                btnNext.innerHTML = 'สร้างตารางออกกำลังกาย';
             }
         } catch (err) {
             console.error("Server Error HTML:", text);
-            alert("เกิดข้อผิดพลาดที่ Server");
+            if (typeof Swal !== 'undefined') {
+                Swal.fire("ข้อผิดพลาด", "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์", "error");
+            } else {
+                alert("เกิดข้อผิดพลาดที่เซิร์ฟเวอร์");
+            }
+            btnNext.disabled = false;
+            btnNext.innerHTML = 'สร้างตารางออกกำลังกาย';
         }
     } catch (e) {
-        alert("เชื่อมต่อ Server ไม่ได้: " + e);
-    } finally {
-        btn.innerText = originalText; btn.disabled = false;
+        if (typeof Swal !== 'undefined') {
+            Swal.fire("ข้อผิดพลาด", "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: " + e, "error");
+        } else {
+            alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: " + e);
+        }
+        btnNext.disabled = false;
+        btnNext.innerHTML = 'สร้างตารางออกกำลังกาย';
     }
 }
 

@@ -12,3 +12,6 @@ __pycache__/
 *.pyo
 *.pyd
 *.py[cod]
+.env.*
+!.env.deploy.example
+backups/

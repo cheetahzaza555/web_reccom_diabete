@@ -1,0 +1,72 @@
+name: CI/CD Pipeline - Test & Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - non
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Build & Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build -t diabalance-web:ci ./back_end
+
+      - name: Run Deploy Check (Pellet reasoner, dependencies, healthcheck)
+        run: |
+          docker run --rm --network none diabalance-web:ci python -m deploy.check
+
+  deploy:
+    name: Deploy to VPS
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+            echo "🚀 Deploying DiaBalance to VPS..."
+
+            TARGET_DIR="${{ secrets.VPS_TARGET_DIR || '~/web_reccom_diabete' }}"
+            cd "$TARGET_DIR"
+
+            # ดึงโค้ดล่าสุดจาก main
+            git fetch origin main
+            git reset --hard origin/main
+
+            cd back_end
+
+            # ตรวจสอบไฟล์ .env.deploy
+            if [ ! -f .env.deploy ]; then
+              echo "❌ Error: .env.deploy not found in back_end/! Please create it before deploying."
+              exit 1
+            fi
+
+            # สั่ง build และ restart container
+            echo "📦 Rebuilding and starting containers..."
+            docker compose --env-file .env.deploy -f compose.yaml -f compose.production.yaml pull graphdb proxy || true
+            docker compose --env-file .env.deploy -f compose.yaml -f compose.production.yaml up -d --build web proxy
+
+            # ตรวจสอบสถานะ
+            echo "🔍 Checking status..."
+            docker compose --env-file .env.deploy -f compose.yaml -f compose.production.yaml ps
+            echo "✅ Deployment completed successfully!"

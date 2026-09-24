@@ -50,7 +50,7 @@ async function handleOCR(input) {
     formData.append('file', input.files[0]);
 
     try {
-        const response = await fetch('http://127.0.0.1:5000/user/api/ocr', {
+        const response = await fetch('/user/api/ocr', {
             method: 'POST',
             body: formData
         });

@@ -1,66 +1,59 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask
-import datetime
 import os
 from routes.user import user_bp
 from flask_cors import CORS
-from dotenv import load_dotenv
 from routes.auth import auth
 from routes.admin import admin_bp
-from apscheduler.schedulers.background import BackgroundScheduler
-from modules.db.reschedule_repository import run_daily_reschedule_job ,get_all_patients_with_active_plan, reschedule_missed_days
-from routes.webhook import webhook_bp
-from modules.line_utils import run_morning_reminder_job # 🌟 นำเข้าหุ่นยนต์แจ้งเตือนที่เพิ่งจัดระเบียบใหม่
-
-
-# โหลดตัวแปรจาก .env
-load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
+if os.getenv("APP_ENV") == "production" and (not app.secret_key or len(app.secret_key) < 32):
+    raise RuntimeError("Set SECRET_KEY to a random value of at least 32 characters")
+if os.getenv("APP_ENV") == "production" and len(os.getenv("JWT_SECRET_KEY", "")) < 32:
+    raise RuntimeError("Set JWT_SECRET_KEY to a random value of at least 32 characters")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
+    MAX_CONTENT_LENGTH=10 * 1024 * 1024,
+)
+if os.getenv("TRUST_PROXY") == "1":
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-# 🤖 รวมการตั้งเวลาหุ่นยนต์ทั้งหมดไว้ตรงนี้
-scheduler = BackgroundScheduler(timezone="Asia/Bangkok")
-scheduler.add_job(run_daily_reschedule_job, 'cron', hour=0, minute=5) # เลื่อนตารางตอนเที่ยงคืน
-scheduler.add_job(run_morning_reminder_job, 'cron', hour=8, minute=0) # แจ้งเตือนตอน 8 โมงเช้า
 
-if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-    scheduler.start()
+@app.get('/healthz')
+def health():
+    return {"status": "ok"}
 
-@app.route('/force-run-reschedule')
-def force_run_reschedule():
-    print("⏳ บังคับรันระบบเลื่อนตาราง (โหมดจำลองข้ามเวลา)...")
-    
-    # หลอกระบบว่าวันนี้คืออีก 3 วันข้างหน้า (บวกเพิ่ม 3 วัน)
-    fake_today = datetime.datetime.today().date() + datetime.timedelta(days=1)
-    print(f"🕒 จำลองเวลาปัจจุบันเป็น: {fake_today}")
 
-    # ดึงรายชื่อคนไข้และสั่งรันทีละคน โดยโยนเวลาจำลองเข้าไป
-    patient_ids = get_all_patients_with_active_plan()
-    for pid in patient_ids:
-        try:
-            changed = reschedule_missed_days(pid, today=fake_today)
-            if changed:
-                print(f"[reschedule] เลื่อนตารางให้ Patient{pid} เรียบร้อย (โหมดจำลอง)")
-        except Exception as e:
-            print(f"[reschedule] เกิดข้อผิดพลาดกับ Patient{pid}: {e}")
+@app.get('/readyz')
+def ready():
+    import requests
+    from modules.config import GRAPHDB_READ
+    try:
+        response = requests.get(GRAPHDB_READ, params={"query": "ASK { ?s ?p ?o }"},
+                                headers={"Accept": "application/sparql-results+json"}, timeout=5)
+        response.raise_for_status()
+        if not response.json().get('boolean'):
+            return {"status": "database_empty"}, 503
+        return {"status": "ready"}
+    except (requests.RequestException, ValueError):
+        return {"status": "database_unavailable"}, 503
 
-    return f"สั่งจำลองการข้ามเวลาไปยังวันที่ {fake_today} เรียบร้อย! ลองรีเฟรชหน้าเว็บดูครับ"
-
-@app.route('/force-run-reminder')
-def force_run_reminder():
-    print("⏳ บังคับรันระบบแจ้งเตือนทาง LINE...")
-    run_morning_reminder_job()
-    return "สั่งรันระบบแจ้งเตือนแล้ว! เช็กที่มือถือ หรือ Terminal ได้เลยครับ"
-
-# เปิดใช้งาน CORS
+# Scheduled jobs run separately in scheduler.py.
 CORS(app)
 
 # ลงทะเบียน Blueprint
 app.register_blueprint(auth)
 app.register_blueprint(user_bp, url_prefix='/user')
 app.register_blueprint(admin_bp, url_prefix="/admin")
-app.register_blueprint(webhook_bp, url_prefix='/line')
+if os.getenv('LINE_CHANNEL_ACCESS_TOKEN') and os.getenv('LINE_CHANNEL_SECRET'):
+    from routes.webhook import webhook_bp
+    app.register_blueprint(webhook_bp, url_prefix='/line')
 
 if __name__ == '__main__':
     print("🚀 Starting Flask Server (Powered by GraphDB Semantic Web)...")
-    app.run(debug=True, use_reloader=False, port=5000)
+    app.run(debug=os.getenv("FLASK_DEBUG") == "1", use_reloader=False, port=5000)

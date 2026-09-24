@@ -1,0 +1,62 @@
+name: diabalance
+services:
+  graphdb:
+    image: ${GRAPHDB_IMAGE:?Set GRAPHDB_IMAGE to the version matching your existing GraphDB}
+    restart: unless-stopped
+    environment:
+      GDB_JAVA_OPTS: -Xms512m -Xmx2g
+    ports:
+      - "127.0.0.1:7201:7200"
+    volumes:
+      - graphdb_data:/opt/graphdb/home
+  web:
+    build: .
+    image: diabalance-web:local
+    restart: unless-stopped
+    env_file: .env.deploy
+    environment:
+      APP_ENV: production
+      GRAPHDB_URL: http://graphdb:7200
+      SESSION_COOKIE_SECURE: "0"
+      TRUST_PROXY: "1"
+      TZ: Asia/Bangkok
+    expose:
+      - "8000"
+    depends_on:
+      - graphdb
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=8)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ":80"
+    ports:
+      - "127.0.0.1:8000:80"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+  scheduler:
+    profiles: [jobs]
+    build: .
+    image: diabalance-web:local
+    restart: unless-stopped
+    command: ["python", "scheduler.py"]
+    env_file: .env.deploy
+    environment:
+      GRAPHDB_URL: http://graphdb:7200
+      TZ: Asia/Bangkok
+    depends_on:
+      web:
+        condition: service_healthy
+volumes:
+  graphdb_data:
+  caddy_data:
+  caddy_config:

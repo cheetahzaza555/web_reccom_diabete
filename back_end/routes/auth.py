@@ -97,7 +97,6 @@ def login():
         if not check_password_hash(user["password_hash"], data["password"]):
             return jsonify({"status": "error", "message": "รหัสผ่านไม่ถูกต้อง"}), 401
         
-        print(f"DEBUG: ข้อมูลที่ดึงมาจากฐานข้อมูล: {user}")
         # 3. เซ็ต Session โดยใช้คีย์ที่ดึงมาจาก GraphDB
         session["user_id"] = user.get("patient_id", "")
         session["username"] = user.get("username", "")

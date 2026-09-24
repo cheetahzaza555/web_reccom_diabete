@@ -8,278 +8,47 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --sidebar-width: 260px;
-            --primary-blue: #3366CC;
-            --primary-dark: #2952A3;
-            --hover-bg: #4A7BD4;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Kanit', sans-serif;
-            overflow-x: hidden;
-            /* เพิ่ม margin-left ให้ body เพื่อไม่ให้ sidebar ทับเนื้อหา */
-            margin-left: var(--sidebar-width);
-            transition: margin-left 0.3s ease;
-        }
-
-        /* Sidebar Container */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        /* Header Section */
-        .sidebar-header {
-            padding: 1.25rem 1rem;
-            text-align: center;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .brand-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .brand-logo i {
-            font-size: 2rem;
-            color: white;
-        }
-
-        .brand-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            margin: 0;
-            letter-spacing: 0.5px;
-        }
-
-        .brand-subtitle {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.8);
-            margin: 0.25rem 0 0 0;
-            line-height: 1.3;
-        }
-
-        /* User Info */
-        .user-info-top {
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 0.85rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Navigation Menu */
-        .sidebar-nav {
-            flex: 1;
-            padding: 1rem 0;
-        }
-
-        .nav-item {
-            margin: 0.25rem 0.75rem;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.85rem 1.25rem;
-            color: white;
-            text-decoration: none;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            font-weight: 500;
-            position: relative;
-        }
-
-        .nav-link i {
-            font-size: 1.5rem;
-            min-width: 24px;
-            text-align: center;
-        }
-
-        .nav-link:hover {
-            background: var(--hover-bg);
-            transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .nav-link.active {
-            background: white;
-            color: var(--primary-blue);
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
-        }
-
-        .nav-link .arrow {
-            margin-left: auto;
-            transition: transform 0.3s ease;
-        }
-
-        .nav-link:hover .arrow {
-            transform: translateX(3px);
-        }
-
-        /* Bottom Section */
-        .sidebar-bottom {
-            margin-top: auto;
-            border-top: 2px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        .bottom-nav-item {
-            margin: 0.5rem 0.75rem;
-        }
-
-        .bottom-nav-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.85rem 1.25rem;
-            color: white;
-            text-decoration: none;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-
-        .bottom-nav-link i {
-            font-size: 1.5rem;
-            min-width: 24px;
-        }
-
-        .bottom-nav-link:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-        }
-
-        /* User Profile */
-        .sidebar-user {
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: rgba(0, 0, 0, 0.15);
-        }
-
-        .user-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-blue);
-            font-size: 1.5rem;
-        }
-
-        .user-name {
-            color: white;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        /* Mobile Toggle */
-        .sidebar-toggle {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 999;
-            display: none;
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            width: 45px;
-            height: 45px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-
-            .sidebar.active {
-                transform: translateX(0);
-            }
-
-            .sidebar-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .sidebar.active ~ .sidebar-toggle {
-                left: calc(var(--sidebar-width) + 1rem);
-            }
-
-        }
-
-        /* Overlay for mobile */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-        }
-
-        .sidebar-overlay.active {
-            display: block;
-        }
+        /* ... (Style เดิมทั้งหมด ไม่ต้องแก้) ... */
+        :root { --sidebar-width: 260px; --primary-blue: #3366CC; --primary-dark: #2952A3; --hover-bg: #4A7BD4; }
+        * { margin: 0; padding: 0; box-sizing: border-box;}
+        body { font-family: 'Kanit', sans-serif; overflow-x: hidden; margin-left: var(--sidebar-width); transition: margin-left 0.3s ease; }
+        .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-dark) 100%); box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15); z-index: 1000; display: flex; flex-direction: column; overflow-y: auto; }
+        .sidebar-header { padding: 1.25rem 1rem; text-align: center; border-bottom: 2px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); }
+        .brand-logo { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .brand-logo i { font-size: 2rem; color: white; }
+        .brand-name { font-size: 1.5rem; font-weight: 700; color: white; margin: 0; letter-spacing: 0.5px; }
+        .sidebar-nav { flex: 1; padding: 1rem 0; }
+        .nav-item { margin: 0.25rem 0.75rem; }
+        .nav-link { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1.25rem; color: white; text-decoration: none; border-radius: 0.5rem; transition: all 0.3s ease; font-size: 1rem; font-weight: 500; position: relative; }
+        .nav-link i { font-size: 1.5rem; min-width: 24px; text-align: center; }
+        .nav-link:hover { background: var(--hover-bg); transform: translateX(5px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+        .nav-link.active { background: white; color: var(--primary-blue); font-weight: 600; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3); }
+        .nav-link .arrow { margin-left: auto; transition: transform 0.3s ease; }
+        .nav-link:hover .arrow { transform: translateX(3px); }
+        .sidebar-bottom { margin-top: auto; border-top: 2px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.1); }
+        .bottom-nav-item { margin: 0.5rem 0.75rem; }
+        .bottom-nav-link { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1.25rem; color: white; text-decoration: none; border-radius: 0.5rem; transition: all 0.3s ease; font-size: 1rem; font-weight: 500; }
+        .bottom-nav-link:hover { background: rgba(255, 255, 255, 0.15); color: white; }
+        .sidebar-user { padding: 1rem; display: flex; align-items: center; gap: 1rem; background: rgba(0, 0, 0, 0.2); }
+        .user-avatar { width: 50px; height: 50px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; color: var(--primary-blue); font-size: 1.75rem; flex-shrink: 0; }
+        .user-details { display: flex; flex-direction: column; overflow: hidden; }
+        .user-fullname { color: white; font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+        .user-username { color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; margin-bottom: 2px; }
+        .user-role-badge { display: inline-block; background: #ffc107; color: #333; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; width: fit-content; }
+        .sidebar-toggle { position: fixed; top: 1rem; left: 1rem; z-index: 999; display: none; background: var(--primary-blue); color: white; border: none; border-radius: 0.5rem; width: 45px; height: 45px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; } .sidebar.active { transform: translateX(0); } .sidebar-toggle { display: flex; align-items: center; justify-content: center; } .sidebar.active ~ .sidebar-toggle { left: calc(var(--sidebar-width) + 1rem); } }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999; }
+        .sidebar-overlay.active { display: block; }
     </style>
 </head>
 <body>
-    <!-- Mobile Toggle Button -->
     <button class="sidebar-toggle" id="sidebarToggle">
         <i class="bi bi-list"></i>
     </button>
 
-    <!-- Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-        <!-- Header with Logo -->
         <div class="sidebar-header">
             <div class="brand-logo">
                 <i class="bi bi-heart-pulse-fill"></i>
@@ -287,11 +56,9 @@
             </div>
         </div>
 
-
-        <!-- Main Navigation -->
         <nav class="sidebar-nav">
             <div class="nav-item">
-                <a href="/admin/dashboard" class="nav-link active">
+                <a href="/admin/dashboard" class="nav-link">
                     <i class="bi bi-house-door-fill"></i>
                     <span>หน้าหลัก</span>
                 </a>
@@ -300,21 +67,33 @@
             <div class="nav-item">
                 <a href="/admin/users" class="nav-link">
                     <i class="bi bi-people-fill"></i>
-                    <span>จัดการข้อมูลผู้ใช้</span>
-                    <i class="bi bi-chevron-right arrow"></i>
+                    <span>สิทธิ์บัญชี</span>
+
                 </a>
             </div>
 
             <div class="nav-item">
-                <a href="/admin/exercises" class="nav-link">
-                    <i class="bi bi-book-fill"></i>
-                    <span>จัดการคลังข้อมูล</span>
-                    <i class="bi bi-chevron-right arrow"></i>
+                <!-- ปุ่มหลักสำหรับกดเปิด-ปิด เมนูย่อย -->
+                <a href="#masterDataMenu" class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="masterDataMenu">
+                    <div>
+                        <i class="bi bi-book-fill"></i>
+                        <span>จัดการคลังข้อมูล</span>
+                    </div>
+                    <i class="bi bi-chevron-down ms-auto text-xs"></i>
                 </a>
+
+                <!-- รายการเมนูย่อยที่ซ่อนอยู่ (จะสไลด์ลงมาเมื่อกด) -->
+                <div class="collapse ps-4 pt-1" id="masterDataMenu">
+                    <a href="/admin/exercises" class="nav-link text-sm py-1">ท่าออกกำลังกาย</a>
+                    <a href="/admin/category" class="nav-link text-sm py-1">หมวดหมู่การ <br> ออกกำลังกาย</a>
+                    <a href="/admin/frequencies" class="nav-link text-sm py-1">ความถี่</a>
+                    <a href="/admin/warning" class="nav-link text-sm py-1">ข้อควรระวัง <br>การออกกำลังกาย</a>
+                    <a href="/admin/patient_warning" class="nav-link text-sm py-1">คำเตือนสำหรับผู้ป่วย</a>
+                    <a href="/admin/swrl" class="nav-link text-sm py-1">กฎ SWRL</a>
+                </div>
             </div>
         </nav>
 
-        <!-- Bottom Section -->
         <div class="sidebar-bottom">
             <div class="bottom-nav-item">
                 <a href="/admin/settings" class="bottom-nav-link">
@@ -323,76 +102,111 @@
                 </a>
             </div>
 
-           <div class="bottom-nav-item">
+            <div class="bottom-nav-item">
                 <a href="#" class="bottom-nav-link" id="logoutBtn">
                     <i class="bi bi-box-arrow-right"></i>
-                <span>ออกจากระบบ</span>
+                    <span>ออกจากระบบ</span>
                 </a>
             </div>
 
-            <!-- User Profile -->
             <div class="sidebar-user">
                 <div class="user-avatar">
                     <i class="bi bi-person-fill"></i>
                 </div>
-                <span class="user-name">admin</span>
+                <div class="user-details">
+                    <div class="user-fullname">
+                        {% if session.get('firstname') %}
+                            {{ session.get('firstname') }} {{ session.get('lastname') }}
+                        {% else %}
+                            {{ session.get('username') }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="user-username">
+                        @{{ session.get('username') }}
+                    </div>
+                    
+                    <div class="user-role-badge">
+                        {{ session.get('role', 'ADMIN') }}
+                    </div>
+                </div>
             </div>
         </div>
     </aside>
 
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Mobile Sidebar Toggle
+        // Mobile Sidebar Logic
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            sidebarOverlay.classList.toggle('active');
-        });
-
-        sidebarOverlay.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            sidebarOverlay.classList.remove('active');
-        });
-
-        // Set active navigation based on current path
-        const currentPath = window.location.pathname;
-        document.querySelectorAll('.nav-link').forEach(link => {
-            if (link.getAttribute('href') === currentPath) {
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-            }
-        
-        
-    });
-    
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', async function(e) {
-        e.preventDefault();
-        
-        try {
-            const response = await fetch('/api/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
             });
+        }
 
-            if (response.ok) {
-                // Redirect to login page after successful logout
-                window.location.href = '/login';
-            } else {
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            });
+        }
+
+        // Active Link Logic (รองรับ ?tab=... และกางเมนูย่อยอัตโนมัติ)
+        const currentFullUrl = window.location.pathname + window.location.search;
+        const currentPath = window.location.pathname;
+
+        document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+            const href = link.getAttribute('href');
+            
+            // ลบ class active ทั้งหมดออกก่อน
+            link.classList.remove('active');
+
+            // เช็คว่า URL ปัจจุบันตรงกับ href หรือไม่ (รองรับกรณีไม่มี ?tab= ให้ไปจับที่ tab=exercise เป็นหลัก)
+            const isExactMatch = href === currentFullUrl;
+            const isDefaultTab = (currentPath === '/admin/exercises' && currentFullUrl === '/admin/exercises' && href === '/admin/exercises?tab=exercise');
+
+            if (isExactMatch || isDefaultTab) {
+                link.classList.add('active');
+
+                // ถ้าเมนูที่ active อยู่ภายใน collapse ให้สั่งกางเมนูแม่ไว้อัตโนมัติ
+                const parentCollapse = link.closest('.collapse');
+                if (parentCollapse) {
+                    parentCollapse.classList.add('show'); // กางเมนูย่อยลงมา
+                    
+                    // ปรับปุ่มแม่ให้เป็นสเตตัสเปิด (aria-expanded = true)
+                    const parentToggle = document.querySelector(`[href="#${parentCollapse.id}"]`);
+                    if (parentToggle) {
+                        parentToggle.setAttribute('aria-expanded', 'true');
+                        parentToggle.style.color = '#ffffff'; // ไฮไลท์ข้อความเมนูแม่ให้ชัดเจน
+                    }
+                }
+            }
+        });
+
+        // ❌ ลบ fetchCurrentUser() ทิ้งไปเลย
+
+        // Logout Logic
+        document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+            e.preventDefault();
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('เกิดข้อผิดพลาดในการออกจากระบบ');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
                 alert('เกิดข้อผิดพลาดในการออกจากระบบ');
             }
-        } catch (error) {
-            console.error('Logout error:', error);
-            alert('เกิดข้อผิดพลาดในการออกจากระบบ');
-        }
-    });
-
+        });
     </script>
 </body>
 </html>

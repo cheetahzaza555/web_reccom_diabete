@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiaBalance Admin | จัดการหมวดหมู่การออกกำลังกาย</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-blue: #2B5CB3;
+            --light-bg: #F4F7FC;
+            --text-dark: #333333;
+            --text-muted: #666666;
+            --white: #ffffff;
+            --border-color: #E2E8F0;
+            
+            --category-bg: #E0F2FE;
+            --category-text: #0369A1;
+
+            --danger: #E53E3E;
+            --warning: #D97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+
+        .admin-layout { display: flex; width: 100%; min-height: 100vh; }
+        .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .header-section h1 { font-size: 28px; font-weight: 600; }
+
+        .toolbar-section {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: center;
+            width: 100%;
+        }
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-family: 'Prompt', sans-serif;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .btn-add-category {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+            font-family: 'Prompt', sans-serif;
+            white-space: nowrap;
+        }
+        .btn-add-category:hover { background-color: #1e458a; }
+
+        .table-card {
+            background-color: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border-color);
+            width: 100%; 
+            overflow-x: auto;
+        }
+        .category-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .category-table th {
+            background-color: #F8FAFC;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .category-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .category-table tr:hover { background-color: #F8FAFC; }
+
+        .badge-cat { 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            display: inline-flex; 
+            align-items: center;
+            gap: 6px;
+            background-color: var(--category-bg);
+            color: var(--category-text);
+        }
+
+        .action-buttons { display: flex; gap: 8px; justify-content: center; }
+        .btn-edit {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #FFFDF5;
+            color: var(--warning);
+            cursor: pointer;
+            border: 1px solid #FEF3C7;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-edit:hover { background-color: var(--warning); color: var(--white); border-color: var(--warning); }
+
+        /* 🔴 ตกแต่งปุ่มลบ */
+        .btn-delete {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #FEF2F2;
+            color: var(--danger);
+            cursor: pointer;
+            border: 1px solid #FEE2E2;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
+
+        .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
+        .swal2-input { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
+        .category-form { text-align: left; }
+        .category-form label { display: block; font-size: 15px; font-weight: 600; margin: 18px 0 8px; }
+        .category-form .swal2-input { width: 100%; margin: 0; }
+        .category-hint { color: #64748b; font-size: 13px; margin: 8px 0; line-height: 1.7; }
+        .parent-choices { max-height: 260px; overflow: auto; border: 1px solid #dbe3ef; border-radius: 10px; padding: 8px; background: white; }
+        .parent-choice { display: flex !important; gap: 10px; align-items: center; margin: 2px 0 !important; padding: 9px 10px; border-radius: 7px; cursor: pointer; font-weight: 400 !important; overflow-wrap: anywhere; }
+        .parent-choice:has(input:checked) { background: #eaf1ff; color: #2B5CB3; }
+        .parent-choice input { flex-shrink: 0; accent-color: #2B5CB3; }
+        .parent-choice small, .category-code { display: block; color: #64748b; font-size: 12px; font-weight: 400; overflow-wrap: anywhere; }
+        .category-preview { margin-top: 18px; border: 1px solid #cdddff; border-radius: 10px; padding: 14px; background: #f5f8ff; color: #2B5CB3; font-size: 14px; overflow-wrap: anywhere; }
+        .category-preview p { margin-top: 8px; line-height: 1.8; }
+        @media(max-width: 640px) { .main-content { padding: 20px; } .toolbar-section { flex-wrap: wrap; } }
+    </style>
+</head>
+<body>
+
+    <!-- 📥 ดึงข้อมูล JSON จาก Flask Controller -->
+    <div id="category-data-container" style="display: none;" 
+         data-json="{% if categories %}{{ categories | tojson | safe | forceescape }}{% else %}[]{% endif %}">
+    </div>
+
+    <div class="admin-layout">
+        {% include 'includes/navbar_admin.html' %}
+
+        <div class="main-content">
+            {% include 'includes/admin_breadcrumb.html' %}
+            <div class="header-section">
+                <div>
+                    <h1>จัดการหมวดหมู่การออกกำลังกาย</h1>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">จัดหมวดหลักและหมวดย่อย เลือกได้ว่าหมวดใหม่จะอยู่ภายใต้หมวดใด</p>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อหมวดหมู่หรือ Class ID...">
+                </div>
+
+                <button class="btn-add-category" onclick="openAddCategoryModal()">
+                    <i class="fa-solid fa-folder-plus"></i> เพิ่มหมวดหมู่ใหม่
+                </button>
+            </div>
+
+            <div class="table-card">
+                <table class="category-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">ชื่อหมวดหมู่</th>
+                            <th style="width: 35%;">อยู่ใต้หมวดหมู่</th>
+                            <th style="width: 30%; text-align: center;">จัดการข้อมูล</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoryTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('category-data-container');
+        const categoriesData = JSON.parse(container.getAttribute('data-json') || '[]');
+
+        const categoryMap = new Map(categoriesData.map(item => [item.category_id, item]));
+        const thaiNames = {
+            Exercise: 'การออกกำลังกายทั้งหมด', Aerobic: 'แอโรบิก',
+            Resistance: 'ฝึกแรงต้าน', Stretching: 'ยืดเหยียด',
+            WeightBearingAerobicExercise: 'แอโรบิกแบบลงน้ำหนัก',
+            NonWeightBearingAerobicExercise: 'แอโรบิกแบบไม่ลงน้ำหนัก',
+            WeightBearingResistanceExercise: 'ฝึกแรงต้านแบบลงน้ำหนัก',
+            NonWeightBearingResistanceExercise: 'ฝึกแรงต้านแบบไม่ลงน้ำหนัก',
+            Walking: 'เดิน', Running: 'วิ่ง', Dancing: 'เต้น', Bicycling: 'ปั่นจักรยาน',
+            WaterActivity: 'กิจกรรมในน้ำ', StretchingExercise: 'ท่ายืดเหยียด',
+            WeightBearingAerobicSport: 'กีฬาแอโรบิกแบบลงน้ำหนัก',
+            NonWeightBearingAerobicSport: 'กีฬาแอโรบิกแบบไม่ลงน้ำหนัก'
+        };
+        function categoryName(id) {
+            const item = categoryMap.get(id);
+            return (item?.label_th && item.label_th !== id) ? item.label_th : (thaiNames[id] || id);
+        }
+        function parentOf(id) {
+            const parent = categoryMap.get(id)?.parent_id;
+            return !parent || parent === 'ExerciseCategory' ? 'Exercise' : parent;
+        }
+        function categoryPath(id) {
+            const path = [], visited = new Set();
+            while (id && !visited.has(id)) {
+                visited.add(id);
+                path.unshift(id);
+                if (id === 'Exercise') break;
+                if (!categoryMap.has(id)) break;
+                id = parentOf(id);
+            }
+            return path;
+        }
+        function hierarchyRows() {
+            const rows = [], visited = new Set();
+            function walk(id, depth) {
+                if (visited.has(id)) return;
+                visited.add(id);
+                rows.push({id, depth});
+                categoriesData.filter(item => parentOf(item.category_id) === id)
+                    .sort((a, b) => categoryName(a.category_id).localeCompare(categoryName(b.category_id), 'th'))
+                    .forEach(item => walk(item.category_id, depth + 1));
+            }
+            walk('Exercise', 0);
+            categoriesData.forEach(item => { if (!visited.has(item.category_id)) walk(item.category_id, 0); });
+            return rows;
+        }
+        function renderTable(data) {
+            const body = document.getElementById('categoryTableBody');
+            body.replaceChildren();
+            const visible = new Set(data.map(item => item.category_id));
+            hierarchyRows().filter(row => visible.has(row.id)).forEach(({id, depth}) => {
+                const item = categoryMap.get(id), row = document.createElement('tr');
+                const name = row.insertCell();
+                name.style.paddingLeft = `${16 + Math.min(depth, 5) * 16}px`;
+                const title = document.createElement('strong');
+                title.textContent = `${depth > 1 ? '↳ ' : ''}${categoryName(id)}`;
+                const code = document.createElement('small');
+                code.className = 'category-code'; code.textContent = id;
+                name.append(title, code);
+                row.insertCell().textContent = categoryPath(parentOf(id)).map(categoryName).join(' › ');
+                const actions = document.createElement('div'); actions.className = 'action-buttons';
+                [['แก้ไข', 'btn-edit', () => openEditCategoryModal(id, item.label_th, parentOf(id))],
+                 ['ลบ', 'btn-delete', () => deleteCategory(id, categoryName(id))]].forEach(([label, style, action]) => {
+                    const button = document.createElement('button'); button.className = style;
+                    button.textContent = label; button.addEventListener('click', action); actions.append(button);
+                });
+                row.insertCell().append(actions); body.append(row);
+            });
+            if (!body.children.length) {
+                const cell = body.insertRow().insertCell(); cell.colSpan = 3;
+                cell.textContent = 'ไม่พบข้อมูลหมวดหมู่ที่ค้นหา';
+            }
+        }
+        document.getElementById('searchBar').addEventListener('input', event => {
+            const query = event.target.value.trim().toLowerCase();
+            renderTable(categoriesData.filter(item => categoryPath(item.category_id)
+                .some(id => `${categoryName(id)} ${id}`.toLowerCase().includes(query))));
+        });
+        renderTable(categoriesData);
+
+        function openAddCategoryModal() { openCategoryForm(); }
+        function openEditCategoryModal(id, label, parent) { openCategoryForm(id, label, parent); }
+        function openCategoryForm(currentId = '', label = '', selectedParent = 'Exercise') {
+            if (selectedParent === 'ExerciseCategory') selectedParent = 'Exercise';
+            Swal.fire({
+                title: currentId ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่',
+                width: 680,
+                html: `<div class="category-form">
+                    <label for="swal-cat-label">1. ชื่อหมวดหมู่</label>
+                    <input id="swal-cat-label" class="swal2-input" placeholder="เช่น เดินเร็ว">
+                    <label>2. เพิ่มหมวดหมู่ไว้ภายใต้</label>
+                    <p class="category-hint" id="parent-help">เลือกหมวดที่ต้องการนำหมวดนี้ไปไว้ข้างใน รายการที่เยื้องเข้าด้านในคือหมวดย่อย<br>เลือก “การออกกำลังกายทั้งหมด” หากต้องการสร้างหมวดหลัก</p>
+                    <div id="parent-choices" class="parent-choices" role="group" aria-label="เลือกหมวดที่อยู่ภายใต้" aria-describedby="parent-help"></div>
+                    <div class="category-preview"><strong>ตำแหน่งหลังบันทึก</strong><p id="category-path-preview" aria-live="polite"></p></div>
+                    <label for="swal-cat-id">3. รหัสหมวดหมู่</label>
+                    <input id="swal-cat-id" class="swal2-input" placeholder="เช่น BriskWalking" aria-describedby="category-id-help">
+                    <p id="category-id-help" class="category-hint">รหัสอ้างอิงในระบบ ใช้ตัวอักษรอังกฤษ ตัวเลข หรือ _ และต้องไม่ซ้ำกับหมวดเดิม</p>
+                </div>`,
+                showCancelButton: true, confirmButtonColor: '#2B5CB3', cancelButtonColor: '#666666',
+                confirmButtonText: currentId ? 'บันทึกการแก้ไข' : 'เพิ่มหมวดหมู่', cancelButtonText: 'ยกเลิก', reverseButtons: true,
+                didOpen: () => {
+                    const nameInput = document.getElementById('swal-cat-label');
+                    nameInput.value = label || '';
+                    const idInput = document.getElementById('swal-cat-id');
+                    idInput.value = currentId; idInput.readOnly = Boolean(currentId);
+                    const choices = document.getElementById('parent-choices');
+                    const preview = () => {
+                        const selected = choices.querySelector('input:checked');
+                        document.getElementById('category-path-preview').textContent = selected
+                            ? [...categoryPath(selected.value).map(categoryName), nameInput.value.trim() || '[ชื่อหมวดใหม่]'].join(' › ')
+                            : 'กรุณาเลือกหมวดที่ต้องการไว้ภายใต้';
+                    };
+                    hierarchyRows().filter(({id}) => !currentId || !categoryPath(id).includes(currentId)).forEach(({id, depth}) => {
+                        const row = document.createElement('label'); row.className = 'parent-choice';
+                        row.style.paddingLeft = `${10 + Math.min(depth, 5) * 18}px`;
+                        const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'category-parent'; radio.value = id;
+                        radio.checked = id === selectedParent;
+                        const text = document.createElement('span'); text.textContent = categoryName(id);
+                        const code = document.createElement('small'); code.textContent = id === 'Exercise' ? 'ระดับบนสุด · หมวดใหม่จะเป็นหมวดหลัก' : id;
+                        text.append(code); row.append(radio, text); choices.append(row);
+                    });
+                    choices.addEventListener('change', preview); nameInput.addEventListener('input', preview); preview();
+                },
+                preConfirm: () => {
+                    const id = document.getElementById('swal-cat-id').value.trim();
+                    const name = document.getElementById('swal-cat-label').value.trim();
+                    const parent = document.querySelector('#parent-choices input:checked')?.value;
+                    if (!name || !parent) { Swal.showValidationMessage('กรุณากรอกชื่อและเลือกหมวดที่อยู่ภายใต้'); return false; }
+                    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(id) && id !== currentId) { Swal.showValidationMessage('รหัสต้องขึ้นต้นด้วยตัวอักษรอังกฤษ ตามด้วยตัวอักษร ตัวเลข หรือ _'); return false; }
+                    if (!currentId && (categoryMap.has(id) || id === 'Exercise')) { Swal.showValidationMessage('รหัสนี้มีอยู่แล้ว กรุณาใช้รหัสใหม่'); return false; }
+                    return {category_id: id, label_th: name, parent_id: parent};
+                }
+            }).then(result => { if (result.isConfirmed) sendCategoryUpdate(result.value); });
+        }
+
+        // 🚀 ยิง Request อัปเดตไปยัง Backend API
+        function sendCategoryUpdate(payload) {
+            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            
+            fetch("/admin/api/category/update", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    Swal.fire('สำเร็จ!', 'อัปเดตข้อมูลหมวดหมู่ใน GraphDB เรียบร้อย', 'success').then(() => location.reload());
+                } else { throw new Error(data.message); }
+            })
+            .catch(err => Swal.fire('เกิดข้อผิดพลาด!', err.message, 'error'));
+        }
+
+        // 🔴 ฟังก์ชันลบหมวดหมู่ (แก้ไขปัญหาแสดงคำว่า message)
+        function deleteCategory(catId, catLabel) {
+            Swal.fire({
+                title: 'ยืนยันการลบหมวดหมู่?',
+                text: `คุณต้องการลบหมวดหมู่ "${catLabel || catId}" ใช่หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E53E3E',
+                cancelButtonColor: '#666666',
+                confirmButtonText: 'ยืนยัน ลบข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+                    fetch("/admin/api/categories/delete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ category_id: catId })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // ตรวจสอบข้อความ หากเป็นคำว่า 'message' หรือไม่มีค่า ให้ใช้ข้อความภาษาไทยแทน
+                            const successMsg = (typeof data.message === 'string' && data.message.trim() !== 'message' && data.message.trim() !== '') 
+                                            ? data.message 
+                                            : `ลบหมวดหมู่ "${catLabel || catId}" ออกจากระบบเรียบร้อยแล้ว`;
+
+                            Swal.fire('ลบสำเร็จ!', successMsg, 'success').then(() => location.reload());
+                        } else { 
+                            const errorMsg = (typeof data.message === 'string' && data.message.trim() !== 'message' && data.message.trim() !== '') 
+                                            ? data.message 
+                                            : 'เกิดข้อผิดพลาดในการลบหมวดหมู่';
+                            throw new Error(errorMsg); 
+                        }
+                    })
+                    .catch(err => Swal.fire('ไม่สามารถลบได้!', err.message, 'error'));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

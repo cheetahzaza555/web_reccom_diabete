@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กำลังออกกำลังกาย - DiaBalance</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Prompt', sans-serif; 
+            background-color: #f8f9fa; 
+            min-height: 100vh;
+        }
+        
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            min-height: calc(100vh - 80px); 
+        }
+
+        .exercise-title {
+            font-size: 1.8rem;
+            color: #495057;
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .timer-circle {
+            width: 280px; height: 280px; border-radius: 50%; background-color: #ffffff;
+            border: 12px solid #335da1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            box-shadow: 0 10px 30px rgba(51, 93, 161, 0.2); margin-bottom: 40px;
+            transition: border-color 0.3s ease;
+        }
+        .timer-circle.paused { border-color: #ffc107; }
+        .timer-circle.goal-reached { border-color: #198754; }
+
+        .time-display { font-size: 4rem; font-weight: 700; color: #333; font-variant-numeric: tabular-nums; }
+
+        .progress-container { width: 100%; max-width: 350px; margin-bottom: 40px; }
+        .progress-label { display: flex; justify-content: space-between; font-weight: 600; color: #6c757d; margin-bottom: 8px; font-size: 0.95rem; }
+        .progress { height: 18px; border-radius: 10px; background-color: #e9ecef; box-shadow: inset 0 1px 2px rgba(0,0,0,.1); }
+        .progress-bar { background-color: #335da1; transition: width 1s linear, background-color 0.5s ease; }
+        .progress-bar.completed { background-color: #198754; }
+
+        .control-buttons { display: flex; gap: 20px; width: 100%; max-width: 350px; }
+        .btn-pause { flex: 1; background-color: #ffc107; color: #000; border: none; padding: 15px; border-radius: 15px; font-size: 1.2rem; font-weight: 600; transition: all 0.2s; }
+        .btn-pause:hover { background-color: #e0a800; transform: scale(1.05); }
+        .btn-finish { flex: 1; background-color: #198754; color: white; border: none; padding: 15px; border-radius: 15px; font-size: 1.2rem; font-weight: 600; transition: all 0.2s; }
+        .btn-finish:hover { background-color: #157347; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+    {% include 'includes/navbar_user.html' %}
+
+    <div class="container d-flex justify-content-center">
+        <div class="timer-container w-100">
+            <h2 class="exercise-title">{{ exercise_name }}</h2>
+            
+            <!-- YouTube หรือ GIF -->
+            {% if youtube_id %}
+                <!-- กรณีมี YouTube ID ให้แสดงวิดีโอ -->
+                <div class="d-flex justify-content-center mb-4 w-100">
+                    <div style="width: 100%; max-width: 500px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                        <div class="ratio ratio-16x9">
+                            <iframe 
+                                src="https://www.youtube.com/embed/{{ youtube_id }}?rel=0&modestbranding=1" 
+                                title="YouTube video player" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- กรณีไม่มี YouTube ID ให้แสดงวิดีโอ MP4 (เล่นวนลูปเหมือน GIF) -->
+                <div class="d-flex justify-content-center mb-4">
+                    <div style="width: 250px; height: 250px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        
+                        <!-- 🌟 เปลี่ยนจาก <img> เป็น <video> -->
+                        <video autoplay loop muted playsinline style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                            <!-- ดึงไฟล์นามสกุล .mp4 -->
+                            <source src="{{ url_for('static', filename='images/exercises/' ~ exercise_id ~ '.mp4') }}" type="video/mp4">
+                            
+                            <!-- 🌟 Fallback: ถ้าหาไฟล์ MP4 ไม่เจอ จะสลับมาโชว์รูปภาพนี้แทน -->
+                            <img src="{{ url_for('static', filename='images/default_exercise.png') }}" 
+                                 alt="{{ exercise_name }}" 
+                                 style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </video>
+
+                    </div>
+                </div>
+            {% endif %}
+            <!-- Check Youtube Video -->
+
+            <div class="timer-circle" id="timerCircle">
+                <div class="time-display" id="timeDisplay">00:00</div>
+                <div class="text-muted mt-2 fw-bold" id="statusText">กำลังจับเวลา...</div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-label">
+                    <span id="progressText">ความคืบหน้า: 0%</span>
+                    <span id="goalText"><i class="bi bi-flag-fill"></i> เป้าหมาย: {{ target_minutes }} นาที</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="control-buttons">
+                <button class="btn-pause shadow-sm" id="pauseBtn" onclick="togglePause()">
+                    <i class="bi bi-pause-fill"></i> พัก
+                </button>
+                <button class="btn-finish shadow-sm" onclick="finishExercise()">
+                    <i class="bi bi-check-circle-fill"></i> เสร็จสิ้น
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let startTime, updatedTime, difference, tInterval;
+        let running = false;
+        let paused = false;
+        let savedTime = 0;
+
+        // ✅ รับค่าเป้าหมายจาก Python และแปลงเป็นวินาที
+        const targetMinutes = parseInt("{{ target_minutes }}") || 30;
+        const targetSeconds = targetMinutes * 60; 
+
+        window.onload = function() {
+            startTime = new Date().getTime();
+            tInterval = setInterval(getShowTime, 1000);
+            running = true;
+        }
+
+        function getShowTime() {
+            updatedTime = new Date().getTime();
+            if (savedTime) {
+                difference = (updatedTime - startTime) + savedTime;
+            } else {
+                difference = updatedTime - startTime;
+            }
+            
+            let totalSeconds = Math.floor(difference / 1000);
+            let displayMinutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            let displaySeconds = Math.floor((difference % (1000 * 60)) / 1000);
+            
+            let formattedMins = (displayMinutes < 10) ? "0" + displayMinutes : displayMinutes;
+            let formattedSecs = (displaySeconds < 10) ? "0" + displaySeconds : displaySeconds;
+            
+            document.getElementById("timeDisplay").innerHTML = formattedMins + ":" + formattedSecs;
+            updateProgressBar(totalSeconds);
+        }
+
+        function updateProgressBar(elapsedSeconds) {
+            const progressBar = document.getElementById("progressBar");
+            const progressText = document.getElementById("progressText");
+            const timerCircle = document.getElementById("timerCircle");
+            const goalText = document.getElementById("goalText");
+
+            let percent = (elapsedSeconds / targetSeconds) * 100;
+            let displayPercent = Math.min(percent, 100).toFixed(0);
+
+            progressBar.style.width = displayPercent + "%";
+
+            if (elapsedSeconds >= targetSeconds) {
+                progressBar.classList.add("completed");
+                timerCircle.classList.add("goal-reached");
+                progressText.innerHTML = "สำเร็จเป้าหมายแล้ว! 🎉";
+                progressText.style.color = "#198754";
+                goalText.style.color = "#198754";
+            } else {
+                progressText.innerHTML = `ความคืบหน้า: ${displayPercent}%`;
+            }
+        }
+
+        function togglePause() {
+            const pauseBtn = document.getElementById("pauseBtn");
+            const timerCircle = document.getElementById("timerCircle");
+            const statusText = document.getElementById("statusText");
+            const progressBar = document.getElementById("progressBar");
+
+            if (!paused) {
+                clearInterval(tInterval);
+                savedTime = difference;
+                paused = true;
+                pauseBtn.innerHTML = '<i class="bi bi-play-fill"></i> ทำต่อ';
+                pauseBtn.style.backgroundColor = '#17a2b8'; 
+                pauseBtn.style.color = 'white';
+                progressBar.classList.remove('progress-bar-animated');
+                
+                if (!timerCircle.classList.contains("goal-reached")) {
+                    timerCircle.classList.add('paused');
+                }
+                statusText.innerHTML = "หยุดพักชั่วคราว";
+            } else {
+                startTime = new Date().getTime();
+                tInterval = setInterval(getShowTime, 1000);
+                paused = false;
+                pauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i> พัก';
+                pauseBtn.style.backgroundColor = '#ffc107'; 
+                pauseBtn.style.color = '#000';
+                progressBar.classList.add('progress-bar-animated');
+                timerCircle.classList.remove('paused');
+                statusText.innerHTML = "กำลังจับเวลา...";
+            }
+        }
+
+        function finishExercise() {
+            clearInterval(tInterval);
+            
+            // คำนวณเวลาเป็นนาที (ขั้นต่ำ 1 นาที ถ้าเล่นไม่ถึงนาที)
+            let totalMinutesCompleted = Math.max(1, Math.floor(difference / (1000 * 60)));
+
+            // แสดง Loading กันผู้ใช้กดปุ่มซ้ำ
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // 1. ส่งข้อมูลไปอัปเดตสถานะ + Streak ที่ Backend
+            fetch('/user/update_day_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    day_id: "{{ day_id }}", 
+                    completed: true, 
+                    duration: totalMinutesCompleted 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 2. ถ้ามีการอัปเดต Streak เพิ่มขึ้น ให้โชว์ SweetAlert ฉลองไฟติด! 🔥
+                    if (data.streak_updated) {
+                        Swal.fire({
+                            title: '🔥 สุดยอดไปเลย!',
+                            html: `คุณออกกำลังกายไป <b>${totalMinutesCompleted}</b> นาที<br>` +
+                                `สะสม Streak ต่อเนื่องได้แล้ว <b>${data.current_streak} วัน</b> !`,
+                            icon: 'success',
+                            confirmButtonText: 'ลุยต่อเลย!',
+                            confirmButtonColor: '#ff6b6b'
+                        }).then(() => {
+                            window.location.href = '/user/dashboard';
+                        });
+                    } else {
+                        // ถ้าทำซ้ำวันเดิมแล้ว ให้โชว์ SweetAlert ปกติ
+                        Swal.fire({
+                            title: 'ยอดเยี่ยมมาก!',
+                            text: `คุณออกกำลังกายไป ${totalMinutesCompleted} นาที ระบบบันทึกข้อมูลเรียบร้อย`,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = '/user/dashboard';
+                        });
+                    }
+                } else {
+                    // กรณีเกิดข้อผิดพลาดจาก Backend
+                    Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+            });
+        }
+    </script>
+</body>
+</html>

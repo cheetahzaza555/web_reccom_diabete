@@ -1,0 +1,22 @@
+services:
+  web:
+    environment:
+      SESSION_COOKIE_SECURE: "1"
+      TRUST_PROXY: "1"
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN to your public hostname}
+    ports: !override
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+volumes:
+  caddy_data:
+  caddy_config:

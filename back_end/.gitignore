@@ -1,0 +1,17 @@
+# ไฟล์รหัสผ่านและค่า Config ต่างๆ ห้ามเอาขึ้น!
+.env
+*.env
+
+# (แถมให้) พวกโฟลเดอร์จำลองของ Python ที่หนักๆ ก็ไม่ควรเอาขึ้นครับ
+venv/
+env/
+__pycache__/
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+.env.*
+!.env.deploy.example
+backups/

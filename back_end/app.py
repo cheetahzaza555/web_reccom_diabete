@@ -1,131 +1,59 @@
-import bcrypt
-import psycopg2
+from dotenv import load_dotenv
+load_dotenv()
+from flask import Flask
 import os
 from routes.user import user_bp
-from flask import Flask, request, jsonify, render_template , session ,redirect
-from modules.database import get_patient_profile, delete_patient, save_raw_patient_data
-from modules.logic import process_patient_realtime
 from flask_cors import CORS
-from flask import request, jsonify
-from dotenv import load_dotenv
 from routes.auth import auth
-
-load_dotenv()
-
-print("DB_HOST =", os.getenv("DB_HOST"))
-print("DB_NAME =", os.getenv("DB_NAME"))
-print("DB_USER =", os.getenv("DB_USER"))
-print("DB_PASS =", os.getenv("DB_PASS"))
-print("DB_PORT =", os.getenv("DB_PORT"))
+from routes.admin import admin_bp
 
 app = Flask(__name__)
-app.secret_key = "secret1234"
-conn = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    database=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASS"),
-    port=os.getenv("DB_PORT")
+app.secret_key = os.getenv("SECRET_KEY")
+if os.getenv("APP_ENV") == "production" and (not app.secret_key or len(app.secret_key) < 32):
+    raise RuntimeError("Set SECRET_KEY to a random value of at least 32 characters")
+if os.getenv("APP_ENV") == "production" and len(os.getenv("JWT_SECRET_KEY", "")) < 32:
+    raise RuntimeError("Set JWT_SECRET_KEY to a random value of at least 32 characters")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
+    MAX_CONTENT_LENGTH=10 * 1024 * 1024,
 )
+if os.getenv("TRUST_PROXY") == "1":
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-cursor = conn.cursor()
+
+@app.get('/healthz')
+def health():
+    return {"status": "ok"}
+
+
+@app.get('/readyz')
+def ready():
+    import requests
+    from modules.config import GRAPHDB_READ
+    try:
+        response = requests.get(GRAPHDB_READ, params={"query": "ASK { ?s ?p ?o }"},
+                                headers={"Accept": "application/sparql-results+json"}, timeout=5)
+        response.raise_for_status()
+        if not response.json().get('boolean'):
+            return {"status": "database_empty"}, 503
+        return {"status": "ready"}
+    except (requests.RequestException, ValueError):
+        return {"status": "database_unavailable"}, 503
+
+# Scheduled jobs run separately in scheduler.py.
 CORS(app)
 
+# ลงทะเบียน Blueprint
 app.register_blueprint(auth)
-
 app.register_blueprint(user_bp, url_prefix='/user')
-
-@app.route('/api/analyze', methods=['POST'])
-def analyze():
-    data = request.json
-    # 1. บันทึกข้อมูลดิบก่อน
-    save_raw_patient_data(data)
-    # 2. ประมวลผลและได้ผลลัพธ์
-    recs, warns, comorbs, complis = process_patient_realtime(data['id'], input_data=data)
-    
-    return jsonify({
-        "status": "ok",
-        "exercises": recs,
-        "warnings": warns,
-        "comorbs": comorbs,
-        "complis": complis
-    })
-
-@app.route('/api/patient/<id>', methods=['GET'])
-def get_patient(id):
-    profile = get_patient_profile(id)
-    if profile: 
-        return jsonify({"status": "ok", **profile})
-    return jsonify({"status": "error"})
-
-@app.route('/api/reprocess/<id>', methods=['POST'])
-def reprocess(id):
-    process_patient_realtime(id)
-    return jsonify({"status": "ok"})
-
-@app.route('/api/delete/<id>', methods=['DELETE'])
-def delete_pt(id):
-    delete_patient(id)
-    return jsonify({"status": "ok"})
-
-@app.route("/api/login", methods=["POST"])
-def login():
-    try:
-        data = request.json
-        username = data.get("username")
-        password = data.get("password")
-
-        cursor.execute(
-            "SELECT id, username, password_hash, role FROM users WHERE username=%s",
-            (username,)
-        )
-        user = cursor.fetchone()
-
-        if not user:
-            return jsonify({"message": "User not found"}), 401
-
-        # 🔐 เช็ค password ด้วย bcrypt
-        if not bcrypt.checkpw(
-            password.encode("utf-8"),
-            user[2].encode("utf-8")
-        ):
-            return jsonify({"message": "Wrong password"}), 401
-
-        # ✅ เก็บ session
-        session["user_id"] = user[0]
-        session["username"] = user[1]
-        session["role"] = user[3]
-
-        return jsonify({"message": "Login success"})
-
-    except Exception as e:
-        print("LOGIN ERROR:", e)
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/register", methods=["POST"])
-def register():
-    try:
-        data = request.json
-        username = data["username"]
-        password = data["password"]
-
-        hashed = bcrypt.hashpw(
-            password.encode("utf-8"),
-            bcrypt.gensalt()
-        ).decode("utf-8")
-
-        cursor.execute(
-            "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
-            (username, hashed, "user")
-        )
-        conn.commit()
-
-        return jsonify({"message": "Register success"})
-
-    except Exception as e:
-        print("REGISTER ERROR:", e)
-        return jsonify({"error": str(e)}), 500
-    
+app.register_blueprint(admin_bp, url_prefix="/admin")
+if os.getenv('LINE_CHANNEL_ACCESS_TOKEN') and os.getenv('LINE_CHANNEL_SECRET'):
+    from routes.webhook import webhook_bp
+    app.register_blueprint(webhook_bp, url_prefix='/line')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    print("🚀 Starting Flask Server (Powered by GraphDB Semantic Web)...")
+    app.run(debug=os.getenv("FLASK_DEBUG") == "1", use_reloader=False, port=5000)

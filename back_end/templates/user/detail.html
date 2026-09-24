@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ex.name }} - DiabBalance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f8f9fa; }
+        .detail-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            height: 200px; border-bottom-left-radius: 50px; border-bottom-right-radius: 50px;
+        }
+        .main-card {
+            margin-top: -100px; border: none; border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden;
+            position: relative;
+        }
+        .ex-img-container { height: 300px; background-color: #fff; text-align: center; }
+        .ex-img { height: 100%; object-fit: contain; padding: 20px; }
+        
+        /* สไตล์สำหรับตัวเลขขั้นตอน */
+        .step-number {
+            width: 35px; height: 35px; background: #4facfe; color: white;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(79, 172, 254, 0.3);
+        }
+        
+        /* กล่องวิดีโอ */
+        .video-wrapper {
+            border-radius: 20px; overflow: hidden; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            background: #000;
+        }
+
+        .warning-box {
+            background-color: #fff8e1; border-left: 5px solid #ffc107;
+            border-radius: 15px; padding: 25px; margin-top: 30px;
+        }
+
+        /* ปุ่มย้อนกลับลอยด้านบน */
+        .btn-back-top {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            border: 1px solid #dee2e6;
+            transition: all 0.2s ease;
+        }
+        .btn-back-top:hover {
+            background-color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar_user.html' %}
+
+    <div class="detail-header"></div>
+
+    <div class="container pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card main-card">
+                    
+                    <!-- 📌 ปุ่มย้อนกลับด้านบนสุด (ลอยฝั่งซ้ายของรูปภาพ) -->
+                    <a href="/user/exercises" class="btn btn-back-top rounded-pill px-3 py-2 text-dark fw-bold">
+                        <i class="fas fa-arrow-left me-2 text-primary"></i>กลับหน้าคลังท่า
+                    </a>
+
+                    <div class="ex-img-container">
+                        <img src="{{ ex.img }}" class="ex-img" alt="{{ ex.name }}" onerror="this.src='/static/images/default_ex.png'">
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <h2 class="fw-bold mb-1">{{ ex.name }}</h2>
+                                <span class="badge bg-primary rounded-pill px-3 py-2">{{ ex.type_th }}</span>
+                            </div>
+                            <div class="text-end">
+                                <div class="h3 fw-bold text-danger mb-0">{{ ex.mets }}</div>
+                                <small class="text-muted fw-bold">METs</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-5 opacity-25">
+
+                        {% if ex.video %}
+                        <div class="mb-5">
+                            <h4 class="fw-bold mb-4">
+                                <i class="fab fa-youtube me-2 text-danger"></i>วิดีโอสาธิตการฝึก
+                            </h4>
+                            <div class="video-wrapper">
+                                <div class="ratio ratio-16x9">
+                                    <iframe 
+                                        src="https://www.youtube.com/embed/{{ ex.video }}?rel=0" 
+                                        title="{{ ex.video }}" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <h4 class="fw-bold mb-4">
+                            <i class="fas fa-person-running me-2 text-primary"></i>วิธีปฏิบัติและขั้นตอน
+                        </h4>
+                        <div class="mb-5">
+                            {% if ex.steps %}
+                                {% for step in ex.steps %}
+                                <div class="d-flex align-items-start mb-4">
+                                    <div class="step-number">{{ loop.index }}</div>
+                                    <div class="fs-5 text-dark" style="line-height: 1.6;">{{ step }}</div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted italic">ขออภัย กำลังจัดเตรียมข้อมูลขั้นตอนปฏิบัติ...</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="warning-box">
+                            <h5 class="fw-bold text-warning-emphasis mb-3">
+                                <i class="fas fa-triangle-exclamation me-2"></i>ข้อควรระวังสำหรับผู้ป่วยเบาหวาน
+                            </h5>
+                            <p class="mb-0 text-dark fs-5">{{ ex.precaution }}</p>
+                        </div>
+
+                        
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

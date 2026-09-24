@@ -8,23 +8,24 @@ def load_ontology():
     print(f"🌍 Loading Ontology from {REPO_NAME}...")
     headers = {"Accept": "text/plain"} 
     params = {"infer": "false"} 
+    world = World()
     try:
-        response = requests.get(f"{GRAPHDB_READ}/statements", headers=headers, params=params)
+        response = requests.get(f"{GRAPHDB_READ}/statements", headers=headers, params=params, timeout=30)
         response.raise_for_status()
         raw_data = response.content.decode('utf-8')
         clean_lines = [line for line in raw_data.splitlines() if "http://www.w3.org/2002/07/owl#imports" not in line]
         clean_data = "\n".join(clean_lines)
-        onto = get_ontology("http://example.org/diabetes_from_db").load(fileobj=io.BytesIO(clean_data.encode('utf-8')), format="ntriples")
+        onto = world.get_ontology("http://example.org/diabetes_from_db").load(fileobj=io.BytesIO(clean_data.encode('utf-8')), format="ntriples")
         print(f"✅ Loaded! Rules count: {len(list(onto.rules()))}")
+        initialize_schema(onto)
         return onto
     except Exception as e:
-        print(f"❌ Error loading ontology: {e}")
-        return None
+        world.close()
+        raise RuntimeError("Cannot load the latest ontology from GraphDB") from e
 
-onto = load_ontology()
 
-# ประกาศ Namespaces และ Classes
-if onto:
+def initialize_schema(onto):
+    """Declare application classes in this request's isolated ontology."""
     ex = onto.get_namespace("http://example.org/diabetes#")
     with onto:
         class Patient(Thing): namespace = ex
@@ -61,3 +62,4 @@ if onto:
         
         class intensityOfExercise(ObjectProperty): namespace = ex
         class exerciseFrequency(ObjectProperty): namespace = ex
+        class favoriteExercise(ObjectProperty): namespace = ex

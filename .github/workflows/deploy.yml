@@ -64,9 +64,9 @@ jobs:
             # สั่ง build และ restart container
             echo "📦 Rebuilding and starting containers..."
             docker compose --env-file .env.deploy -f compose.yaml -f compose.production.yaml pull graphdb proxy || true
-            docker compose --env-file .env.deploy -f compose.yaml -f compose.production.yaml up -d --build web proxy
+            docker compose --env-file .env.deploy -f compose.yaml -f compose.production.yaml --profile jobs up -d --build
 
             # ตรวจสอบสถานะ
             echo "🔍 Checking status..."
-            docker compose --env-file .env.deploy -f compose.yaml -f compose.production.yaml ps
+            docker compose --env-file .env.deploy -f compose.yaml -f compose.production.yaml --profile jobs ps
             echo "✅ Deployment completed successfully!"

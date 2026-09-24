@@ -3,5 +3,8 @@
 }
 
 graphdb.diabalance.tech {
+    tls {
+        issuer zerossl
+    }
     reverse_proxy graphdb:7200
 }

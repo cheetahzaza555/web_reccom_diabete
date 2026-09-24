@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-# ตั้งค่า GraphDB
-REPO_NAME = "Project" 
-GRAPHDB_BASE = "http://localhost:7200/repositories"
-=======
 import os
 from dotenv import load_dotenv
 
@@ -15,7 +10,6 @@ REPO_NAME = os.getenv("GRAPHDB_REPO", "Project")
 
 # เอามาประกอบร่างกันใน Python
 GRAPHDB_BASE = f"{GRAPHDB_URL}/repositories"
->>>>>>> 17c103169a337a3766553a5a745813c721a4e545
 GRAPHDB_READ = f"{GRAPHDB_BASE}/{REPO_NAME}"
 GRAPHDB_WRITE = f"{GRAPHDB_BASE}/{REPO_NAME}/statements"
 

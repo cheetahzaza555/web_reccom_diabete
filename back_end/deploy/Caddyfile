@@ -3,5 +3,8 @@
 }
 
 http://graphdb.diabalance.tech, https://graphdb.diabalance.tech {
+    basic_auth {
+        admin $2a$14$xFhby8NhCsPNa2MXzVrqGORUsrOYAb58b3YBxo3Ds5N3m6PsUjHNW
+    }
     reverse_proxy graphdb:7200
 }

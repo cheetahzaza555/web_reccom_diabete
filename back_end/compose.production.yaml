@@ -1,7 +1,7 @@
 services:
   graphdb:
     ports: !override
-      - "7200:7200"
+      - "127.0.0.1:7201:7200"
   web:
     environment:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-1}

@@ -165,7 +165,7 @@ def save_results_to_db(pid_num, recs, warns, comorbs, complis, avoids, intens, f
 
 def delete_patient(patient_id):
     if not validate_id(patient_id):
-        return
+        return False
     pid = f"Patient{patient_id}"
     sparql_write.setQuery(
         f"PREFIX ex: <http://example.org/diabetes#> "
@@ -175,6 +175,8 @@ def delete_patient(patient_id):
         f"OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} }}"
     )
     sparql_write.query()
+
+    return True
 
 
 def get_patient_profile(patient_id):

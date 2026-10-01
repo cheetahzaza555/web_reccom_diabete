@@ -132,18 +132,25 @@ def get_admin_dashboard_stats():
 
 
 def get_recent_registered_users():
-    """ดึงรายชื่อผู้ป่วยที่ลงทะเบียนในระบบมาแสดงในตารางกิจกรรมล่าสุด"""
+    """ผู้สมัครล่าสุด 5 ราย โดยบัญชีที่ไม่มีวันที่สมัครอยู่ท้ายรายการ"""
     sparql = SPARQLWrapper(GRAPHDB_READ)
     user_list = []
 
     query = """
     PREFIX ex: <http://example.org/diabetes#>
-    SELECT DISTINCT ?username ?fname ?lname WHERE {
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    SELECT DISTINCT ?p ?username ?fname ?lname ?createdAt WHERE {
         ?p a ex:Patient .
         OPTIONAL { ?p ex:username ?username . }
         OPTIONAL { ?p ex:firstname ?fname . }
         OPTIONAL { ?p ex:lastname ?lname . }
-    } LIMIT 5
+        OPTIONAL {
+            ?p ex:createdAt ?rawCreatedAt .
+            BIND(xsd:dateTime(?rawCreatedAt) AS ?createdAt)
+        }
+    }
+    ORDER BY DESC(BOUND(?createdAt)) DESC(?createdAt) ASC(STR(?p))
+    LIMIT 5
     """
     try:
         sparql.setQuery(query)
@@ -157,7 +164,8 @@ def get_recent_registered_users():
 
             user_list.append({
                 "firstname": f_name,
-                "lastname": l_name
+                "lastname": l_name,
+                "created_at": row.get("createdAt", {}).get("value")
             })
     except Exception as e:
         print("❌ [Admin Module Error] เกิดข้อผิดพลาดขณะ Query รายชื่อผู้ใช้ล่าสุด:", e)

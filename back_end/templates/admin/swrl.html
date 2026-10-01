@@ -4,20 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DiaBalance Admin | จัดการกฎ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
-  <body>
+  <body class="admin-page">
     {% include 'includes/navbar_admin.html' %}
     <style>
       body {
         background: #fff;
         color: #333;
-        font-family: "Kanit", sans-serif;
+        font-family: "Prompt", sans-serif;
       }
       .rules-page {
-        max-width: 1500px;
-        padding: 36px 40px 56px;
-        margin: 0 auto;
+        width: 100%;
+        max-width: none;
+        padding: 40px 40px 56px;
+        margin: 0;
         min-width: 0;
       }
       .rules-page *,
@@ -34,7 +36,7 @@
         margin-bottom: 20px;
       }
       .rules-breadcrumb a {
-        color: #3366cc;
+        color: #2b5cb3;
         text-decoration: none;
       }
       .rules-breadcrumb a:hover {
@@ -45,13 +47,13 @@
         justify-content: space-between;
         align-items: center;
         gap: 24px;
-        margin-bottom: 30px;
+        margin-bottom: 32px;
       }
       .rules-header h1 {
         font-size: 28px;
         font-weight: 600;
         margin: 0 0 8px;
-        color: #29364b;
+        color: #333333;
       }
       .rules-header p {
         font-size: 14px;
@@ -65,32 +67,61 @@
         justify-content: center;
         gap: 9px;
         flex-shrink: 0;
-        padding: 12px 20px;
+        padding: 10px 20px;
         border-radius: 8px;
-        background: #3366cc;
+        background: #2b5cb3;
         color: #fff;
         text-decoration: none;
         font-size: 14px;
         font-weight: 500;
-        box-shadow: 0 3px 8px #3366cc20;
+        border: 1px solid transparent;
       }
       .rules-add:hover {
-        background: #2952a3;
+        background: #1e458a;
         color: #fff;
       }
       .rules-panel {
+        width: 100%;
+        padding: 24px;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
         background: #fff;
-        overflow: hidden;
-        box-shadow: 0 4px 16px #23334b04;
+        overflow-x: auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
       }
+      .rules-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        table-layout: fixed;
+      }
+      .rules-table th {
+        background: #f8fafc;
+        color: #666;
+        font-weight: 600;
+        padding: 16px;
+        font-size: 14px;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      .rules-table td {
+        padding: 16px;
+        font-size: 14px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+      }
+      .rules-table th:first-child { width: 20%; }
+      .rules-table .rules-actions { width: 150px; text-align: center; }
+      .rules-table tbody tr:hover { background: #f8fafc; }
+      .rules-table .rule-details { margin: 8px 0 0; }
+      .rules-table .rules-empty { padding: 40px 16px; }
+      .rules-table .rule-expression { max-width: 100%; }
       .rules-panel-heading {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 24px;
-        padding: 24px;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 16px;
+        padding: 0 0 20px;
       }
       .rules-panel-title {
         display: flex;
@@ -105,7 +136,7 @@
         height: 42px;
         flex-shrink: 0;
         background: #edf3ff;
-        color: #3366cc;
+        color: #2b5cb3;
         border-radius: 12px;
         font-size: 20px;
       }
@@ -117,7 +148,7 @@
       .rules-total {
         display: inline-block;
         font-size: 12px;
-        color: #3366cc;
+        color: #2b5cb3;
         background: #edf3ff;
         border-radius: 20px;
         padding: 2px 9px;
@@ -125,14 +156,15 @@
         vertical-align: middle;
       }
       .rules-panel-title p {
-        font-size: 12px;
-        color: #758095;
+        font-size: 14px;
+        color: #666;
         margin: 0;
       }
       .rules-search {
         position: relative;
-        flex: 0 1 380px;
-        min-width: 220px;
+        flex: auto;
+        width: 100%;
+        min-width: 0;
       }
       .rules-search > i {
         position: absolute;
@@ -144,11 +176,11 @@
       }
       .rules-search input {
         font: inherit;
-        font-size: 13px;
+        font-size: 14px;
         width: 100%;
         min-height: 44px;
         border: 1px solid #dce3ed;
-        background: #f8fafc;
+        background: #fff;
         border-radius: 8px;
         padding: 10px 40px;
         color: #333;
@@ -172,19 +204,22 @@
         display: flex;
         justify-content: space-between;
         gap: 12px;
-        background: #f8fafc;
-        border-top: 1px solid #edf0f5;
-        border-bottom: 1px solid #edf0f5;
-        padding: 11px 24px;
-        font-size: 12px;
-        color: #758095;
+        padding: 0 0 16px;
+        font-size: 14px;
+        color: #666;
       }
       .rule-item {
-        padding: 22px 24px;
+        padding: 20px 24px;
         border-bottom: 1px solid #edf0f5;
       }
       .rule-item:last-child {
         border-bottom: 0;
+      }
+      .rule-item:hover {
+        background: #f8fafc;
+      }
+      .rule-item:focus-within {
+        background: #f8fafc;
       }
       .rule-item-heading {
         display: flex;
@@ -198,11 +233,8 @@
         min-width: 36px;
         height: 36px;
         padding: 0 6px;
-        border: 1px solid #e3eaf5;
-        border-radius: 9px;
-        background: #f8faff;
-        color: #6b83ac;
-        font-size: 12px;
+        color: #666;
+        font-size: 14px;
       }
       .rule-text {
         flex: 1;
@@ -210,15 +242,15 @@
       }
       .rule-text h3 {
         font-size: 16px;
-        font-weight: 500;
-        color: #273c60;
+        font-weight: 600;
+        color: #333;
         margin: 1px 0 7px;
         line-height: 1.65;
         overflow-wrap: anywhere;
       }
       .rule-description {
-        font-size: 13px;
-        color: #6b7280;
+        font-size: 14px;
+        color: #666;
         line-height: 1.8;
         margin: 0;
         white-space: pre-wrap;
@@ -234,17 +266,18 @@
         gap: 6px;
         flex-shrink: 0;
         padding: 7px 10px;
-        border: 1px solid #fee2e2;
-        border-radius: 7px;
-        color: #d14b4b;
-        background: #fff;
+        border: 1px solid #fed7d7;
+        border-radius: 6px;
+        color: #e53e3e;
+        background: #fff5f5;
         font: inherit;
         font-size: 12px;
         cursor: pointer;
       }
       .rule-delete:hover {
-        background: #fff1f1;
-        border-color: #f5bebe;
+        background: #e53e3e;
+        border-color: #e53e3e;
+        color: #fff;
       }
       .rule-details {
         margin: 14px 0 0 50px;
@@ -253,7 +286,7 @@
       .rule-details summary {
         width: fit-content;
         max-width: 100%;
-        color: #3366cc;
+        color: #2b5cb3;
         font-size: 13px;
         cursor: pointer;
         padding: 4px 0;
@@ -310,7 +343,7 @@
         outline-offset: 3px;
       }
       .swal2-popup {
-        font-family: "Kanit", sans-serif;
+        font-family: "Sarabun", sans-serif;
         border-radius: 16px;
       }
       @media (max-width: 1150px) {
@@ -339,7 +372,9 @@
         .rules-header h1 {
           font-size: 25px;
         }
-        .rules-panel-heading,
+        .rules-panel-heading {
+          padding: 0 0 20px;
+        }
         .rule-item {
           padding: 18px 16px;
         }
@@ -368,7 +403,7 @@
       {% include 'includes/admin_breadcrumb.html' %}
       <header class="rules-header">
         <div>
-          <h1>จัดการกฎ</h1>
+          <h1>จัดการกฎการแนะนำ</h1>
           <p>
             ดูเงื่อนไขและผลลัพธ์ที่ใช้ในการแนะนำ เพิ่มกฎใหม่
             หรือจัดการกฎที่มีอยู่
@@ -378,7 +413,6 @@
           ><i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มกฎใหม่</a
         >
       </header>
-      <section class="rules-panel" aria-labelledby="rules-list-title">
         <div class="rules-panel-heading">
           <div class="rules-panel-title">
             <span class="rules-icon"
@@ -411,11 +445,21 @@
             </button>
           </div>
         </div>
+      <section class="rules-panel table-card" aria-labelledby="rules-list-title">
         <div class="rules-list-caption">
           <span id="result-count" role="status" aria-live="polite"></span
           ><span>เรียงตามชื่อกฎ</span>
         </div>
-        <div id="rules-list"></div>
+        <table class="rules-table">
+          <thead>
+            <tr>
+              <th scope="col">ชื่อกฎ</th>
+              <th scope="col">รายละเอียดกฎ</th>
+              <th scope="col" class="rules-actions">จัดการข้อมูล</th>
+            </tr>
+          </thead>
+          <tbody id="rules-list"></tbody>
+        </table>
         <noscript
           ><p class="rules-empty">
             กรุณาเปิด JavaScript เพื่อแสดงและจัดการรายการกฎ
@@ -522,7 +566,9 @@
             : `ทั้งหมด ${rules.length} กฎ`;
           list.replaceChildren();
           if (!filtered.length) {
-            const empty = element("div", "rules-empty");
+            const emptyRow = element("tr", "");
+            const empty = element("td", "rules-empty");
+            empty.colSpan = 3;
             const icon = element(
               "i",
               query ? "bi bi-search" : "bi bi-journal-plus",
@@ -543,23 +589,18 @@
                   : "เริ่มสร้างเงื่อนไขและผลลัพธ์ด้วยปุ่ม “เพิ่มกฎใหม่” ด้านบน",
               ),
             );
-            list.append(empty);
+            emptyRow.append(empty);
+            list.append(emptyRow);
             return;
           }
           const fragment = document.createDocumentFragment();
-          filtered.forEach((rule, index) => {
+          filtered.forEach((rule) => {
             const title = rule.rule_label || "กฎที่ไม่มีชื่อ";
-            const article = element("article", "rule-item");
-            const heading = element("div", "rule-item-heading");
-            const number = element(
-              "span",
-              "rule-index",
-              String(index + 1).padStart(2, "0"),
-            );
-            number.setAttribute("aria-hidden", "true");
-            const text = element("div", "rule-text");
+            const row = element("tr", "");
+            const nameCell = element("td", "rule-name");
+            nameCell.append(element("strong", "", title));
+            const text = element("td", "rule-text");
             text.append(
-              element("h3", "", title),
               element(
                 "p",
                 rule.comment
@@ -580,9 +621,12 @@
                 encodeURIComponent(rule.rule_label || "-"),
               ),
             );
-            heading.append(number, text, remove);
+            const actionCell = element("td", "rules-actions");
+            const actions = element("div", "action-buttons");
+            actions.append(remove);
+            actionCell.append(actions);
             const details = element("details", "rule-details");
-            const summary = element("summary", "", "ดูเงื่อนไข");
+            const summary = element("summary", "", "ดูเงื่อนไขและผลลัพธ์");
             const code = element(
               "code",
               "",
@@ -591,8 +635,9 @@
             const pre = element("pre", "rule-expression");
             pre.append(code);
             details.append(summary, pre);
-            article.append(heading, details);
-            fragment.append(article);
+            text.append(details);
+            row.append(nameCell, text, actionCell);
+            fragment.append(row);
           });
           list.append(fragment);
         }
@@ -605,5 +650,6 @@
         render();
       })();
     </script>
-  </body>
+  {% include 'includes/admin_responsive.html' %}
+</body>
 </html>

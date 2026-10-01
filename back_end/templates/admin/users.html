@@ -115,7 +115,7 @@
         .swal2-popup { font-family: 'Sarabun', sans-serif !important; border-radius: 16px !important; }
     </style>
 </head>
-<body>
+<body class="admin-page">
 
     <div class="admin-layout">
         {% include 'includes/navbar_admin.html' %}
@@ -162,7 +162,7 @@
                             </td>
                             <td style="text-align: center;">
                                 <button class="btn-delete" onclick="deleteUser('{{ user.id }}')">
-                                    <i class="fa-solid fa-trash-can"></i> ลบผู้ใช้
+                                    <i class="bi bi-trash3" aria-hidden="true"></i> ลบผู้ใช้
                                 </button>
                             </td>
                         </tr>
@@ -247,7 +247,7 @@
         function deleteUser(userId) {
             Swal.fire({
                 title: 'คุณแน่ใจใช่ไหมที่จะลบ?',
-                text: `บัญชีไอดี #${userId} จะถูกลบออกจากคลังข้อมูล GraphDB ทั้งหมดและไม่สามารถกู้คืนได้!`,
+                text: `ต้องการลบบัญชีไอดี #${userId} และผลตรวจที่เชื่อมกับบัญชีนี้ใช่ไหม? การลบไม่สามารถย้อนกลับผ่านหน้าเว็บได้`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E53E3E',
@@ -255,21 +255,29 @@
                 confirmButtonText: 'ใช่, ลบออกไปเลย!',
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'กำลังลบข้อมูล...',
-                        icon: 'info',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        // แจ้งเตือนจำลองการทำงานก่อนเขียน SPARQL DELETE จริงในอนาคต
-                        Swal.fire(
-                            'ส่งคำขอสำเร็จ!',
-                            `ระบบจำลองการส่งคำขอคำสั่งลบไอดี ${userId} ไปที่เซิร์ฟเวอร์เรียบร้อย`,
-                            'success'
-                        );
+            }).then(async (result) => {
+                if (!result.isConfirmed) return;
+                Swal.fire({
+                    title: 'กำลังลบข้อมูล...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => Swal.showLoading()
+                });
+                try {
+                    const response = await fetch(`/admin/api/patient/${encodeURIComponent(userId)}`, {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json' }
                     });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || data.status !== 'deleted') {
+                        throw new Error(data.message || 'ลบบัญชีไม่สำเร็จ กรุณาลองใหม่');
+                    }
+                    await Swal.fire('ลบบัญชีสำเร็จ', 'ลบบัญชีที่เลือกเรียบร้อยแล้ว', 'success');
+                    location.reload();
+                } catch (error) {
+                    Swal.fire('ลบบัญชีไม่สำเร็จ', error.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
                 }
             });
         }
@@ -279,5 +287,6 @@
             select.setAttribute('data-current', select.value);
         });
     </script>
+{% include 'includes/admin_responsive.html' %}
 </body>
 </html>

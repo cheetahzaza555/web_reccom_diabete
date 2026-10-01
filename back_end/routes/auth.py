@@ -137,7 +137,6 @@ def get_current_user():
     # --- 1. API สำหรับส่ง OTP ไปที่อีเมล ---
 @auth.route("/api/request_otp", methods=["POST"])
 def request_otp():
-    print("🔑 ข้อมูลใน Session แอดมินตอนนี้คือ:", dict(session))
     try:
         data = request.json or {}
 

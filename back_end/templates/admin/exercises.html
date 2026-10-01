@@ -163,7 +163,7 @@
         .swal2-input { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
     </style>
 </head>
-<body>
+<body class="admin-page">
 
     <div id="exercise-data-container" style="display: none;" 
          data-json="{% if exercises %}{{ exercises | tojson | safe | forceescape }}{% else %}[]{% endif %}"
@@ -192,7 +192,7 @@
                 </select>
 
                 <button class="btn-add-exercise" onclick="openAddExerciseModal()">
-                    <i class="fa-solid fa-circle-plus"></i> เพิ่มท่าออกกำลังกายใหม่
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มท่าออกกำลังกายใหม่
                 </button>
             </div>
 
@@ -345,10 +345,10 @@
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="openEditExerciseModal('${item.id}', '${item.name.replace(/'/g, "\\'")}', '${actualClass}', '${item.mets}', '${item.youtube_id || ''}')">
-                                <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                                <i class="bi bi-pencil-square" aria-hidden="true"></i> แก้ไข
                             </button>
                             <button class="btn-delete" onclick="deleteExercise('${item.id}')">
-                                <i class="fa-solid fa-trash-can"></i> ลบ
+                                <i class="bi bi-trash3" aria-hidden="true"></i> ลบ
                             </button>
                         </div>
                     </td>
@@ -571,5 +571,6 @@
             });
         }
     </script>
+{% include 'includes/admin_responsive.html' %}
 </body>
 </html>

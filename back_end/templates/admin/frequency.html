@@ -58,7 +58,7 @@
         .swal2-input { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
     </style>
 </head>
-<body>
+<body class="admin-page">
 
     <!-- 📥 รับข้อมูล JSON จาก Flask Controller -->
     <div id="freq-data-container" style="display: none;" 
@@ -84,7 +84,7 @@
                 </div>
 
                 <button class="btn-add-freq" onclick="openAddFreqModal()">
-                    <i class="fa-solid fa-clock-rotate-left"></i> เพิ่มความถี่ใหม่
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มความถี่ใหม่
                 </button>
             </div>
 
@@ -130,10 +130,10 @@
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="openEditFreqModal('${item.freq_id}', '${(item.description || '').replace(/'/g, "\\'")}')">
-                                <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                                <i class="bi bi-pencil-square" aria-hidden="true"></i> แก้ไข
                             </button>
                             <button class="btn-delete" onclick="deleteFreq('${item.freq_id}', '${(item.description || '').replace(/'/g, "\\'")}')">
-                                <i class="fa-solid fa-trash"></i> ลบ
+                                <i class="bi bi-trash3" aria-hidden="true"></i> ลบ
                             </button>
                         </div>
                     </td>
@@ -274,5 +274,6 @@
             });
         }
     </script>
+{% include 'includes/admin_responsive.html' %}
 </body>
 </html>

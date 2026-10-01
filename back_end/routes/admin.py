@@ -1,9 +1,10 @@
 from flask import Blueprint, redirect, render_template, jsonify, request, session, url_for
 from modules.db.admin_repository import delete_avoidance, delete_category_from_ontology, delete_exercise_from_ontology, delete_frequency, delete_warning, get_all_categories_for_dropdown, get_all_categories_from_ontology, get_avoidance_page, get_frequencies, insert_exercise_to_ontology, insert_exercise_to_ontology_v2, save_or_update_avoidance, save_or_update_avoidance, save_or_update_frequency, save_or_update_warning, update_category_hierarchy_in_ontology, get_patient_warning
-from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db
+from modules.db.auth_repository import get_password_hash_by_id, update_user_profile_db, update_password_db
 from modules.db.exercise_repository import get_all_exercises_for_library
 from modules.db.swrl import *
 from utils.security import admin_required  # 🛡️ เปิดใช้งานยามเฝ้าประตู
+from modules.db.connection import validate_id
 from werkzeug.security import check_password_hash, generate_password_hash
 import random
 from modules.db import (
@@ -34,10 +35,17 @@ def get_patient(id):
 @admin_bp.route('/api/patient/<id>', methods=['DELETE'])
 @admin_required  # 🔒 ดักสิทธิ์: ป้องกันคนนอกแอบมายิง API ลบคนไข้
 def delete_patient_route(id):
-    result = delete_patient(id)
+    if not validate_id(id):
+        return jsonify({"status": "error", "message": "ไอดีบัญชีไม่ถูกต้อง"}), 400
+    if str(session.get("user_id")) == id:
+        return jsonify({"status": "error", "message": "ไม่สามารถลบบัญชีที่กำลังใช้งานอยู่ได้"}), 409
+    try:
+        result = delete_patient(id)
+    except Exception:
+        return jsonify({"status": "error", "message": "ลบบัญชีไม่สำเร็จ กรุณาลองใหม่"}), 500
     if result:
         return jsonify({"status": "deleted"})
-    return jsonify({"status": "error", "message": "ไม่สามารถลบข้อมูลได้"})
+    return jsonify({"status": "error", "message": "ไม่สามารถลบข้อมูลได้"}), 500
 
 
 # ==========================================
@@ -196,31 +204,45 @@ def setting():
 @admin_required
 def update_admin_settings():
     admin_id = session.get('admin_id') or session.get('user_id')
-    data = request.json
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({"status": "error", "message": "ข้อมูลคำขอไม่ถูกต้อง"}), 400
+    action = data.get('action')
+    if action not in ('profile', 'password'):
+        return jsonify({"status": "error", "message": "กรุณาเลือกส่วนที่ต้องการแก้ไข"}), 400
+    if (not session.get('register_otp') or data.get('otp') != session.get('register_otp')
+            or not session.get('email') or session.get('register_email') != session.get('email')):
+        return jsonify({"status": "error", "message": "รหัส OTP ไม่ถูกต้อง กรุณาขอรหัสใหม่"}), 400
 
-    firstname = data.get('firstname', '').strip()
-    lastname = data.get('lastname', '').strip()
-    old_password = data.get('old_password')
-    new_password = data.get('new_password')
-
-    new_hash = None
-    if new_password:
-        if not old_password:
+    if action == 'profile':
+        firstname = data.get('firstname', '')
+        lastname = data.get('lastname', '')
+        if not isinstance(firstname, str) or not isinstance(lastname, str):
+            return jsonify({"status": "error", "message": "ชื่อและนามสกุลไม่ถูกต้อง"}), 400
+        firstname, lastname = firstname.strip(), lastname.strip()
+        if not firstname or not lastname or max(len(firstname), len(lastname)) > 100:
+            return jsonify({"status": "error", "message": "กรุณากรอกชื่อและนามสกุล ไม่เกินช่องละ 100 ตัวอักษร"}), 400
+        success = update_user_profile_db(admin_id, firstname, lastname)
+    else:
+        old_password = data.get('old_password', '')
+        new_password = data.get('new_password', '')
+        if not isinstance(old_password, str) or not old_password:
             return jsonify({"status": "error", "message": "กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยัน"}), 400
-        current_hash = get_password_hash_by_id(admin_id) # ⚠️ ตรวจสอบว่าฟังก์ชันนี้ใช้ของแอดมินด้วยหรือไม่
+        if not isinstance(new_password, str) or not 6 <= len(new_password) <= 128:
+            return jsonify({"status": "error", "message": "รหัสผ่านใหม่ต้องมีความยาว 6–128 ตัวอักษร"}), 400
+        current_hash = get_password_hash_by_id(admin_id)
         if not current_hash or not check_password_hash(current_hash, old_password):
             return jsonify({"status": "error", "message": "รหัสผ่านปัจจุบันไม่ถูกต้อง"}), 400
-        new_hash = generate_password_hash(new_password)
+        success = update_password_db(admin_id, generate_password_hash(new_password))
 
-    #  แก้ไขตรงนี้: เปลี่ยนเป็นฟังก์ชันอัปเดตโปรไฟล์ของแอดมิน
-    success = update_user_profile_db(admin_id, firstname, lastname, new_hash)
-
-    if success:
+    if not success:
+        return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500
+    if action == 'profile':
         session['firstname'] = firstname
         session['lastname'] = lastname
-        return jsonify({"status": "success", "message": "อัปเดตข้อมูลผู้ดูแลระบบสำเร็จ"})
-    else:
-        return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500
+    session.pop('register_otp', None)
+    session.pop('register_email', None)
+    return jsonify({"status": "success", "message": "แก้ไขชื่อสำเร็จ" if action == 'profile' else "เปลี่ยนรหัสผ่านสำเร็จ"})
 
 @admin_bp.route('/category', methods=['GET'])
 @admin_required

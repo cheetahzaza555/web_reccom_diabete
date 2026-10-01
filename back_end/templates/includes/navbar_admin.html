@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ... (Style เดิมทั้งหมด ไม่ต้องแก้) ... */
+        /* Scrollable sidebar with subtle edge shadows instead of a visible scrollbar. */
         :root { --sidebar-width: 260px; --primary-blue: #3366CC; --primary-dark: #2952A3; --hover-bg: #4A7BD4; }
         * { margin: 0; padding: 0; box-sizing: border-box;}
         body { font-family: 'Kanit', sans-serif; overflow-x: hidden; margin-left: var(--sidebar-width); transition: margin-left 0.3s ease; }
@@ -39,16 +39,78 @@
         @media (max-width: 768px) { .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; } .sidebar.active { transform: translateX(0); } .sidebar-toggle { display: flex; align-items: center; justify-content: center; } .sidebar.active ~ .sidebar-toggle { left: calc(var(--sidebar-width) + 1rem); } }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999; }
         .sidebar-overlay.active { display: block; }
+        .sidebar {
+            height: 100dvh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            overscroll-behavior-y: contain;
+            background-image:
+                linear-gradient(var(--primary-blue), transparent),
+                linear-gradient(transparent, var(--primary-dark)),
+                radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .22), transparent),
+                radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, .22), transparent),
+                linear-gradient(180deg, var(--primary-blue), var(--primary-dark));
+            background-size: 100% 36px, 100% 36px, 100% 12px, 100% 12px, 100% 100%;
+            background-position: top, bottom, top, bottom, center;
+            background-repeat: no-repeat;
+            background-attachment: local, local, scroll, scroll, scroll;
+        }
+        .sidebar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        .sidebar:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
+        .sidebar-scroll-cue {
+            position: sticky;
+            z-index: 2;
+            flex: 0 0 44px;
+            width: 100%;
+            min-height: 44px;
+            border: 0;
+            border-radius: 0;
+            background: #244987;
+            color: #fff;
+            font: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            visibility: hidden;
+        }
+        .sidebar-scroll-cue.is-visible { visibility: visible; }
+        .sidebar-scroll-cue:hover { background: #193968; }
+        .sidebar-scroll-cue:focus-visible { outline: 2px solid white; outline-offset: -3px; }
+        .sidebar-scroll-up { top: 0; margin-bottom: -44px; }
+        .sidebar-scroll-down { bottom: 0; margin-top: -44px; }
+        .sidebar-header { padding-top: 3rem; }
+        .sidebar-user { padding-bottom: 3rem; }
+        .sidebar-header, .sidebar-bottom { flex-shrink: 0; }
+        .sidebar .nav-link:hover { transform: none; }
+        .sidebar .nav-link:focus { color: white; }
+        .sidebar .nav-link.active:focus { color: var(--primary-blue); }
+        .sidebar .master-data-toggle {
+            display: grid;
+            grid-template-columns: 24px minmax(0, 1fr) 16px;
+            gap: 8px;
+            color: white;
+        }
+        .sidebar .master-data-toggle > span { min-width: 0; }
+        .sidebar .master-data-toggle .menu-chevron {
+            min-width: 0;
+            font-size: 16px;
+            transition: transform 0.2s ease;
+        }
+        .sidebar .master-data-toggle[aria-expanded="true"] .menu-chevron { transform: rotate(180deg); }
     </style>
 </head>
 <body>
-    <button class="sidebar-toggle" id="sidebarToggle">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="เปิดเมนูผู้ดูแลระบบ" aria-controls="sidebar" aria-expanded="false">
         <i class="bi bi-list"></i>
     </button>
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" tabindex="0" aria-label="เมนูผู้ดูแลระบบ เลื่อนขึ้นลงเพื่อดูรายการเพิ่มเติม">
+        <button type="button" class="sidebar-scroll-cue sidebar-scroll-up" id="sidebarScrollUp" disabled>
+            <i class="bi bi-chevron-up" aria-hidden="true"></i> เลื่อนขึ้น
+        </button>
         <div class="sidebar-header">
             <div class="brand-logo">
                 <i class="bi bi-heart-pulse-fill"></i>
@@ -74,12 +136,10 @@
 
             <div class="nav-item">
                 <!-- ปุ่มหลักสำหรับกดเปิด-ปิด เมนูย่อย -->
-                <a href="#masterDataMenu" class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="masterDataMenu">
-                    <div>
-                        <i class="bi bi-book-fill"></i>
-                        <span>จัดการคลังข้อมูล</span>
-                    </div>
-                    <i class="bi bi-chevron-down ms-auto text-xs"></i>
+                <a href="#masterDataMenu" class="nav-link master-data-toggle" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="masterDataMenu">
+                    <i class="bi bi-book-fill" aria-hidden="true"></i>
+                    <span>จัดการคลังข้อมูล</span>
+                    <i class="bi bi-chevron-down menu-chevron" aria-hidden="true"></i>
                 </a>
 
                 <!-- รายการเมนูย่อยที่ซ่อนอยู่ (จะสไลด์ลงมาเมื่อกด) -->
@@ -132,6 +192,9 @@
                 </div>
             </div>
         </div>
+        <button type="button" class="sidebar-scroll-cue sidebar-scroll-down" id="sidebarScrollDown" disabled>
+            <i class="bi bi-chevron-down" aria-hidden="true"></i> เลื่อนดูเมนูด้านล่าง
+        </button>
     </aside>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -140,20 +203,59 @@
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const scrollUp = document.getElementById('sidebarScrollUp');
+        const scrollDown = document.getElementById('sidebarScrollDown');
+        function updateScrollCues() {
+            const above = sidebar.scrollTop > 2;
+            const below = sidebar.scrollHeight - sidebar.clientHeight - sidebar.scrollTop > 2;
+            [[scrollUp, above], [scrollDown, below]].forEach(([button, visible]) => {
+                if (!visible && document.activeElement === button) sidebar.focus({ preventScroll: true });
+                button.classList.toggle('is-visible', visible);
+                button.disabled = !visible;
+            });
+        }
+        [[scrollUp, -1], [scrollDown, 1]].forEach(([button, direction]) => {
+            button.addEventListener('click', () => sidebar.scrollBy({
+                top: direction * sidebar.clientHeight * 0.65,
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
+            }));
+        });
+        sidebar.addEventListener('scroll', updateScrollCues, { passive: true });
+        const sidebarSizeObserver = new ResizeObserver(updateScrollCues);
+        [sidebar, ...sidebar.children].forEach(node => sidebarSizeObserver.observe(node));
+        document.fonts.ready.then(updateScrollCues);
+        requestAnimationFrame(updateScrollCues);
+
+        function setAdminMenu(open) {
+            sidebar.classList.toggle('active', open);
+            sidebarOverlay.classList.toggle('active', open);
+            document.body.classList.toggle('admin-menu-open', open);
+            sidebarToggle.setAttribute('aria-expanded', String(open));
+            sidebarToggle.setAttribute('aria-label', open ? 'ปิดเมนูผู้ดูแลระบบ' : 'เปิดเมนูผู้ดูแลระบบ');
+            sidebar.inert = window.innerWidth <= 768 && !open;
+        }
 
         if (sidebarToggle) {
             sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('active');
-                sidebarOverlay.classList.toggle('active');
+                setAdminMenu(!sidebar.classList.contains('active'));
             });
         }
 
         if (sidebarOverlay) {
             sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
+                setAdminMenu(false);
+                sidebarToggle.focus();
             });
         }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && sidebar.classList.contains('active')) {
+                setAdminMenu(false);
+                sidebarToggle.focus();
+            }
+        });
+        window.matchMedia('(max-width: 768px)').addEventListener('change', () => setAdminMenu(false));
+        setAdminMenu(false);
 
         // Active Link Logic (รองรับ ?tab=... และกางเมนูย่อยอัตโนมัติ)
         const currentFullUrl = window.location.pathname + window.location.search;

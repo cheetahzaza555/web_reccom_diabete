@@ -152,7 +152,7 @@
         }
     </style>
 </head>
-<body>
+<body class="admin-page">
 
     <div class="admin-layout">
         
@@ -204,7 +204,13 @@
                                 <div class="main-text">คุณ {{ user.firstname }} {{ user.lastname }}</div>
                             </div>
                         </div>
-                        <div class="activity-time">สมาชิกใหม่</div>
+                        <div class="activity-time">
+                            {% if user.created_at %}
+                            สมัครเมื่อ {{ user.created_at[:10] }}
+                            {% else %}
+                            ไม่พบวันที่สมัคร
+                            {% endif %}
+                        </div>
                     </div>
                     {% else %}
                     <div style="text-align: center; color: var(--text-muted); padding: 20px;">
@@ -218,5 +224,6 @@
         </div>
     </div>
 
+{% include 'includes/admin_responsive.html' %}
 </body>
 </html>

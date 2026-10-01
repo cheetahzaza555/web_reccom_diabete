@@ -139,7 +139,7 @@
         .swal2-textarea { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
     </style>
 </head>
-<body>
+<body class="admin-page">
 
     <!-- 📥 รับข้อมูล JSON จาก Flask Backend (โครงสร้าง: [{id: "Warning1", description: "ท่านเป็นเบาหวานชนิดที่ 1..."}, ...]) -->
     <div id="patient-warning-data-container" style="display: none;" 
@@ -165,7 +165,7 @@
                 </div>
 
                 <button class="btn-add-patient-warning" onclick="openAddPatientWarningModal()">
-                    <i class="fa-solid fa-user-shield"></i> เพิ่มคำเตือนสภาวะผู้ป่วย
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มคำเตือนสภาวะผู้ป่วย
                 </button>
             </div>
 
@@ -212,10 +212,10 @@
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="openEditPatientWarningModal('${item.id}', '${safeDesc}')">
-                                <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                                <i class="bi bi-pencil-square" aria-hidden="true"></i> แก้ไข
                             </button>
                             <button class="btn-delete" onclick="deletePatientWarning('${item.id}', '${safeDesc}')">
-                                <i class="fa-solid fa-trash-can"></i> ลบ
+                                <i class="bi bi-trash3" aria-hidden="true"></i> ลบ
                             </button>
                         </div>
                     </td>
@@ -358,5 +358,6 @@
             });
         }
     </script>
+{% include 'includes/admin_responsive.html' %}
 </body>
 </html>

@@ -166,6 +166,13 @@
         width: 100%;
         min-width: 0;
       }
+      .rules-toolbar { display: flex; align-items: stretch; gap: 16px; }
+      .rules-toolbar .rules-search { flex: 1; width: auto; }
+      .rules-toolbar .rules-search input { height: 100%; }
+      @media (max-width: 768px) {
+        .rules-toolbar { flex-direction: column; gap: 12px; }
+        .rules-toolbar .rules-add { width: 100%; }
+      }
       .rules-search > i {
         position: absolute;
         left: 14px;
@@ -409,9 +416,6 @@
             หรือจัดการกฎที่มีอยู่
           </p>
         </div>
-        <a class="rules-add" href="{{ url_for('admin.new_swrl_rule') }}"
-          ><i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มกฎใหม่</a
-        >
       </header>
         <div class="rules-panel-heading">
           <div class="rules-panel-title">
@@ -426,6 +430,7 @@
               <p>เลือก “ดูเงื่อนไขและผลลัพธ์” เพื่ออ่านกฎฉบับเต็ม</p>
             </div>
           </div>
+          <div class="rules-toolbar">
           <div class="rules-search">
             <label class="rules-sr-only" for="searchBar">ค้นหากฎ</label>
             <i class="bi bi-search" aria-hidden="true"></i>
@@ -443,6 +448,10 @@
             >
               ×
             </button>
+          </div>
+          <a class="rules-add" href="{{ url_for('admin.new_swrl_rule') }}"
+            ><i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มกฎใหม่</a
+          >
           </div>
         </div>
       <section class="rules-panel table-card" aria-labelledby="rules-list-title">

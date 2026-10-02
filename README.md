@@ -1,6 +1,6 @@
 # DiaBalance - Diabetes Exercise Recommendation System
 
-DiaBalance เป็นระบบแนะนำและจัดตารางการออกกำลังกายสำหรับผู้ป่วยเบาหวาน โดยใช้เทคโนโลยี Semantic Web (Ontology & SWRL Rules) ร่วมกับ Machine Learning และ Generative AI
+DiaBalance เป็นระบบแนะนำและจัดตารางการออกกำลังกายสำหรับผู้ป่วยเบาหวาน โดยใช้เทคโนโลยี Semantic Web (Ontology & SWRL Rules)
 
 ## 🌐 Production URLs
 - **Main Website**: [https://diabalance.tech](https://diabalance.tech) (หรือ [https://www.diabalance.tech](https://www.diabalance.tech))

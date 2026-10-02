@@ -27,9 +27,6 @@
         }
         return value;
       }
-      function allConditions() {
-        return conditions;
-      }
       function describeCondition(c) {
         const value = c.value === '' ? '[ยังไม่ได้ใส่ตัวเลข]' : displayValue(c.value);
         if (c.field === 'special') return 'มี ' + (c.value ? value : '[ยังไม่ได้เลือกรายการ]');
@@ -104,7 +101,6 @@
         return "";
       }
       function clearStatus() {
-        $("test-status").textContent = "";
         $("save-status").textContent = "";
       }
       function render() {
@@ -196,46 +192,7 @@
           row.append(remove);
           $("conditions").append(row);
         });
-        renderTest();
         preview();
-      }
-      function renderTest() {
-        const old = {};
-        $("test-fields")
-          .querySelectorAll("input,select")
-          .forEach((el) => (old[el.dataset.field] = el.multiple ? Array.from(el.selectedOptions, item => item.value) : el.value));
-        $("test-fields").replaceChildren();
-        [...new Set(allConditions().map((c) => c.field))].forEach((field) => {
-          const input = valueInput(
-            field,
-            fields[field].multiple ? '' : old[field] ?? defaultValue(field),
-            "test-" + field,
-          );
-          input.required = false;
-          if (fields[field].values) {
-            input.prepend(option('', 'ยังไม่มีข้อมูล'));
-            input.value = fields[field].multiple ? '' : old[field] ?? '';
-          }
-          if (fields[field].multiple) {
-            input.multiple = true;
-            input.size = Math.min(5, input.options.length);
-            Array.from(input.options).forEach(item => item.selected = (old[field] || []).includes(item.value));
-          }
-          input.dataset.field = field;
-          input.oninput = () => {
-            input.setCustomValidity('');
-            $("test-status").textContent = "";
-          };
-          const testControl = control(
-              fields[field].label +
-                (fields[field].unit ? " (" + fields[field].unit + ")" : ""),
-              input,
-            );
-          if (fields[field].multiple) {
-            const hint=document.createElement('div');hint.className='hint';hint.textContent='เลือกได้หลายรายการ กด Ctrl หรือ Command ค้างไว้ขณะเลือก';testControl.append(hint);
-          }
-          $("test-fields").append(testControl);
-        });
       }
       function preview() {
         clearStatus();
@@ -300,9 +257,7 @@
       function reset() {
         conditions = [{ id: nextId++, field: 'bmi', op: 'gte', value: '' }];
         customName = false;
-        $('test-panel').open = false;
         outcomes = [newOutcome()];
-        $("test-fields").replaceChildren();
         renderOutputs();
         render();
       }
@@ -319,35 +274,6 @@
       $("name").oninput = () => { customName = true; clearStatus(); };
       $('add-output').onclick=()=>{if(outcomes.length>=30){$('save-status').textContent='เพิ่มผลลัพธ์ได้สูงสุด 30 รายการ';return;}outcomes.push(newOutcome());renderOutputs();$('output-action-'+outcomes.at(-1).id).focus();};
       $("reset").onclick = reset;
-      $("test").onclick = () => {
-        if (!validateRule()) return;
-        for (const field of new Set(allConditions().map((c) => c.field))) {
-          const input = $("test-" + field);
-          if (input.value === "" || !input.checkValidity()) {
-            $("test-status").textContent =
-              input.value === '' ? 'ยังประเมินไม่ได้: ไม่มีข้อมูล' + fields[field].label + ' จึงยังยืนยันไม่ได้ว่าตรงทุกเงื่อนไข' : 'กรุณาใส่ตัวเลขตั้งแต่ 0 ขึ้นไป';
-            input.focus();
-            return;
-          }
-        }
-        const matched = allConditions().every((c) => {
-          const actual = $("test-" + c.field).value;
-          if (fields[c.field].multiple) return Array.from($('test-'+c.field).selectedOptions).some(item => item.value === c.value);
-          if (fields[c.field].values) return actual === c.value;
-          const a = Number(actual),
-            b = Number(c.value);
-          return {
-            gte: a >= b,
-            gt: a > b,
-            lte: a <= b,
-            lt: a < b,
-            eq: a === b,
-          }[c.op];
-        });
-        $("test-status").textContent = matched
-          ? (outcomes.some(item=>item.action==='exercise') ? 'ตรงเงื่อนไขผู้ป่วยแล้ว แต่ต้องตรวจว่ามีกิจกรรมตรงหมวด MET และความชอบในการประมวลผลจริงก่อน กฎจึงจะทำงาน' : "กฎนี้จะแสดงผล: " + resultText())
-          : "กฎนี้จะไม่แสดงผล เพราะข้อมูลตัวอย่างไม่ตรงกับกลุ่มผู้ป่วยหรือเงื่อนไขบางข้อ";
-      };
       let saving = false;
       async function showSaveMessage(success, message) {
         const title = success ? 'เพิ่มกฎสำเร็จ' : 'เพิ่มกฎไม่สำเร็จ';

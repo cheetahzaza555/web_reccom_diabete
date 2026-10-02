@@ -281,11 +281,6 @@
         font-size: 14px;
         margin-bottom: 10px;
       }
-      .test-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
       hr {
         border: 0;
         border-top: 1px solid #e5ebf3;
@@ -366,9 +361,6 @@ input, select { color: #333; border-color: #cbd5e1; }
 .condition.builder-row { align-items: start; }
 .value-suffix { display: block; font-size: 12px; color: #666; margin-top: 4px; }
 .condition .remove { margin-top: 28px; }
-#test-panel summary { cursor: pointer; color: var(--primary-blue); }
-#test-panel summary:focus-visible { outline: 2px solid var(--primary-blue); outline-offset: 4px; }
-#test-panel[open] summary { margin-bottom: 14px; }
 #preview-sentence { margin: 0; line-height: 1.9; overflow-wrap: anywhere; }
 .condition-count { color: #666; font-size: 13px; margin: 4px 0 14px; }
 .flow-arrow { color: var(--primary-blue); text-align: center; font-size: 24px; margin: -12px 0 6px; }

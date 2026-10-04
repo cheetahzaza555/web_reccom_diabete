@@ -8,7 +8,11 @@
     <title>DiaBalance | หน้าหลักแอดมิน</title>
     <meta name="description" content="หน้าหลักผู้ดูแลระบบ DiaBalance แสดงสถิติผู้ใช้งาน คลังท่าออกกำลังกาย กฎ SWRL และผู้สมัครล่าสุด">
     <link rel="icon" href="{{ url_for('static', filename='icons/diabalance.svg') }}" type="image/svg+xml">
-    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/prompt/prompt.css') }}">
+    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-0.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-3.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-4.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-7.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/prompt/prompt.css', v='swap-1') }}">
 
     <style>
         :root {

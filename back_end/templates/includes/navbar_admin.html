@@ -1,12 +1,12 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DiaBalance - Admin Panel</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% macro admin_icon(name, extra='') -%}
+{% if optimized_admin_dashboard|default(false) -%}
+<svg class="bi bi-{{ name }} {{ extra }}" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><use href="{{ url_for('static', filename='icons/admin-dashboard.svg') }}#{{ name }}"></use></svg>
+{% else -%}
+<i class="bi bi-{{ name }} {{ extra }}" aria-hidden="true"></i>
+{% endif -%}
+{% endmacro %}
+
+{% macro sidebar_styles() -%}
     <style>
         /* Scrollable sidebar with subtle edge shadows instead of a visible scrollbar. */
         :root { --sidebar-width: 260px; --primary-blue: #3366CC; --primary-dark: #2952A3; --hover-bg: #4A7BD4; }
@@ -99,21 +99,35 @@
         }
         .sidebar .master-data-toggle[aria-expanded="true"] .menu-chevron { transform: rotate(180deg); }
     </style>
+
+{%- endmacro %}
+{% if not optimized_admin_dashboard|default(false) %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiaBalance - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {{ sidebar_styles() }}
 </head>
 <body>
+{% endif %}
     <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="เปิดเมนูผู้ดูแลระบบ" aria-controls="sidebar" aria-expanded="false">
-        <i class="bi bi-list"></i>
+        {{ admin_icon('list', '') }}
     </button>
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <aside class="sidebar" id="sidebar" tabindex="0" aria-label="เมนูผู้ดูแลระบบ เลื่อนขึ้นลงเพื่อดูรายการเพิ่มเติม">
         <button type="button" class="sidebar-scroll-cue sidebar-scroll-up" id="sidebarScrollUp" disabled>
-            <i class="bi bi-chevron-up" aria-hidden="true"></i> เลื่อนขึ้น
+            {{ admin_icon('chevron-up', '') }} เลื่อนขึ้น
         </button>
         <div class="sidebar-header">
             <div class="brand-logo">
-                <i class="bi bi-heart-pulse-fill"></i>
+                {{ admin_icon('heart-pulse-fill', '') }}
                 <h1 class="brand-name">DiaBalance</h1>
             </div>
         </div>
@@ -121,14 +135,14 @@
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="/admin/dashboard" class="nav-link">
-                    <i class="bi bi-house-door-fill"></i>
+                    {{ admin_icon('house-door-fill', '') }}
                     <span>หน้าหลัก</span>
                 </a>
             </div>
 
             <div class="nav-item">
                 <a href="/admin/users" class="nav-link">
-                    <i class="bi bi-people-fill"></i>
+                    {{ admin_icon('people-fill', '') }}
                     <span>สิทธิ์บัญชี</span>
 
                 </a>
@@ -137,9 +151,9 @@
             <div class="nav-item">
                 <!-- ปุ่มหลักสำหรับกดเปิด-ปิด เมนูย่อย -->
                 <a href="#masterDataMenu" class="nav-link master-data-toggle" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="masterDataMenu">
-                    <i class="bi bi-book-fill" aria-hidden="true"></i>
+                    {{ admin_icon('book-fill', '') }}
                     <span>จัดการคลังข้อมูล</span>
-                    <i class="bi bi-chevron-down menu-chevron" aria-hidden="true"></i>
+                    {{ admin_icon('chevron-down', 'menu-chevron') }}
                 </a>
 
                 <!-- รายการเมนูย่อยที่ซ่อนอยู่ (จะสไลด์ลงมาเมื่อกด) -->
@@ -157,21 +171,21 @@
         <div class="sidebar-bottom">
             <div class="bottom-nav-item">
                 <a href="/admin/settings" class="bottom-nav-link">
-                    <i class="bi bi-gear-fill"></i>
+                    {{ admin_icon('gear-fill', '') }}
                     <span>การตั้งค่า</span>
                 </a>
             </div>
 
             <div class="bottom-nav-item">
                 <a href="#" class="bottom-nav-link" id="logoutBtn">
-                    <i class="bi bi-box-arrow-right"></i>
+                    {{ admin_icon('box-arrow-right', '') }}
                     <span>ออกจากระบบ</span>
                 </a>
             </div>
 
             <div class="sidebar-user">
                 <div class="user-avatar">
-                    <i class="bi bi-person-fill"></i>
+                    {{ admin_icon('person-fill', '') }}
                 </div>
                 <div class="user-details">
                     <div class="user-fullname">
@@ -193,11 +207,13 @@
             </div>
         </div>
         <button type="button" class="sidebar-scroll-cue sidebar-scroll-down" id="sidebarScrollDown" disabled>
-            <i class="bi bi-chevron-down" aria-hidden="true"></i> เลื่อนดูเมนูด้านล่าง
+            {{ admin_icon('chevron-down', '') }} เลื่อนดูเมนูด้านล่าง
         </button>
     </aside>
 
+    {% if not optimized_admin_dashboard|default(false) %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% endif %}
     <script>
         // Mobile Sidebar Logic
         const sidebar = document.getElementById('sidebar');
@@ -257,6 +273,21 @@
         window.matchMedia('(max-width: 768px)').addEventListener('change', () => setAdminMenu(false));
         setAdminMenu(false);
 
+        {% if optimized_admin_dashboard|default(false) %}
+        // Dashboard uses the same menu without loading the entire Bootstrap bundle.
+        const masterToggle = document.querySelector('[href="#masterDataMenu"]');
+        const masterMenu = document.getElementById('masterDataMenu');
+        masterToggle.addEventListener('click', event => {
+            event.preventDefault();
+            const open = masterMenu.classList.toggle('show');
+            masterToggle.setAttribute('aria-expanded', String(open));
+            requestAnimationFrame(updateScrollCues);
+        });
+        masterToggle.addEventListener('keydown', event => {
+            if (event.key === ' ') { event.preventDefault(); masterToggle.click(); }
+        });
+        {% endif %}
+
         // Active Link Logic (รองรับ ?tab=... และกางเมนูย่อยอัตโนมัติ)
         const currentFullUrl = window.location.pathname + window.location.search;
         const currentPath = window.location.pathname;
@@ -310,5 +341,7 @@
             }
         });
     </script>
+{% if not optimized_admin_dashboard|default(false) %}
 </body>
 </html>
+{% endif %}

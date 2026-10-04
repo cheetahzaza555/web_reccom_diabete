@@ -121,6 +121,7 @@
     .admin-page .layout > * { min-width: 0; }
   }
 </style>
+{% if not admin_styles_only|default(false) %}
 <script>
   document.querySelectorAll('.admin-page .table-card').forEach(card => {
     card.tabIndex = 0;
@@ -128,3 +129,5 @@
     card.setAttribute('aria-label', 'ตารางข้อมูล เลื่อนซ้ายขวาเพื่อดูข้อมูลทั้งหมด');
   });
 </script>
+
+{% endif %}

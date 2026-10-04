@@ -1,14 +1,14 @@
 <!DOCTYPE html>
+{% set optimized_admin_dashboard = true %}
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="การตั้งค่าผู้ดูแลระบบ DiaBalance แก้ไขชื่อและเปลี่ยนรหัสผ่านด้วยการยืนยัน OTP">
     <title>DiaBalance Admin | การตั้งค่า</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<body class="admin-page">
-    {% include 'includes/navbar_admin.html' %}
+    {{ admin_assets() }}
+    <script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
     <style>
         .settings-page {
             font-family: 'Prompt', sans-serif;
@@ -21,7 +21,7 @@
         .settings-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; align-items: start; }
         .settings-page .settings-card { border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; background: #fff; }
         .settings-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-        .settings-heading > i { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: #edf3ff; color: #2b5cb3; flex-shrink: 0; }
+        .settings-heading > .bi { display: grid; place-items: center; width: 44px; height: 44px; padding: 12px; border-radius: 10px; background: #edf3ff; color: #2b5cb3; flex-shrink: 0; }
         .settings-heading h2 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
         .settings-heading p, .settings-note { font-size: 13px; color: #666; margin: 0; }
         .settings-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
@@ -41,13 +41,18 @@
         @media(max-width:1100px) { .settings-grid { grid-template-columns: minmax(0,1fr); } }
         @media(max-width:580px) { .settings-fields { grid-template-columns: minmax(0,1fr); gap: 0; } .settings-actions button { flex: 1 1 auto; } }
     </style>
+    {{ admin_layout_styles() }}
+</head>
+<body class="admin-page">
+    {% include 'includes/navbar_admin.html' %}
+
     <main class="main-content settings-page">
         {% include 'includes/admin_breadcrumb.html' %}
         <h1>การตั้งค่าผู้ดูแลระบบ</h1>
         <p class="settings-intro">จัดการชื่อที่แสดงและรหัสผ่านของบัญชีคุณ</p>
         <div class="settings-grid">
             <section class="settings-card" aria-labelledby="profile-title">
-                <div class="settings-heading"><i class="bi bi-person" aria-hidden="true"></i><div><h2 id="profile-title">ข้อมูลบัญชี</h2><p>แก้ไขชื่อและนามสกุลที่แสดงในระบบ</p></div></div>
+                <div class="settings-heading">{{ admin_icon('person') }}<div><h2 id="profile-title">ข้อมูลบัญชี</h2><p>แก้ไขชื่อและนามสกุลที่แสดงในระบบ</p></div></div>
                 <form id="profileForm">
                     <div class="settings-field"><label for="accountUsername">ชื่อบัญชีผู้ใช้</label><input id="accountUsername" value="{{ session.get('username', '') }}" readonly></div>
                     <div class="settings-fields">
@@ -57,14 +62,14 @@
                     <div class="settings-field"><label for="accountEmail">อีเมลสำหรับยืนยัน OTP</label><input id="accountEmail" value="{{ session.get('email', '') }}" readonly></div>
                     <p class="settings-note">ชื่อบัญชีและอีเมลไม่สามารถแก้ไขจากหน้านี้ได้</p>
                     <div class="settings-actions">
-                        <button type="button" class="btn-edit" id="editProfile" aria-controls="profileForm" aria-expanded="false"><i class="bi bi-pencil-square" aria-hidden="true"></i>แก้ไขชื่อ</button>
-                        <button type="submit" class="settings-primary" id="saveProfile" hidden><i class="bi bi-check-lg" aria-hidden="true"></i>บันทึกชื่อ</button>
+                        <button type="button" class="btn-edit" id="editProfile" aria-controls="profileForm" aria-expanded="false">{{ admin_icon('pencil-square') }}แก้ไขชื่อ</button>
+                        <button type="submit" class="settings-primary" id="saveProfile" hidden>{{ admin_icon('check-lg') }}บันทึกชื่อ</button>
                         <button type="button" class="settings-cancel" id="cancelProfile" hidden>ยกเลิก</button>
                     </div>
                 </form>
             </section>
             <section class="settings-card" aria-labelledby="password-title">
-                <div class="settings-heading"><i class="bi bi-shield-lock" aria-hidden="true"></i><div><h2 id="password-title">รหัสผ่าน</h2><p>ยืนยันรหัสผ่านปัจจุบันก่อนตั้งรหัสผ่านใหม่</p></div></div>
+                <div class="settings-heading">{{ admin_icon('shield-lock') }}<div><h2 id="password-title">รหัสผ่าน</h2><p>ยืนยันรหัสผ่านปัจจุบันก่อนตั้งรหัสผ่านใหม่</p></div></div>
                 <form id="passwordForm">
                     <div id="passwordFields" hidden>
                         <div class="settings-field"><label for="oldPassword">รหัสผ่านปัจจุบัน</label><input type="password" id="oldPassword" autocomplete="current-password" required disabled></div>
@@ -73,8 +78,8 @@
                     </div>
                     <p class="settings-note">ระบบจะส่ง OTP ไปยังอีเมลของบัญชีเพื่อยืนยันก่อนบันทึก</p>
                     <div class="settings-actions">
-                        <button type="button" class="btn-edit" id="editPassword" aria-controls="passwordFields" aria-expanded="false"><i class="bi bi-pencil-square" aria-hidden="true"></i>แก้ไขรหัสผ่าน</button>
-                        <button type="submit" class="settings-primary" id="savePassword" hidden><i class="bi bi-check-lg" aria-hidden="true"></i>บันทึกรหัสผ่าน</button>
+                        <button type="button" class="btn-edit" id="editPassword" aria-controls="passwordFields" aria-expanded="false">{{ admin_icon('pencil-square') }}แก้ไขรหัสผ่าน</button>
+                        <button type="submit" class="settings-primary" id="savePassword" hidden>{{ admin_icon('check-lg') }}บันทึกรหัสผ่าน</button>
                         <button type="button" class="settings-cancel" id="cancelPassword" hidden>ยกเลิก</button>
                     </div>
                 </form>
@@ -151,6 +156,5 @@
             group.form.addEventListener('submit',event => { event.preventDefault(); saveSettings(section); });
         });
     </script>
-    {% include 'includes/admin_responsive.html' %}
 </body>
 </html>

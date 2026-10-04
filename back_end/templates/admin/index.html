@@ -1,18 +1,13 @@
 <!DOCTYPE html>
 {% set optimized_admin_dashboard = true %}
-{% from 'includes/navbar_admin.html' import admin_icon, sidebar_styles with context %}
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DiaBalance | หน้าหลักแอดมิน</title>
     <meta name="description" content="หน้าหลักผู้ดูแลระบบ DiaBalance แสดงสถิติผู้ใช้งาน คลังท่าออกกำลังกาย กฎ SWRL และผู้สมัครล่าสุด">
-    <link rel="icon" href="{{ url_for('static', filename='icons/diabalance.svg') }}" type="image/svg+xml">
-    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-0.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-3.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-4.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-7.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/prompt/prompt.css', v='swap-1') }}">
+    {{ admin_assets() }}
 
     <style>
         :root {
@@ -157,19 +152,7 @@
             color: var(--text-muted);
         }
     </style>
-    {{ sidebar_styles() }}
-    {% with admin_styles_only = true %}{% include 'includes/admin_responsive.html' %}{% endwith %}
-    <style>
-        body.admin-page { font-family: 'Prompt', sans-serif; font-size: 16px; line-height: 1.5; transition: none; }
-        h1 { line-height: 1.2; }
-        .bi { display: inline-block; width: 1em; height: 1em; vertical-align: -.125em; flex-shrink: 0; }
-        .brand-logo .bi { font-size: 2rem; color: white; }
-        .nav-link > .bi, .bottom-nav-link > .bi { font-size: 1.5rem; min-width: 24px; }
-        .nav-link > .menu-chevron { font-size: 16px; min-width: 0; }
-        .collapse:not(.show) { display: none; }
-        .sidebar .py-1 { padding-top: .25rem; padding-bottom: .25rem; }
-        .sidebar-user .user-username { color: #cbd9f2; }
-    </style>
+    {{ admin_layout_styles() }}
 </head>
 <body class="admin-page">
 

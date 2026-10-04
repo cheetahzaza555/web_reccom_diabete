@@ -1,3 +1,28 @@
+{% macro admin_assets() -%}
+    <link rel="icon" href="{{ url_for('static', filename='icons/diabalance.svg') }}" type="image/svg+xml">
+    {% for subset in [0, 3, 4, 7] %}
+    <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-' ~ subset ~ '.woff2') }}" as="font" type="font/woff2" crossorigin>
+    {% endfor %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/prompt/prompt.css', v='swap-1') }}">
+{%- endmacro %}
+
+{% macro admin_layout_styles() -%}
+    {{ sidebar_styles() }}
+    {% with admin_styles_only = true %}{% include 'includes/admin_responsive.html' %}{% endwith %}
+    <style>
+        body.admin-page { font-family: 'Prompt', sans-serif; font-size: 16px; line-height: 1.5; transition: none; }
+        h1 { line-height: 1.2; }
+        .bi { display: inline-block; width: 1em; height: 1em; vertical-align: -.125em; flex-shrink: 0; }
+        .brand-logo .bi { font-size: 2rem; color: white; }
+        .nav-link > .bi, .bottom-nav-link > .bi { font-size: 1.5rem; min-width: 24px; }
+        .nav-link > .menu-chevron { font-size: 16px; min-width: 0; }
+        .collapse:not(.show) { display: none; }
+        .sidebar .py-1 { padding-top: .25rem; padding-bottom: .25rem; }
+        .sidebar-user .user-username { color: #cbd9f2; }
+        button, input, select { font-family: inherit; }
+    </style>
+{%- endmacro %}
+
 {% macro admin_icon(name, extra='') -%}
 {% if optimized_admin_dashboard|default(false) -%}
 <svg class="bi bi-{{ name }} {{ extra }}" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><use href="{{ url_for('static', filename='icons/admin-dashboard.svg') }}#{{ name }}"></use></svg>

@@ -1,15 +1,15 @@
 <!DOCTYPE html>
+{% set optimized_admin_dashboard = true %}
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="จัดการสิทธิ์บัญชีผู้ใช้งาน DiaBalance ตรวจสอบบัญชีและปรับสิทธิ์การใช้งานระบบ">
     <title>DiaBalance Admin | จัดการสิทธิ์ผู้ใช้</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {{ admin_assets() }}
+    <script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 
     <style>
         :root {
@@ -22,10 +22,10 @@
             
             /* 🌟 ปรับชุดสีสำหรับ Badge สิทธิ์ให้เข้มและคมชัดขึ้น */
             --user-badge-bg: #7bcaf5;
-            --user-badge-text: #2B6CB0;     /* สีน้ำเงินเข้ม */
+            --user-badge-text: #17446b;     /* สีน้ำเงินเข้ม */
             --doctor-badge-bg: #82fae2;
             --doctor-badge-text: #234E52;   /* สีเขียวหัวเป็ดเข้ม */
-            --admin-badge-bg: #fa3131;
+            --admin-badge-bg: #b42323;
             --admin-badge-text: #C53030;    /* สีแดงเข้ม */
             
             --danger: #E53E3E;
@@ -110,16 +110,17 @@
         }
         .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
         
-        /* สไตล์ปรับฟอนต์ให้กล่อง SweetAlert ใช้ Sarabun */
-        .swal2-popup { font-family: 'Sarabun', sans-serif !important; border-radius: 16px !important; }
+        /* ใช้ Prompt เหมือนทุกส่วนของหน้า */
+        .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
     </style>
+    {{ admin_layout_styles() }}
 </head>
 <body class="admin-page">
 
     <div class="admin-layout">
         {% include 'includes/navbar_admin.html' %}
 
-        <div class="main-content">
+        <main class="main-content">
             {% include 'includes/admin_breadcrumb.html' %}
             <div class="header-section">
                 <div>
@@ -128,7 +129,7 @@
                 </div>
             </div>
 
-            <div class="table-card">
+            <div class="table-card" tabindex="0" role="region" aria-label="ตารางบัญชีผู้ใช้ เลื่อนซ้ายขวาเพื่อดูข้อมูลทั้งหมด">
                 <table class="user-table">
                     <thead>
                         <tr>
@@ -148,20 +149,20 @@
                             <td>{{ user.username }}</td>
                             <td>
                                 {% if user.role == 'admin' %}
-                                <span class="badge badge-admin"><i class="fa-solid fa-user-shield"></i> Admin</span>
+                                <span class="badge badge-admin">{{ admin_icon('shield-lock-fill') }} Admin</span>
                                 {% else %}
-                                <span class="badge badge-user"><i class="fa-solid fa-user"></i> ผู้ป่วยทั่วไป</span>
+                                <span class="badge badge-user">{{ admin_icon('person-fill') }} ผู้ป่วยทั่วไป</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <select class="role-select" onchange="changeRole('{{ user.id }}', this.value, this)">
+                                <select aria-label="สิทธิ์บัญชี {{ user.username }}" class="role-select" onchange="changeRole('{{ user.id }}', this.value, this)">
                                     <option value="user" {% if user.role == 'user' %}selected{% endif %}>ผู้ป่วยทั่วไป (User)</option>
                                     <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>แอดมิน (Admin)</option>
                                 </select>
                             </td>
                             <td style="text-align: center;">
                                 <button class="btn-delete" onclick="deleteUser('{{ user.id }}')">
-                                    <i class="bi bi-trash3" aria-hidden="true"></i> ลบผู้ใช้
+                                    {{ admin_icon('trash3') }} ลบผู้ใช้
                                 </button>
                             </td>
                         </tr>
@@ -175,7 +176,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
@@ -286,6 +287,6 @@
             select.setAttribute('data-current', select.value);
         });
     </script>
-{% include 'includes/admin_responsive.html' %}
+
 </body>
 </html>

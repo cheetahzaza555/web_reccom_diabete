@@ -1,12 +1,14 @@
 <!DOCTYPE html>
+{% set optimized_admin_dashboard = true %}
+{% from 'includes/navbar_admin.html' import admin_icon, sidebar_styles with context %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diabetes Expert System | หน้าหลักแอดมิน</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>DiaBalance | หน้าหลักแอดมิน</title>
+    <meta name="description" content="หน้าหลักผู้ดูแลระบบ DiaBalance แสดงสถิติผู้ใช้งาน คลังท่าออกกำลังกาย กฎ SWRL และผู้สมัครล่าสุด">
+    <link rel="icon" href="{{ url_for('static', filename='icons/diabalance.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/prompt/prompt.css') }}">
 
     <style>
         :root {
@@ -151,6 +153,19 @@
             color: var(--text-muted);
         }
     </style>
+    {{ sidebar_styles() }}
+    {% with admin_styles_only = true %}{% include 'includes/admin_responsive.html' %}{% endwith %}
+    <style>
+        body.admin-page { font-family: 'Prompt', sans-serif; font-size: 16px; line-height: 1.5; transition: none; }
+        h1 { line-height: 1.2; }
+        .bi { display: inline-block; width: 1em; height: 1em; vertical-align: -.125em; flex-shrink: 0; }
+        .brand-logo .bi { font-size: 2rem; color: white; }
+        .nav-link > .bi, .bottom-nav-link > .bi { font-size: 1.5rem; min-width: 24px; }
+        .nav-link > .menu-chevron { font-size: 16px; min-width: 0; }
+        .collapse:not(.show) { display: none; }
+        .sidebar .py-1 { padding-top: .25rem; padding-bottom: .25rem; }
+        .sidebar-user .user-username { color: #cbd9f2; }
+    </style>
 </head>
 <body class="admin-page">
 
@@ -158,7 +173,7 @@
         
         {% include 'includes/navbar_admin.html' %}
 
-        <div class="main-content">
+        <main class="main-content">
             {% include 'includes/admin_breadcrumb.html' %}
             <div class="welcome-header">
                 <h1>ยินดีต้อนรับ, {{ username if username else 'admin' }}</h1>
@@ -167,14 +182,14 @@
 
             <div class="stat-grid">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fa-solid fa-user-group"></i></div>
+                    <div class="stat-icon">{{ admin_icon('people-fill') }}</div>
                     <div class="stat-info">
                         <div class="stat-label">ผู้ใช้งานทั้งหมด</div>
                         <div class="stat-value">{{ stats.total_patients }} คน</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fa-solid fa-child-reaching"></i></div>
+                    <div class="stat-icon">{{ admin_icon('person-arms-up') }}</div>
                     <div class="stat-info">
                         <div class="stat-label">สื่อท่าออกกำลังกาย</div>
                         <div class="stat-value">{{ stats.total_exercises }} ชิ้น</div>
@@ -182,7 +197,7 @@
                 </div>
                 <!-- 🧩 เปลี่ยนจาก METs เป็น กฎ SWRL -->
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fa-solid fa-puzzle-piece"></i></div>
+                    <div class="stat-icon">{{ admin_icon('puzzle-fill') }}</div>
                     <div class="stat-info">
                         <div class="stat-label">กฎ SWRL ที่ใช้งาน</div>
                         <div class="stat-value">{{ stats.total_rules }} ข้อ</div>
@@ -198,7 +213,7 @@
                     <div class="activity-item">
                         <div class="activity-left">
                             <div class="stat-icon" style="width:40px; height:40px; font-size:16px;">
-                                <i class="fa-solid fa-user-plus"></i>
+                                {{ admin_icon('person-plus-fill') }}
                             </div>
                             <div class="activity-text">
                                 <div class="main-text">คุณ {{ user.firstname }} {{ user.lastname }}</div>
@@ -221,9 +236,8 @@
                 </div>
             </div>
 
-        </div>
+        </main>
     </div>
 
-{% include 'includes/admin_responsive.html' %}
 </body>
 </html>

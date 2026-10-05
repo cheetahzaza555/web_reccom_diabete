@@ -1,8 +1,15 @@
 <!doctype html>
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DiaBalance | เพิ่มกฎ</title></head><body class="admin-page">
+<title>DiaBalance | เพิ่มกฎ</title><link rel="stylesheet" href="{{ url_for('static', filename='css/rule-builder.css') }}">
+
+{{ admin_assets() }}
+<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+{{ admin_layout_styles() }}
+<meta name="description" content="DiaBalance | เพิ่มกฎ">
+</head><body class="admin-page">
 {% include 'includes/navbar_admin.html' %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/rule-builder.css') }}">
+
 {% if load_error %}<main class="main-content rule-builder-page">{% include 'includes/admin_breadcrumb.html' %}<div class="card"><p role="alert">{{ load_error }}</p><a href="">ลองโหลดอีกครั้ง</a> · <a href="/admin/swrl">กลับหน้าจัดการกฎ</a></div></main>
 {% else %}
     <main class="main-content rule-builder-page">
@@ -80,8 +87,8 @@
     </main>
 
 <script id="builder-catalog" type="application/json">{{ catalog | tojson }}</script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script src="{{ url_for('static', filename='js/rule-builder.js') }}"></script>
 {% endif %}
-{% include 'includes/admin_responsive.html' %}
+
 </body></html>

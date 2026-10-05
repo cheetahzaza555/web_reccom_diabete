@@ -1,13 +1,12 @@
 <!DOCTYPE html>
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DiaBalance Admin | จัดการคำเตือนสภาวะผู้ป่วย</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
 
     <style>
         :root {
@@ -22,7 +21,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; }
 
         .admin-layout { display: flex; width: 100%; min-height: 100vh; }
         .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
@@ -31,7 +30,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            
+
         }
         .header-section h1 { font-size: 28px; font-weight: 600; }
 
@@ -62,7 +61,7 @@
             font-size: 14px;
             outline: none;
         }
-        
+
         .btn-add-patient-warning {
             padding: 10px 20px;
             border-radius: 8px;
@@ -87,7 +86,7 @@
             padding: 24px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
             border: 1px solid var(--border-color);
-            width: 100%; 
+            width: 100%;
             overflow-x: auto;
         }
         .warning-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -134,22 +133,27 @@
             gap: 4px;
         }
         .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
-        
+
         .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
         .swal2-textarea { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
     </style>
+
+{{ admin_assets() }}
+<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+{{ admin_layout_styles() }}
+<meta name="description" content="DiaBalance Admin | จัดการคำเตือนสภาวะผู้ป่วย">
 </head>
 <body class="admin-page">
 
     <!-- 📥 รับข้อมูล JSON จาก Flask Backend (โครงสร้าง: [{id: "Warning1", description: "ท่านเป็นเบาหวานชนิดที่ 1..."}, ...]) -->
-    <div id="patient-warning-data-container" style="display: none;" 
+    <div id="patient-warning-data-container" style="display: none;"
          data-json="{% if warnings %}{{ warnings | tojson | safe | forceescape }}{% else %}[]{% endif %}">
     </div>
 
     <div class="admin-layout">
         {% include 'includes/navbar_admin.html' %}
 
-        <div class="main-content">
+        <main class="main-content">
             {% include 'includes/admin_breadcrumb.html' %}
             <div class="header-section">
                 <div>
@@ -160,12 +164,12 @@
 
             <div class="toolbar-section">
                 <div class="search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหารหัสคำเตือน หรือรายละเอียดข้อความ...">
+                    {{ admin_icon('search') }}
+                    <input type="text" id="searchBar" class="search-input" aria-label="ค้นหารหัสคำเตือน หรือรายละเอียดข้อความ..." placeholder="ค้นหารหัสคำเตือน หรือรายละเอียดข้อความ...">
                 </div>
 
                 <button class="btn-add-patient-warning" onclick="openAddPatientWarningModal()">
-                    <i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มคำเตือนสภาวะผู้ป่วย
+                    {{ admin_icon('plus-lg') }} เพิ่มคำเตือนสภาวะผู้ป่วย
                 </button>
             </div>
 
@@ -183,7 +187,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
@@ -193,7 +197,7 @@
         // 📊 ฟังก์ชันแสดงผลตาราง
         function renderTable(data) {
             const tableBody = document.getElementById('warningTableBody');
-            
+
             if (!data || !data.length) {
                 tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลคำเตือนสภาวะผู้ป่วย</td></tr>`;
                 return;
@@ -212,16 +216,16 @@
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="openEditPatientWarningModal('${item.id}', '${safeDesc}')">
-                                <i class="bi bi-pencil-square" aria-hidden="true"></i> แก้ไข
+                                {{ admin_icon('pencil-square') }} แก้ไข
                             </button>
                             <button class="btn-delete" onclick="deletePatientWarning('${item.id}', '${safeDesc}')">
-                                <i class="bi bi-trash3" aria-hidden="true"></i> ลบ
+                                {{ admin_icon('trash3') }} ลบ
                             </button>
                         </div>
                     </td>
                 </tr>`;
             });
-            
+
             tableBody.innerHTML = html;
         }
 
@@ -229,7 +233,7 @@
         function filterContent() {
             const searchVal = document.getElementById('searchBar').value.toLowerCase();
             const filtered = warningData.filter(item => {
-                return item.id.toLowerCase().includes(searchVal) || 
+                return item.id.toLowerCase().includes(searchVal) ||
                        (item.description && item.description.toLowerCase().includes(searchVal));
             });
             renderTable(filtered);
@@ -248,7 +252,7 @@
                 html: `
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">รหัสคำเตือน (เช่น Warning1)</label></div>
                     <input id="swal-warning-id" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น Warning1">
-                    
+
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">รายละเอียดคำเตือนภาษาไทย (ex:description)</label></div>
                     <textarea id="swal-warning-desc" class="swal2-textarea" style="margin:0; width:100%; height:130px;" placeholder="กรอกรายละเอียดคำเตือน เช่น ท่านเป็นเบาหวานชนิดที่ 1..."></textarea>
                 `,
@@ -261,16 +265,16 @@
                 preConfirm: () => {
                     const id = document.getElementById('swal-warning-id').value.trim();
                     const description = document.getElementById('swal-warning-desc').value.trim();
-                    
+
                     if (!id) { Swal.showValidationMessage('กรุณาระบุรหัสคำเตือน'); return false; }
                     if (!description) { Swal.showValidationMessage('กรุณากรอกข้อความรายละเอียดคำเตือน'); return false; }
-                    
+
                     return { id: id, description: description };
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                    
+
                     fetch("/admin/api/patient_warning/update", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -309,7 +313,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                    
+
                     fetch("/admin/api/patient_warning/update", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -358,6 +362,6 @@
             });
         }
     </script>
-{% include 'includes/admin_responsive.html' %}
+
 </body>
 </html>

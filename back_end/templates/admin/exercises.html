@@ -1,14 +1,12 @@
 <!DOCTYPE html>
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DiaBalance Admin | จัดการคลังข้อมูลการออกกำลังกาย</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
 
     <style>
         :root {
@@ -24,7 +22,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; }
 
         .admin-layout { display: flex; width: 100%; min-height: 100vh; }
         .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
@@ -33,7 +31,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            
+
         }
         .header-section h1 { font-size: 28px; font-weight: 600; }
 
@@ -75,7 +73,7 @@
             cursor: pointer;
             min-width: 280px;
         }
-        
+
         .btn-add-exercise {
             padding: 10px 20px;
             border-radius: 8px;
@@ -100,7 +98,7 @@
             padding: 24px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
             border: 1px solid var(--border-color);
-            width: 100%; 
+            width: 100%;
             overflow-x: auto;
         }
         .exercise-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -115,12 +113,12 @@
         .exercise-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .exercise-table tr:hover { background-color: #F8FAFC; }
 
-        .badge { 
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-size: 13px; 
-            font-weight: 600; 
-            display: inline-flex; 
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
             transition: all 0.3s ease;
@@ -158,14 +156,19 @@
             gap: 4px;
         }
         .btn-delete:hover { background-color: var(--danger); color: var(--white); border-color: var(--danger); }
-        
+
         .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
         .swal2-input { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
     </style>
+
+{{ admin_assets() }}
+<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+{{ admin_layout_styles() }}
+<meta name="description" content="DiaBalance Admin | จัดการคลังข้อมูลการออกกำลังกาย">
 </head>
 <body class="admin-page">
 
-    <div id="exercise-data-container" style="display: none;" 
+    <div id="exercise-data-container" style="display: none;"
          data-json="{% if exercises %}{{ exercises | tojson | safe | forceescape }}{% else %}[]{% endif %}"
          data-categories="{% if categories %}{{ categories | tojson | safe | forceescape }}{% else %}[]{% endif %}">
     </div>
@@ -173,7 +176,7 @@
     <div class="admin-layout">
         {% include 'includes/navbar_admin.html' %}
 
-        <div class="main-content">
+        <main class="main-content">
             {% include 'includes/admin_breadcrumb.html' %}
             <div class="header-section">
                 <div>
@@ -184,15 +187,15 @@
 
             <div class="toolbar-section">
                 <div class="search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อท่าหรือไอดี...">
+                    {{ admin_icon('search') }}
+                    <input type="text" id="searchBar" class="search-input" aria-label="ค้นหาชื่อท่าหรือไอดี..." placeholder="ค้นหาชื่อท่าหรือไอดี...">
                 </div>
-                
-                <select id="filterType" class="filter-select">
+
+                <select aria-label="กรองประเภทท่าออกกำลังกาย" id="filterType" class="filter-select">
                 </select>
 
                 <button class="btn-add-exercise" onclick="openAddExerciseModal()">
-                    <i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มท่าออกกำลังกายใหม่
+                    {{ admin_icon('plus-lg') }} เพิ่มท่าออกกำลังกายใหม่
                 </button>
             </div>
 
@@ -211,7 +214,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
@@ -250,7 +253,7 @@
             if (categoriesData && categoriesData.length > 0) {
                 return categoriesData.map(c => c.id || c.name);
             }
-            
+
             const classSet = new Set();
             exercisesData.forEach(item => {
                 if (item.original_type) classSet.add(item.original_type);
@@ -261,9 +264,9 @@
         // 🔄 3. ฟังก์ชันเรนเดอร์ Dropdown ตัวกรอง
         function renderFilterDropdown() {
             const dropdown = document.getElementById('filterType');
-            
+
             let html = `<option value="all">ทุกประเภท (แสดงทั้งหมด)</option>`;
-            
+
             if (categoriesData && categoriesData.length > 0) {
                 categoriesData.forEach(cat => {
                     html += `<option value="${cat.id}">• ${cat.name}</option>`;
@@ -274,7 +277,7 @@
                     html += `<option value="${cls}">• ${cls}</option>`;
                 });
             }
-            
+
             dropdown.innerHTML = html;
         }
 
@@ -292,14 +295,14 @@
                     }
                 }
             }
-            
+
             return item.original_type || "Exercise";
         }
 
         // 🟢 4. ฟังก์ชัน renderTable (เพิ่มการ Sort เรียงตามหมวดหมู่ A-Z)
         function renderTable(data) {
             const tableBody = document.getElementById('exerciseTableBody');
-            
+
             if (!data || !data.length) {
                 tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูล</td></tr>`;
                 return;
@@ -309,11 +312,11 @@
             const sortedData = [...data].sort((a, b) => {
                 const catA = getSpecificCategoryName(a).toLowerCase();
                 const catB = getSpecificCategoryName(b).toLowerCase();
-                
+
                 // 1. เปรียบเทียบชื่อหมวดหมู่ (A-Z)
                 if (catA < catB) return -1;
                 if (catA > catB) return 1;
-                
+
                 // 2. ถ้าหมวดหมู่เดียวกัน ให้เรียงตาม ID
                 return a.id.toString().localeCompare(b.id.toString(), undefined, { numeric: true });
             });
@@ -322,12 +325,12 @@
             sortedData.forEach(item => {
                 let rawClass = getSpecificCategoryName(item);
                 let actualClass = rawClass.charAt(0).toUpperCase() + rawClass.slice(1);
-                
+
                 // 🎨 ดึงสีสุ่มตามชื่อ Class
                 const badgeColor = getColorForClass(actualClass);
 
                 let metsDisplay = parseFloat(item.mets) ? `${parseFloat(item.mets).toFixed(1)} METs` : "0.0 METs";
-                let ytBadge = item.youtube_id ? ` <small style="color: #ef4444;"><i class="fa-brands fa-youtube"></i></small>` : '';
+                let ytBadge = item.youtube_id ? ` <small style="color: #ef4444;">{{ admin_icon('youtube') }}</small>` : '';
 
                 html += `
                 <tr>
@@ -336,7 +339,7 @@
                     <td>
                         <!-- แสดง Badge สีสุ่มอัตโนมัติ -->
                         <span class="badge" style="background-color: ${badgeColor.bg}; color: ${badgeColor.text};">
-                            <i class="fa-solid fa-tag"></i> ${actualClass}
+                            {{ admin_icon('tag-fill') }} ${actualClass}
                         </span>
                     </td>
                     <td>
@@ -345,16 +348,16 @@
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="openEditExerciseModal('${item.id}', '${item.name.replace(/'/g, "\\'")}', '${actualClass}', '${item.mets}', '${item.youtube_id || ''}')">
-                                <i class="bi bi-pencil-square" aria-hidden="true"></i> แก้ไข
+                                {{ admin_icon('pencil-square') }} แก้ไข
                             </button>
                             <button class="btn-delete" onclick="deleteExercise('${item.id}')">
-                                <i class="bi bi-trash3" aria-hidden="true"></i> ลบ
+                                {{ admin_icon('trash3') }} ลบ
                             </button>
                         </div>
                     </td>
                 </tr>`;
             });
-            
+
             tableBody.innerHTML = html;
         }
 
@@ -364,9 +367,9 @@
             const filterTypeVal = document.getElementById('filterType').value;
 
             const filtered = exercisesData.filter(item => {
-                const nameMatch = item.name.toLowerCase().includes(searchVal) || 
+                const nameMatch = item.name.toLowerCase().includes(searchVal) ||
                                   item.id.toString().toLowerCase().includes(searchVal);
-                
+
                 let typeMatch = false;
                 if (!filterTypeVal || filterTypeVal === 'all') {
                     typeMatch = true;
@@ -376,12 +379,12 @@
 
                     const originalMatch = (item.original_type || "").toLowerCase() === filterTypeVal.toLowerCase();
 
-                    const categoryMatch = item.all_categories && Array.isArray(item.all_categories) && 
+                    const categoryMatch = item.all_categories && Array.isArray(item.all_categories) &&
                         item.all_categories.some(cat => cat.toLowerCase() === filterTypeVal.toLowerCase());
 
                     typeMatch = specificMatch || originalMatch || categoryMatch;
                 }
-                                
+
                 return nameMatch && typeMatch;
             });
 
@@ -410,7 +413,7 @@
                 html: `
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
                     <input id="swal-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น เดินแกว่งแขนบนสายพาน">
-                    
+
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ประเภทข้อมูล (Ontology Class)</label></div>
                     <select id="swal-type" class="swal2-input" style="margin:0 0 16px 0; width:100%; height:42px; padding: 0 10px;">
                         ${dropdownHtml}
@@ -432,11 +435,11 @@
                     const name = document.getElementById('swal-name').value.trim();
                     const type = document.getElementById('swal-type').value;
                     const mets = document.getElementById('swal-mets').value.trim();
-                    
+
                     if (!name) { Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย'); return false; }
                     if (!type) { Swal.showValidationMessage('กรุณาเลือกคลาสประเภทข้อมูลใน Ontology'); return false; }
                     if (!mets) { Swal.showValidationMessage('กรุณาระบุค่า METs ประจำท่า'); return false; }
-                    
+
                     return {
                         name: name,
                         type: type,
@@ -447,7 +450,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                    
+
                     fetch("/admin/exercises/add", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -479,7 +482,7 @@
                 html: `
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ชื่อท่าออกกำลังกาย</label></div>
                     <input id="swal-edit-name" class="swal2-input" style="margin:0 0 16px 0; width:100%;" value="${name}">
-                    
+
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">ประเภทข้อมูล (Ontology Class)</label></div>
                     <select id="swal-edit-type" class="swal2-input" style="margin:0 0 16px 0; width:100%; height:42px; padding: 0 10px;">
                         ${dropdownHtml}
@@ -501,11 +504,11 @@
                     const editName = document.getElementById('swal-edit-name').value.trim();
                     const editType = document.getElementById('swal-edit-type').value;
                     const editMets = document.getElementById('swal-edit-mets').value.trim();
-                    
+
                     if (!editName) { Swal.showValidationMessage('กรุณากรอกชื่อท่าออกกำลังกาย'); return false; }
                     if (!editType) { Swal.showValidationMessage('กรุณาเลือกคลาสประเภทข้อมูล'); return false; }
                     if (!editMets) { Swal.showValidationMessage('กรุณาระบุค่า METs'); return false; }
-                    
+
                     return {
                         id: id,
                         name: editName,
@@ -517,7 +520,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                    
+
                     fetch("/admin/exercises/update", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -552,7 +555,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                    
+
                     fetch(`/admin/exercises/delete/${exerciseId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }
@@ -571,6 +574,6 @@
             });
         }
     </script>
-{% include 'includes/admin_responsive.html' %}
+
 </body>
 </html>

@@ -35,7 +35,7 @@
         .settings-primary { background: #2b5cb3; border: 1px solid #2b5cb3; color: #fff; }
         .settings-primary:hover { background: #1e458a; }
         .settings-cancel { background: #fff; border: 1px solid #dce3ed; color: #666; }
-        .settings-actions button:disabled { opacity: .6; cursor: wait; }
+        .settings-actions button:disabled { opacity: .6; cursor: not-allowed; }
         .settings-actions [hidden], .settings-page [hidden] { display: none; }
         .swal2-popup { font-family: 'Prompt', sans-serif; }
         @media(max-width:1100px) { .settings-grid { grid-template-columns: minmax(0,1fr); } }
@@ -87,6 +87,35 @@
             password: { form: document.getElementById('passwordForm'), edit: document.getElementById('editPassword'), save: document.getElementById('savePassword'), cancel: document.getElementById('cancelPassword'), fields: ['oldPassword','newPassword','confirmPassword'] }
         };
         let settingsSaving = false;
+        let initialAdminFirstname = '';
+        let initialAdminLastname = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const fn = document.getElementById('firstname');
+            const ln = document.getElementById('lastname');
+            if (fn) initialAdminFirstname = fn.value.trim();
+            if (ln) initialAdminLastname = ln.value.trim();
+
+            ['firstname', 'lastname'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', checkAdminProfileChanges);
+                    el.addEventListener('change', checkAdminProfileChanges);
+                }
+            });
+        });
+
+        function checkAdminProfileChanges() {
+            const fn = document.getElementById('firstname').value.trim();
+            const ln = document.getElementById('lastname').value.trim();
+            const hasChange = (fn !== initialAdminFirstname || ln !== initialAdminLastname) && fn !== '' && ln !== '';
+            const saveBtn = document.getElementById('saveProfile');
+            if (saveBtn) {
+                saveBtn.disabled = !hasChange;
+                saveBtn.title = hasChange ? 'คลิกเพื่อบันทึกชื่อ' : 'กรุณาแก้ไขชื่อหรือนามสกุลก่อนบันทึก';
+            }
+        }
+
         function setSettingsEditing(section, editing) {
             const group = settingsSections[section];
             group.fields.forEach(id => document.getElementById(id).disabled = !editing);
@@ -94,6 +123,9 @@
             group.edit.setAttribute('aria-expanded', String(editing));
             group.save.hidden = !editing;
             group.cancel.hidden = !editing;
+            if (section === 'profile' && editing) {
+                checkAdminProfileChanges();
+            }
             if (section === 'password') document.getElementById('passwordFields').hidden = !editing;
             if (!editing) group.form.reset();
             if (editing) document.getElementById(group.fields[0]).focus();
@@ -113,6 +145,9 @@
                 payload.firstname = document.getElementById('firstname').value.trim();
                 payload.lastname = document.getElementById('lastname').value.trim();
                 if (!payload.firstname || !payload.lastname) return Swal.fire('กรุณากรอกข้อมูล','กรอกชื่อและนามสกุลให้ครบ','warning');
+                if (payload.firstname === initialAdminFirstname && payload.lastname === initialAdminLastname) {
+                    return Swal.fire('ไม่มีการเปลี่ยนแปลง', 'คุณยังไม่ได้แก้ไขชื่อหรือนามสกุล', 'info');
+                }
             } else {
                 payload.old_password = document.getElementById('oldPassword').value;
                 payload.new_password = document.getElementById('newPassword').value;
@@ -134,7 +169,11 @@
                 Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, allowEscapeKey:false, didOpen:() => Swal.showLoading() });
                 const data = await settingsRequest('/admin/api/update_settings', payload);
                 if (data.status !== 'success') throw new Error(data.message || 'บันทึกไม่สำเร็จ');
-                if (section === 'profile') group.fields.forEach(id => document.getElementById(id).defaultValue = payload[id]);
+                if (section === 'profile') {
+                    initialAdminFirstname = payload.firstname;
+                    initialAdminLastname = payload.lastname;
+                    group.fields.forEach(id => document.getElementById(id).defaultValue = payload[id]);
+                }
                 setSettingsEditing(section, false);
                 await Swal.fire('บันทึกสำเร็จ', data.message, 'success');
                 if (section === 'profile') window.location.reload();
@@ -143,6 +182,7 @@
             } finally {
                 settingsSaving = false;
                 document.querySelectorAll('.settings-actions button').forEach(button => button.disabled = false);
+                if (section === 'profile') checkAdminProfileChanges();
             }
         }
         Object.entries(settingsSections).forEach(([section,group]) => {

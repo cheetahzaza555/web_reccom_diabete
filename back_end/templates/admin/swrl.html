@@ -1,15 +1,12 @@
 <!doctype html>
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DiaBalance Admin | จัดการกฎ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  </head>
-  <body class="admin-page">
-    {% include 'includes/navbar_admin.html' %}
-    <style>
+
+      <style>
       body {
         background: #fff;
         color: #333;
@@ -350,7 +347,7 @@
         outline-offset: 3px;
       }
       .swal2-popup {
-        font-family: "Sarabun", sans-serif;
+        font-family: "Prompt", sans-serif;
         border-radius: 16px;
       }
       @media (max-width: 1150px) {
@@ -406,6 +403,15 @@
         }
       }
     </style>
+
+{{ admin_assets() }}
+<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+{{ admin_layout_styles() }}
+<meta name="description" content="DiaBalance Admin | จัดการกฎ">
+</head>
+  <body class="admin-page">
+    {% include 'includes/navbar_admin.html' %}
+
     <main class="rules-page">
       {% include 'includes/admin_breadcrumb.html' %}
       <header class="rules-header">
@@ -420,8 +426,7 @@
         <div class="rules-panel-heading">
           <div class="rules-panel-title">
             <span class="rules-icon"
-              ><i class="bi bi-diagram-3" aria-hidden="true"></i
-            ></span>
+              >{{ admin_icon('diagram-3') }}</span>
             <div>
               <h2 id="rules-list-title">
                 รายการกฎทั้งหมด
@@ -433,11 +438,11 @@
           <div class="rules-toolbar">
           <div class="rules-search">
             <label class="rules-sr-only" for="searchBar">ค้นหากฎ</label>
-            <i class="bi bi-search" aria-hidden="true"></i>
+            {{ admin_icon('search') }}
             <input
               type="search"
               id="searchBar"
-              placeholder="ค้นหาชื่อกฎ คำอธิบาย หรือเงื่อนไข…"
+              aria-label="ค้นหาชื่อกฎ คำอธิบาย หรือเงื่อนไข…" placeholder="ค้นหาชื่อกฎ คำอธิบาย หรือเงื่อนไข…"
               autocomplete="off"
             />
             <button
@@ -450,7 +455,7 @@
             </button>
           </div>
           <a class="rules-add" href="{{ url_for('admin.new_swrl_rule') }}"
-            ><i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มกฎใหม่</a
+            >{{ admin_icon('plus-lg') }} เพิ่มกฎใหม่</a
           >
           </div>
         </div>
@@ -659,6 +664,6 @@
         render();
       })();
     </script>
-  {% include 'includes/admin_responsive.html' %}
+
 </body>
 </html>

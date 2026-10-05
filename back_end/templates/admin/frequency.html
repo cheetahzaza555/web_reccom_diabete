@@ -1,12 +1,11 @@
 <!DOCTYPE html>
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DiaBalance Admin | จัดการความถี่การออกกำลังกาย (Frequency)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <style>
         :root {
@@ -23,7 +22,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; }
 
         .admin-layout { display: flex; width: 100%; min-height: 100vh; }
         .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
@@ -35,7 +34,7 @@
         .search-wrapper { position: relative; flex-grow: 1; }
         .search-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
         .search-input { width: 100%; padding: 10px 14px 10px 40px; border-radius: 8px; border: 1px solid var(--border-color); font-family: 'Prompt', sans-serif; font-size: 14px; outline: none; }
-        
+
         .btn-add-freq { padding: 10px 20px; border-radius: 8px; font-size: 14px; background-color: var(--primary-blue); color: var(--white); border: none; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background-color 0.2s; font-family: 'Prompt', sans-serif; white-space: nowrap; }
         .btn-add-freq:hover { background-color: #1e458a; }
 
@@ -57,18 +56,23 @@
         .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
         .swal2-input { font-family: 'Prompt', sans-serif !important; font-size: 14px !important; }
     </style>
+
+{{ admin_assets() }}
+<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+{{ admin_layout_styles() }}
+<meta name="description" content="DiaBalance Admin | จัดการความถี่การออกกำลังกาย (Frequency)">
 </head>
 <body class="admin-page">
 
     <!-- 📥 รับข้อมูล JSON จาก Flask Controller -->
-    <div id="freq-data-container" style="display: none;" 
+    <div id="freq-data-container" style="display: none;"
          data-json="{% if frequencies %}{{ frequencies | tojson | safe | forceescape }}{% else %}[]{% endif %}">
     </div>
 
     <div class="admin-layout">
         {% include 'includes/navbar_admin.html' %}
 
-        <div class="main-content">
+        <main class="main-content">
             {% include 'includes/admin_breadcrumb.html' %}
             <div class="header-section">
                 <div>
@@ -79,12 +83,12 @@
 
             <div class="toolbar-section">
                 <div class="search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหารายละเอียดความถี่หรือ Freq ID...">
+                    {{ admin_icon('search') }}
+                    <input type="text" id="searchBar" class="search-input" aria-label="ค้นหารายละเอียดความถี่หรือ Freq ID..." placeholder="ค้นหารายละเอียดความถี่หรือ Freq ID...">
                 </div>
 
                 <button class="btn-add-freq" onclick="openAddFreqModal()">
-                    <i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มความถี่ใหม่
+                    {{ admin_icon('plus-lg') }} เพิ่มความถี่ใหม่
                 </button>
             </div>
 
@@ -101,7 +105,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
@@ -111,7 +115,7 @@
         // 📊 ฟังก์ชันเรนเดอร์ตาราง
         function renderTable(data) {
             const tableBody = document.getElementById('freqTableBody');
-            
+
             if (!data || !data.length) {
                 tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">ไม่พบข้อมูลความถี่ที่ค้นหา</td></tr>`;
                 return;
@@ -130,16 +134,16 @@
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="openEditFreqModal('${item.freq_id}', '${(item.description || '').replace(/'/g, "\\'")}')">
-                                <i class="bi bi-pencil-square" aria-hidden="true"></i> แก้ไข
+                                {{ admin_icon('pencil-square') }} แก้ไข
                             </button>
                             <button class="btn-delete" onclick="deleteFreq('${item.freq_id}', '${(item.description || '').replace(/'/g, "\\'")}')">
-                                <i class="bi bi-trash3" aria-hidden="true"></i> ลบ
+                                {{ admin_icon('trash3') }} ลบ
                             </button>
                         </div>
                     </td>
                 </tr>`;
             });
-            
+
             tableBody.innerHTML = html;
         }
 
@@ -147,7 +151,7 @@
         function filterContent() {
             const searchVal = document.getElementById('searchBar').value.toLowerCase();
             const filtered = frequenciesData.filter(item => {
-                return ((item.description && item.description.toLowerCase().includes(searchVal)) || 
+                return ((item.description && item.description.toLowerCase().includes(searchVal)) ||
                        item.freq_id.toLowerCase().includes(searchVal));
             });
             renderTable(filtered);
@@ -166,7 +170,7 @@
                 html: `
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">Frequency Instance ID</label></div>
                     <input id="swal-freq-id" class="swal2-input" style="margin:0 0 16px 0; width:100%;" placeholder="เช่น Freq8">
-                    
+
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">คำอธิบายความถี่</label></div>
                     <input id="swal-freq-desc" class="swal2-input" style="margin:0; width:100%;" placeholder="เช่น Aerobic: 150 นาที/สัปดาห์">
                 `,
@@ -179,10 +183,10 @@
                 preConfirm: () => {
                     const freqId = document.getElementById('swal-freq-id').value.trim();
                     const freqDesc = document.getElementById('swal-freq-desc').value.trim();
-                    
+
                     if (!freqId) { Swal.showValidationMessage('กรุณากรอก Frequency Instance ID'); return false; }
                     if (!freqDesc) { Swal.showValidationMessage('กรุณากรอกคำอธิบายความถี่'); return false; }
-                    
+
                     // ✅ เปลี่ยน key เป็น description ให้ตรงกับ Backend
                     return { freq_id: freqId, description: freqDesc }
                 }
@@ -200,7 +204,7 @@
                 html: `
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">Frequency Instance ID</label></div>
                     <input id="swal-freq-id" class="swal2-input" style="margin:0 0 16px 0; width:100%; background-color: #E2E8F0;" value="${freqId}" readonly>
-                    
+
                     <div style="text-align:left; margin-bottom:8px;"><label style="font-size:13px;font-weight:600;">คำอธิบายความถี่ (ex:description)</label></div>
                     <input id="swal-freq-desc" class="swal2-input" style="margin:0; width:100%;" value="${freqDesc}">
                 `,
@@ -213,7 +217,7 @@
                 preConfirm: () => {
                     const freqDescVal = document.getElementById('swal-freq-desc').value.trim();
                     if (!freqDescVal) { Swal.showValidationMessage('กรุณากรอกคำอธิบายความถี่'); return false; }
-                    
+
                     // ✅ เปลี่ยน key เป็น description ให้ตรงกับ Backend
                     return { freq_id: freqId, description: freqDescVal }
                 }
@@ -227,7 +231,7 @@
         // 🚀 ส่งข้อมูลไปที่ Backend API
         function sendFreqUpdate(payload) {
             Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-            
+
             fetch("/admin/api/frequency/update", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -274,6 +278,6 @@
             });
         }
     </script>
-{% include 'includes/admin_responsive.html' %}
+
 </body>
 </html>

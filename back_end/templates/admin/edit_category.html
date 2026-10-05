@@ -1,12 +1,11 @@
 <!DOCTYPE html>
+{% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DiaBalance Admin | จัดการหมวดหมู่การออกกำลังกาย</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <style>
         :root {
@@ -16,7 +15,7 @@
             --text-muted: #666666;
             --white: #ffffff;
             --border-color: #E2E8F0;
-            
+
             --category-bg: #E0F2FE;
             --category-text: #0369A1;
 
@@ -25,7 +24,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; } 
+        body { background-color: var(--light-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-family: 'Prompt', sans-serif; }
 
         .admin-layout { display: flex; width: 100%; min-height: 100vh; }
         .main-content { margin-left: 0; flex-grow: 1; padding: 40px; width: 100%; }
@@ -34,7 +33,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            
+
         }
         .header-section h1 { font-size: 28px; font-weight: 600; }
 
@@ -65,7 +64,7 @@
             font-size: 14px;
             outline: none;
         }
-        
+
         .btn-add-category {
             padding: 10px 20px;
             border-radius: 8px;
@@ -90,7 +89,7 @@
             padding: 24px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
             border: 1px solid var(--border-color);
-            width: 100%; 
+            width: 100%;
             overflow-x: auto;
         }
         .category-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -105,12 +104,12 @@
         .category-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .category-table tr:hover { background-color: #F8FAFC; }
 
-        .badge-cat { 
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-size: 13px; 
-            font-weight: 600; 
-            display: inline-flex; 
+        .badge-cat {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
             background-color: var(--category-bg);
@@ -166,18 +165,23 @@
         .category-preview p { margin-top: 8px; line-height: 1.8; }
         @media(max-width: 640px) { .main-content { padding: 20px; } .toolbar-section { flex-wrap: wrap; } }
     </style>
+
+{{ admin_assets() }}
+<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+{{ admin_layout_styles() }}
+<meta name="description" content="DiaBalance Admin | จัดการหมวดหมู่การออกกำลังกาย">
 </head>
 <body class="admin-page">
 
     <!-- 📥 ดึงข้อมูล JSON จาก Flask Controller -->
-    <div id="category-data-container" style="display: none;" 
+    <div id="category-data-container" style="display: none;"
          data-json="{% if categories %}{{ categories | tojson | safe | forceescape }}{% else %}[]{% endif %}">
     </div>
 
     <div class="admin-layout">
         {% include 'includes/navbar_admin.html' %}
 
-        <div class="main-content">
+        <main class="main-content">
             {% include 'includes/admin_breadcrumb.html' %}
             <div class="header-section">
                 <div>
@@ -188,12 +192,12 @@
 
             <div class="toolbar-section">
                 <div class="search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="searchBar" class="search-input" placeholder="ค้นหาชื่อหมวดหมู่หรือ Class ID...">
+                    {{ admin_icon('search') }}
+                    <input type="text" id="searchBar" class="search-input" aria-label="ค้นหาชื่อหมวดหมู่หรือ Class ID..." placeholder="ค้นหาชื่อหมวดหมู่หรือ Class ID...">
                 </div>
 
                 <button class="btn-add-category" onclick="openAddCategoryModal()">
-                    <i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มหมวดหมู่ใหม่
+                    {{ admin_icon('plus-lg') }} เพิ่มหมวดหมู่ใหม่
                 </button>
             </div>
 
@@ -210,7 +214,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
@@ -360,7 +364,7 @@
         // 🚀 ยิง Request อัปเดตไปยัง Backend API
         function sendCategoryUpdate(payload) {
             Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-            
+
             fetch("/admin/api/category/update", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -400,16 +404,16 @@
                     .then(data => {
                         if (data.success) {
                             // ตรวจสอบข้อความ หากเป็นคำว่า 'message' หรือไม่มีค่า ให้ใช้ข้อความภาษาไทยแทน
-                            const successMsg = (typeof data.message === 'string' && data.message.trim() !== 'message' && data.message.trim() !== '') 
-                                            ? data.message 
+                            const successMsg = (typeof data.message === 'string' && data.message.trim() !== 'message' && data.message.trim() !== '')
+                                            ? data.message
                                             : `ลบหมวดหมู่ "${catLabel || catId}" ออกจากระบบเรียบร้อยแล้ว`;
 
                             Swal.fire('ลบสำเร็จ!', successMsg, 'success').then(() => location.reload());
-                        } else { 
-                            const errorMsg = (typeof data.message === 'string' && data.message.trim() !== 'message' && data.message.trim() !== '') 
-                                            ? data.message 
+                        } else {
+                            const errorMsg = (typeof data.message === 'string' && data.message.trim() !== 'message' && data.message.trim() !== '')
+                                            ? data.message
                                             : 'เกิดข้อผิดพลาดในการลบหมวดหมู่';
-                            throw new Error(errorMsg); 
+                            throw new Error(errorMsg);
                         }
                     })
                     .catch(err => Swal.fire('ไม่สามารถลบได้!', err.message, 'error'));
@@ -417,6 +421,6 @@
             });
         }
     </script>
-{% include 'includes/admin_responsive.html' %}
+
 </body>
 </html>

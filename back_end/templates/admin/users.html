@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-{% set optimized_admin_dashboard = true %}
 {% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th">
 <head>
@@ -114,6 +113,20 @@
         .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
     </style>
     {{ admin_layout_styles() }}
+    <style>
+        .admin-page .table-card .user-table { table-layout: fixed; min-width: 900px; }
+        .user-table .col-id { width: 80px; }
+        .user-table .col-username { width: 18%; }
+        .user-table .col-role { width: 152px; }
+        .user-table .col-change { width: 180px; }
+        .user-table .col-delete { width: 130px; }
+        .admin-page .user-table th { white-space: nowrap; }
+        .admin-page .user-table :is(th, td):first-child { width: 80px; }
+        .admin-page .user-table td:nth-child(2) { overflow-wrap: break-word; word-break: normal; }
+        .admin-page .user-table .badge { white-space: nowrap; }
+        .admin-page .user-table .role-select { width: 100%; min-height: 44px; }
+        .admin-page .user-table .role-select:focus-visible { outline: 3px solid #81b3ff; outline-offset: 2px; }
+    </style>
 </head>
 <body class="admin-page">
 
@@ -131,13 +144,21 @@
 
             <div class="table-card" tabindex="0" role="region" aria-label="ตารางบัญชีผู้ใช้ เลื่อนซ้ายขวาเพื่อดูข้อมูลทั้งหมด">
                 <table class="user-table">
+                    <colgroup>
+                        <col class="col-id">
+                        <col>
+                        <col class="col-username">
+                        <col class="col-role">
+                        <col class="col-change">
+                        <col class="col-delete">
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>ไอดีคนไข้</th>
                             <th>ชื่อ - นามสกุล</th>
-                            <th>ชื่อผู้ใช้ (Username)</th>
+                            <th>ชื่อผู้ใช้</th>
                             <th>สิทธิ์ปัจจุบัน</th>
-                            <th>ปรับเปลี่ยนระดับสิทธิ์</th>
+                            <th>เปลี่ยนสิทธิ์</th>
                             <th style="text-align: center;">ลบบัญชี</th>
                         </tr>
                     </thead>

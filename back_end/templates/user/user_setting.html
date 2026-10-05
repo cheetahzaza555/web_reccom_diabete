@@ -12,6 +12,15 @@
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f4f8ff; color: #333; }
         .header-section { background-color: #8ca7f9; color: white; padding: 40px 0; margin-bottom: 40px; }
+        @media (max-width: 768px) {
+            .header-section {
+                padding: 22px 60px;
+                text-align: center;
+            }
+            .header-section h1 {
+                font-size: 1.6rem !important;
+            }
+        }
         .settings-card { background: white; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); padding: 40px; margin-bottom: 40px; }
         .form-label { font-weight: 500; color: #495057; margin-bottom: 8px; }
         .form-control { border-radius: 10px; padding: 10px 15px; border: 1px solid #ced4da; background-color: #fafbfc; transition: all 0.3s ease;}
@@ -28,7 +37,7 @@
     {% include 'includes/navbar_user.html' %}
 
     <div class="header-section">
-        <div class="container-fluid px-4 px-md-5 text-start">
+        <div class="container-fluid px-3 px-md-5 text-center text-md-start">
             <h1 class="fw-bold mb-0" style="font-size: 2.5rem;"><i class="bi bi-gear-fill me-2"></i> การตั้งค่า</h1>
         </div>
     </div>

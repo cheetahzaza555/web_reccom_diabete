@@ -144,8 +144,10 @@ def request_otp():
         action = data.get("action", "register")
 
         # 2. ดึงอีเมลให้ถูกที่
-        if action == "update_settings" or action == "update_admin_settings": 
-            email = session.get('email') # หน้าตั้งค่า ดึงจาก Session ป้องกันการแฮก
+        if action in ("update_settings", "update_admin_settings", "update_admin_profile", "update_admin_password"): 
+            email = session.get('email') or data.get('email') # หน้าตั้งค่า ดึงจาก Session หรือ input เผื่อกรณี session หลุด
+            if email and not session.get('email'):
+                session['email'] = email
         else:
             email = data.get('email') # หน้าสมัครสมาชิก ดึงจากที่ผู้ใช้พิมพ์เข้ามา
 

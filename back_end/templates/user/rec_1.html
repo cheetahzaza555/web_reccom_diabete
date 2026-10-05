@@ -49,13 +49,17 @@
     {% include 'includes/navbar_user.html' %}
 
     <div class="main-content">
-        <div class="header-banner" id="pageTitle">ผลตรวจสุขภาพ (1/3)</div>
+        <div class="header-section">
+            <div class="container-fluid px-3 px-md-5 text-center text-md-start">
+                <h1 class="fw-bold mb-0" style="font-size: 2.5rem;"><i class="bi bi-lightbulb-fill me-2"></i> <span id="pageTitle">ผลตรวจสุขภาพ (1/3)</span></h1>
+            </div>
+        </div>
 
         <div class="form-wrapper">
             <form id="healthForm" onsubmit="return false;" style="display: contents;">
 
                 <div class="form-scroll-area">
-                    <div class="form-content">
+                    <div class="form-content container-fluid px-4 px-md-5">
 
                         <div id="step1">
                             <!-- Breadcrumb Step 1 -->
@@ -342,9 +346,11 @@
                 </div>
 
                 <div class="button-area">
-                    <div class="row g-3">
-                        <div class="col-6"><button type="button" class="btn-cancel" id="btnBack" onclick="handleBack()">ยกเลิก</button></div>
-                        <div class="col-6"><button type="button" class="btn-next" id="btnNext" onclick="handleNext()">ถัดไป</button></div>
+                    <div class="container-fluid px-4 px-md-5">
+                        <div class="row g-3">
+                            <div class="col-6"><button type="button" class="btn-cancel" id="btnBack" onclick="handleBack()">ยกเลิก</button></div>
+                            <div class="col-6"><button type="button" class="btn-next" id="btnNext" onclick="handleNext()">ถัดไป</button></div>
+                        </div>
                     </div>
                 </div>
             </form>

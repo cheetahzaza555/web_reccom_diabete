@@ -162,7 +162,9 @@
             document.querySelectorAll('.settings-actions button').forEach(button => button.disabled = true);
             try {
                 Swal.fire({ title:'กำลังส่ง OTP...', text:'ส่งรหัสยืนยันไปยังอีเมลของบัญชี', allowOutsideClick:false, allowEscapeKey:false, didOpen:() => Swal.showLoading() });
-                await settingsRequest('/api/request_otp', { action:'update_admin_settings' });
+                const otpAction = section === 'password' ? 'update_admin_password' : 'update_admin_profile';
+                const adminEmail = document.getElementById('accountEmail')?.value?.trim();
+                await settingsRequest('/api/request_otp', { action: otpAction, email: adminEmail });
                 const result = await Swal.fire({
                     title:section === 'profile' ? 'ยืนยันการแก้ไขชื่อ' : 'ยืนยันการเปลี่ยนรหัสผ่าน', text:'กรอกรหัส OTP 6 หลักที่ส่งไปยังอีเมลของคุณ',
                     input:'text', inputAttributes:{maxlength:'6',inputmode:'numeric',autocomplete:'one-time-code'},

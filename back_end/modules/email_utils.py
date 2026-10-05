@@ -10,10 +10,15 @@ def _generate_email_content(action, otp_code):
     """
     สร้าง Subject, Plain-text fallback และ HTML Email Template ที่ปรับแต่งตาม action
     """
-    if action == "update_settings":
+    if action in ("update_settings", "update_admin_settings", "update_admin_profile"):
         subject = "รหัส OTP ยืนยันการเปลี่ยนแปลงข้อมูลส่วนตัว - DiaBalance"
         action_title = "ยืนยันการเปลี่ยนแปลงข้อมูลส่วนตัว"
         action_desc = "ระบบได้รับคำขอเปลี่ยนแปลงข้อมูลส่วนตัวในบัญชี DiaBalance ของคุณ กรุณาใช้รหัส OTP ด้านล่างเพื่อยืนยันการทำรายการ:"
+        security_note = "หากคุณไม่ได้เป็นผู้ทำรายการนี้ โปรดตรวจสอบความปลอดภัยของบัญชีหรือเปลี่ยนรหัสผ่านทันที"
+    elif action in ("update_password", "update_admin_password"):
+        subject = "รหัส OTP ยืนยันการเปลี่ยนรหัสผ่าน - DiaBalance"
+        action_title = "ยืนยันการเปลี่ยนรหัสผ่าน"
+        action_desc = "ระบบได้รับคำขอเปลี่ยนรหัสผ่านสำหรับบัญชี DiaBalance ของคุณ กรุณาใช้รหัส OTP ด้านล่างเพื่อยืนยันการทำรายการ:"
         security_note = "หากคุณไม่ได้เป็นผู้ทำรายการนี้ โปรดตรวจสอบความปลอดภัยของบัญชีหรือเปลี่ยนรหัสผ่านทันที"
     elif action == "forgot_password":
         subject = "รหัส OTP สำหรับรีเซ็ตรหัสผ่าน - DiaBalance"

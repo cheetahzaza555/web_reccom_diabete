@@ -4,7 +4,7 @@ from modules.auth_utils import generate_token
 import random
 from modules.email_utils import send_otp_email
 # เปลี่ยนมานำเข้าฟังก์ชันจาก database.py แทน (เพราะเราจะย้ายคำสั่ง SPARQL ไปรวมไว้ที่นั่น)
-from modules.db import register_new_patient, get_user_for_login, get_user_by_id, get_user_for_login, update_user_profile_db, update_password_db
+from modules.db import is_username_taken, register_new_patient, get_user_for_login, get_user_by_id, update_user_profile_db, update_password_db
 
 auth = Blueprint("auth", __name__)
 
@@ -137,6 +137,28 @@ def get_current_user():
         print("Error fetching current user:", e)
         return jsonify({"error": str(e)}), 500
     
+@auth.route("/api/check_username", methods=["POST", "GET"])
+def check_username():
+    try:
+        if request.method == "POST":
+            data = request.json or {}
+            username = (data.get("username") or "").strip()
+        else:
+            username = (request.args.get("username") or "").strip()
+
+        if not username:
+            return jsonify({"available": False, "taken": False, "message": ""})
+
+        taken = is_username_taken(username)
+        return jsonify({
+            "available": not taken,
+            "taken": taken,
+            "message": "ชื่อบัญชีผู้ใช้นี้มีผู้ใช้งานแล้ว" if taken else "สามารถใช้ชื่อบัญชีผู้ใช้นี้ได้"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
     # --- 1. API สำหรับส่ง OTP ไปที่อีเมล ---
 @auth.route("/api/request_otp", methods=["POST"])
 def request_otp():
@@ -153,6 +175,9 @@ def request_otp():
                 session['email'] = email
         else:
             email = data.get('email') # หน้าสมัครสมาชิก ดึงจากที่ผู้ใช้พิมพ์เข้ามา
+            username = (data.get('username') or '').strip()
+            if username and is_username_taken(username):
+                return jsonify({"error": "ชื่อบัญชีผู้ใช้นี้มีผู้ใช้งานแล้ว กรุณาตั้งชื่อบัญชีผู้ใช้อื่น"}), 400
 
         if not email:
             return jsonify({"error": "ไม่พบข้อมูลอีเมล กรุณาระบุอีเมล"}), 400

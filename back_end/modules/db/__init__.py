@@ -36,6 +36,7 @@ from .exercise_repository import (
 )
 
 from .auth_repository import (
+    is_username_taken,
     register_new_patient,
     get_user_for_login,
     get_user_by_id,

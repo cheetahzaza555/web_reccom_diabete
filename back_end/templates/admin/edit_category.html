@@ -217,6 +217,8 @@
         </main>
     </div>
 
+    <template id="category-icon-edit">{{ admin_icon('pencil-square') }}</template>
+    <template id="category-icon-delete">{{ admin_icon('trash3') }}</template>
     <script>
         const container = document.getElementById('category-data-container');
         const categoriesData = JSON.parse(container.getAttribute('data-json') || '[]');
@@ -286,9 +288,8 @@
                  ['ลบ', 'btn-delete', () => deleteCategory(id, categoryName(id))]].forEach(([label, style, action]) => {
                     const button = document.createElement('button'); button.className = style;
                     button.type = 'button';
-                    const icon = document.createElement('i');
-                    icon.className = style === 'btn-edit' ? 'bi bi-pencil-square' : 'bi bi-trash3';
-                    icon.setAttribute('aria-hidden', 'true');
+                    const templateId = style === 'btn-edit' ? 'category-icon-edit' : 'category-icon-delete';
+                    const icon = document.getElementById(templateId).content.firstElementChild.cloneNode(true);
                     button.append(icon, document.createTextNode(label));
                     button.addEventListener('click', action); actions.append(button);
                 });

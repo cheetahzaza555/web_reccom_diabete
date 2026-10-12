@@ -94,7 +94,19 @@
         .sidebar .py-1 { padding-top: .25rem; padding-bottom: .25rem; }
         .sidebar-user .user-username { color: #cbd9f2; }
         button, input, select { font-family: inherit; }
-        .search-wrapper > .bi { font-size: 18px; color: #666; }
+        .admin-page :is(.search-wrapper, .rules-search) > .bi {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #666;
+            pointer-events: none;
+        }
+        .admin-page :is(.search-wrapper, .rules-search) input {
+            display: block;
+            min-height: 44px;
+        }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

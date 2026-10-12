@@ -114,6 +114,43 @@
             display: block;
             text-align: left;
         }
+
+        .input-pill.pill-taken {
+            box-shadow: 0 0 0 2.5px #ff6b6b;
+        }
+
+        .input-pill.pill-available {
+            box-shadow: 0 0 0 2.5px #51cf66;
+        }
+
+        .username-status {
+            font-size: 0.82rem;
+            text-align: left;
+            padding-left: 15px;
+            margin-top: -8px;
+            margin-bottom: 10px;
+            min-height: 20px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .username-status.show {
+            display: flex;
+        }
+
+        .username-status.taken {
+            color: #ff9b9b;
+        }
+
+        .username-status.available {
+            color: #96f2ab;
+        }
+
+        .username-status.checking {
+            color: #d1dcf5;
+        }
     </style>
 </head>
 <body>
@@ -142,10 +179,12 @@
             </div>
 
             <label class="form-label-custom mt-2">ชื่อบัญชีผู้ใช้</label>
-            <div class="input-pill">
+            <div class="input-pill" id="usernamePill">
                 <i class="bi bi-person-badge"></i>
-                <input type="text" id="username" placeholder="ตั้งชื่อบัญชีผู้ใช้" required>
+                <input type="text" id="username" placeholder="ตั้งชื่อบัญชีผู้ใช้" autocomplete="off" required>
+                <i id="usernameStatusIcon" class="bi" style="margin-right: 0; margin-left: 8px; display: none;"></i>
             </div>
+            <div id="usernameStatus" class="username-status"></div>
 
             <label class="form-label-custom mt-2">อีเมล</label>
             <div class="input-pill">
@@ -183,6 +222,90 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+        let usernameTimer = null;
+        let lastCheckedUsername = '';
+        let isUsernameTakenFlag = false;
+
+        const usernameInput = document.getElementById('username');
+        const usernamePill = document.getElementById('usernamePill');
+        const usernameStatus = document.getElementById('usernameStatus');
+        const usernameStatusIcon = document.getElementById('usernameStatusIcon');
+
+        async function checkUsernameAvailability(username) {
+            const clean = username.trim();
+            if (!clean) {
+                usernamePill.classList.remove('pill-taken', 'pill-available');
+                usernameStatus.className = 'username-status';
+                usernameStatus.textContent = '';
+                usernameStatusIcon.style.display = 'none';
+                lastCheckedUsername = '';
+                isUsernameTakenFlag = false;
+                return true;
+            }
+
+            usernameStatus.className = 'username-status show checking';
+            usernameStatus.innerHTML = '<span class="spinner-border spinner-border-sm" style="width: 0.85rem; height: 0.85rem;"></span> กำลังตรวจสอบชื่อบัญชีผู้ใช้...';
+
+            try {
+                const res = await fetch('/api/check_username', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: clean })
+                });
+                const data = await res.json();
+
+                // หากผู้ใช้พิมพ์เปลี่ยนไปแล้วระหว่างรอผล ให้ข้ามผลลัพธ์เก่า
+                if (usernameInput.value.trim() !== clean) return !data.taken;
+
+                lastCheckedUsername = clean;
+                isUsernameTakenFlag = Boolean(data.taken);
+
+                if (data.taken) {
+                    usernamePill.classList.remove('pill-available');
+                    usernamePill.classList.add('pill-taken');
+                    usernameStatus.className = 'username-status show taken';
+                    usernameStatus.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> ชื่อบัญชีผู้ใช้นี้มีผู้ใช้งานแล้ว กรุณาใช้ชื่ออื่น';
+                    usernameStatusIcon.className = 'bi bi-x-circle-fill';
+                    usernameStatusIcon.style.color = '#dc3545';
+                    usernameStatusIcon.style.display = 'inline-block';
+                    return false;
+                } else {
+                    usernamePill.classList.remove('pill-taken');
+                    usernamePill.classList.add('pill-available');
+                    usernameStatus.className = 'username-status show available';
+                    usernameStatus.innerHTML = '<i class="bi bi-check-circle-fill"></i> สามารถใช้ชื่อบัญชีผู้ใช้นี้ได้';
+                    usernameStatusIcon.className = 'bi bi-check-circle-fill';
+                    usernameStatusIcon.style.color = '#2b8a3e';
+                    usernameStatusIcon.style.display = 'inline-block';
+                    return true;
+                }
+            } catch (err) {
+                console.error('Error checking username:', err);
+                usernameStatus.className = 'username-status';
+                return true;
+            }
+        }
+
+        usernameInput.addEventListener('input', () => {
+            clearTimeout(usernameTimer);
+            const val = usernameInput.value.trim();
+            if (!val) {
+                checkUsernameAvailability('');
+                return;
+            }
+            usernameTimer = setTimeout(() => {
+                checkUsernameAvailability(val);
+            }, 350);
+        });
+
+        usernameInput.addEventListener('blur', () => {
+            clearTimeout(usernameTimer);
+            const val = usernameInput.value.trim();
+            if (val && val !== lastCheckedUsername) {
+                checkUsernameAvailability(val);
+            }
+        });
+
         async function handleRegister(event) {
             event.preventDefault();
 
@@ -192,6 +315,15 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+
+            const available = (username === lastCheckedUsername)
+                ? !isUsernameTakenFlag
+                : await checkUsernameAvailability(username);
+
+            if (!available) {
+                usernameInput.focus();
+                return Swal.fire('ชื่อผู้ใช้ซ้ำ', 'ชื่อบัญชีผู้ใช้นี้ถูกใช้งานไปแล้ว กรุณาตั้งชื่อบัญชีผู้ใช้อื่น', 'warning');
+            }
 
             if (password.length < 8 || password.length > 12) {
                 return Swal.fire('ข้อผิดพลาด', 'รหัสผ่านต้องมีความยาว 8–12 ตัวอักษร', 'error');
@@ -207,11 +339,11 @@
             btn.disabled = true;
 
             try {
-                // 1. ขอ OTP
+                // 1. ขอ OTP (ส่ง username ไปตรวจซ้ำที่ฝั่งเซิร์ฟเวอร์ด้วย)
                 const otpRes = await fetch('/api/request_otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email })
+                    body: JSON.stringify({ email: email, username: username, action: 'register' })
                 });
                 const otpData = await otpRes.json();
 

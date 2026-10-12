@@ -8,6 +8,21 @@ import datetime
 from .connection import sparql_read, sparql_write, escape_sparql
 
 
+def is_username_taken(username):
+    if not username:
+        return False
+    check_query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    ASK {{ ?p ex:username "{escape_sparql(username)}" . }}
+    """
+    try:
+        sparql_read.setQuery(check_query)
+        return bool(sparql_read.query().convert().get("boolean", False))
+    except Exception as e:
+        print(f"Error checking username: {e}")
+        return False
+
+
 def register_new_patient(username, password_hash, firstname, lastname, email, role="user"):
     if not username or not password_hash:
         return {"success": False, "message": "ข้อมูลไม่ครบถ้วน"}
@@ -16,13 +31,8 @@ def register_new_patient(username, password_hash, firstname, lastname, email, ro
     pid = f"Patient{new_id}"
     created_at = datetime.datetime.now().isoformat()
 
-    check_query = f"""
-    PREFIX ex: <http://example.org/diabetes#>
-    ASK {{ ?p ex:username "{escape_sparql(username)}" . }}
-    """
     try:
-        sparql_read.setQuery(check_query)
-        if sparql_read.query().convert().get("boolean", False):
+        if is_username_taken(username):
             return {"success": False, "message": "Username นี้มีผู้ใช้งานแล้ว"}
 
         insert_query = f"""

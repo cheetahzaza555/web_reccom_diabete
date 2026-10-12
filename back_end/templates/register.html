@@ -155,17 +155,17 @@
 
             <div class="row g-2 mt-2">
                 <div class="col-md-6">
-                    <label class="form-label-custom">รหัสผ่าน</label>
+                    <label class="form-label-custom">รหัสผ่าน (8–12 ตัวอักษร)</label>
                     <div class="input-pill">
                         <i class="bi bi-lock"></i>
-                        <input type="password" id="password" placeholder="รหัสผ่าน" required minlength="6">
+                        <input type="password" id="password" placeholder="รหัสผ่าน 8–12 ตัวอักษร" required minlength="8" maxlength="12">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label-custom">ยืนยันรหัสผ่าน</label>
                     <div class="input-pill">
                         <i class="bi bi-lock-fill"></i>
-                        <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required minlength="6">
+                        <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required minlength="8" maxlength="12">
                     </div>
                 </div>
             </div>
@@ -192,6 +192,10 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password.length < 8 || password.length > 12) {
+                return Swal.fire('ข้อผิดพลาด', 'รหัสผ่านต้องมีความยาว 8–12 ตัวอักษร', 'error');
+            }
 
             if (password !== confirmPassword) {
                 return Swal.fire('ข้อผิดพลาด', 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน', 'error');

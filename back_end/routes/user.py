@@ -15,7 +15,7 @@ from modules.db import (
     get_all_exercises_for_library, get_exercise_details_by_id, get_exercise_by_id,
     generate_30_days_plan, get_dashboard_schedule, delete_user_schedule,
     update_daily_plan_status, get_daily_plan_info,
-    get_password_hash_by_id, update_user_profile_db
+    get_password_hash_by_id, update_user_profile_db, update_password_db
 )
 from modules.ocr_service import process_ocr_image
 
@@ -345,7 +345,9 @@ def setting():
 @login_required
 def update_settings():
     user_id = session['user_id']
-    data = request.json
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({"status": "error", "message": "ข้อมูลคำขอไม่ถูกต้อง"}), 400
 
     # เช็ก OTP
     user_otp = data.get('otp')
@@ -354,41 +356,79 @@ def update_settings():
     if not saved_otp or user_otp != saved_otp:
         return jsonify({"status": "error", "message": "รหัส OTP ไม่ถูกต้อง หรือหมดเวลา"}), 400
 
+    action = data.get('action')
+
+    if action in ('profile', 'password', 'both'):
+        firstname = lastname = None
+        new_hash = None
+
+        if action in ('profile', 'both'):
+            firstname = data.get('firstname', '')
+            lastname = data.get('lastname', '')
+            if not isinstance(firstname, str) or not isinstance(lastname, str):
+                return jsonify({"status": "error", "message": "ชื่อและนามสกุลไม่ถูกต้อง"}), 400
+            firstname, lastname = firstname.strip(), lastname.strip()
+            if not firstname or not lastname or max(len(firstname), len(lastname)) > 100:
+                return jsonify({"status": "error", "message": "กรุณากรอกชื่อและนามสกุล ไม่เกินช่องละ 100 ตัวอักษร"}), 400
+
+        if action in ('password', 'both'):
+            old_password = data.get('old_password', '')
+            new_password = data.get('new_password', '')
+            if not isinstance(old_password, str) or not old_password:
+                return jsonify({"status": "error", "message": "กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยัน"}), 400
+            if not isinstance(new_password, str) or not 8 <= len(new_password) <= 12:
+                return jsonify({"status": "error", "message": "รหัสผ่านใหม่ต้องมีความยาว 8–12 ตัวอักษร"}), 400
+            current_hash = get_password_hash_by_id(user_id)
+            if not current_hash or not check_password_hash(current_hash, old_password):
+                return jsonify({"status": "error", "message": "รหัสผ่านปัจจุบันไม่ถูกต้อง"}), 400
+            new_hash = generate_password_hash(new_password)
+
+        if action == 'profile':
+            success = update_user_profile_db(user_id, firstname, lastname)
+            msg = "แก้ไขชื่อสำเร็จ"
+        elif action == 'password':
+            success = update_password_db(user_id, new_hash)
+            msg = "เปลี่ยนรหัสผ่านสำเร็จ"
+        else:
+            success = update_user_profile_db(user_id, firstname, lastname, new_hash)
+            msg = "บันทึกชื่อและเปลี่ยนรหัสผ่านสำเร็จ"
+
+        if not success:
+            return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500
+        if action in ('profile', 'both'):
+            session['firstname'] = firstname
+            session['lastname'] = lastname
+        session.pop('register_otp', None)
+        session.pop('register_email', None)
+        return jsonify({"status": "success", "message": msg})
+
     firstname = data.get('firstname', '').strip()
     lastname = data.get('lastname', '').strip()
-    email = data.get('email', '').strip()  # ดึง email มาด้วยเผื่อใช้งาน
+    email = data.get('email', '').strip()
     old_password = data.get('old_password')
     new_password = data.get('new_password')
 
     new_hash = None
 
-    # ถ้ามีการพิมพ์รหัสผ่านใหม่มา แปลว่าต้องการเปลี่ยนรหัสผ่าน
     if new_password:
         if not old_password:
             return jsonify({"status": "error", "message": "กรุณากรอกรหัสผ่านเดิมเพื่อยืนยัน"}), 400
 
         current_hash = get_password_hash_by_id(user_id)
-        # ตรวจสอบว่ารหัสเดิมพิมพ์ถูกไหม
         if not current_hash or not check_password_hash(current_hash, old_password):
             return jsonify({"status": "error", "message": "รหัสผ่านเดิมไม่ถูกต้อง"}), 400
 
-        # เข้ารหัสผ่านใหม่
         new_hash = generate_password_hash(new_password)
 
-    # สั่งอัปเดตลง GraphDB (ถ้ามีการอัปเดตอีเมลใน DB ด้วย อย่าลืมไปแก้ฟังก์ชันนี้ให้รับค่า email ด้วยนะครับ)
     success = update_user_profile_db(user_id, firstname, lastname, new_hash)
 
     if success:
-        # ลบ OTP ทิ้งหลังจากการใช้งานสำเร็จ เพื่อความปลอดภัย
         session.pop('register_otp', None)
         session.pop('register_email', None)
-
-        # อัปเดต Session ให้ข้อมูลหน้าเว็บเปลี่ยนตาม
         session['firstname'] = firstname
         session['lastname'] = lastname
         if email:
             session['email'] = email
-
         return jsonify({"status": "success", "message": "อัปเดตข้อมูลสำเร็จ"})
     else:
         return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500

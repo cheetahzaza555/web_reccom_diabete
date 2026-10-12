@@ -179,16 +179,18 @@ def update_user_profile_db(user_id, firstname, lastname, new_hash=None):
 
 
 def update_password_db(patient_id, new_password_hash):
+    clean_id = str(patient_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     DELETE {{
         ?patient ex:passwordHash ?oldHash .
     }}
     INSERT {{
-        ?patient ex:passwordHash "{new_password_hash}" .
+        ?patient ex:passwordHash "{escape_sparql(new_password_hash)}" .
     }}
     WHERE {{
-        BIND(ex:Patient{patient_id} AS ?patient)
+        BIND(ex:{pid} AS ?patient)
         OPTIONAL {{ ?patient ex:passwordHash ?oldHash . }}
     }}
     """

@@ -68,6 +68,9 @@ def register():
         username = data["username"]
         password = data["password"]
 
+        if not (8 <= len(password) <= 12):
+            return jsonify({"error": "รหัสผ่านต้องมีความยาว 8–12 ตัวอักษร"}), 400
+
         hashed_password = generate_password_hash(password)
         result = register_new_patient(username, hashed_password, firstname, lastname, email)
         
@@ -144,7 +147,7 @@ def request_otp():
         action = data.get("action", "register")
 
         # 2. ดึงอีเมลให้ถูกที่
-        if action in ("update_settings", "update_admin_settings", "update_admin_profile", "update_admin_password"): 
+        if action in ("update_settings", "update_profile", "update_password", "update_admin_settings", "update_admin_profile", "update_admin_password"): 
             email = session.get('email') or data.get('email') # หน้าตั้งค่า ดึงจาก Session หรือ input เผื่อกรณี session หลุด
             if email and not session.get('email'):
                 session['email'] = email
@@ -222,6 +225,9 @@ def forgot_password_reset():
             
         if not patient_id:
             return jsonify({"error": "เกิดข้อผิดพลาดของระบบ (Session หมดอายุ)"}), 400
+
+        if not new_password or not (8 <= len(new_password) <= 12):
+            return jsonify({"error": "รหัสผ่านต้องมีความยาว 8–12 ตัวอักษร"}), 400
 
         # เข้ารหัสผ่านใหม่
         new_hash = generate_password_hash(new_password)

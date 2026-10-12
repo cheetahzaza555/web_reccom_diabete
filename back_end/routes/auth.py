@@ -94,7 +94,7 @@ def login():
         user = get_user_for_login(data["username"])
 
         if not user:
-            return jsonify({"status": "error", "message": "User not found"}), 401
+            return jsonify({"status": "error", "message": "ไม่พบผู้ใช้งาน"}), 401
 
         # 2. นำ Hash จาก GraphDB มาเทียบกับรหัสที่ผู้ใช้พิมพ์
         if not check_password_hash(user["password_hash"], data["password"]):

@@ -170,7 +170,7 @@
         .rules-toolbar { flex-direction: column; gap: 12px; }
         .rules-toolbar .rules-add { width: 100%; }
       }
-      .rules-search > i {
+      .rules-search > .bi {
         position: absolute;
         left: 14px;
         top: 50%;
@@ -317,7 +317,7 @@
         padding: 52px 24px;
         color: #758095;
       }
-      .rules-empty i {
+      .rules-empty .bi {
         display: block;
         font-size: 30px;
         color: #9eacc2;
@@ -481,6 +481,9 @@
         >
       </section>
     </main>
+    <template id="rule-icon-trash">{{ admin_icon('trash3') }}</template>
+    <template id="rule-icon-search">{{ admin_icon('search') }}</template>
+    <template id="rule-icon-empty">{{ admin_icon('diagram-3') }}</template>
     <script id="swrl-data" type="application/json">
       {{ swrl_rules | tojson }}
     </script>
@@ -557,6 +560,10 @@
           if (text !== undefined) node.textContent = text;
           return node;
         }
+        function ruleIcon(name) {
+          const template = document.getElementById("rule-icon-" + name);
+          return template.content.firstElementChild.cloneNode(true);
+        }
         function expression(rule) {
           return (
             rule.full_rule ||
@@ -583,11 +590,7 @@
             const emptyRow = element("tr", "");
             const empty = element("td", "rules-empty");
             empty.colSpan = 3;
-            const icon = element(
-              "i",
-              query ? "bi bi-search" : "bi bi-journal-plus",
-            );
-            icon.setAttribute("aria-hidden", "true");
+            const icon = ruleIcon(query ? "search" : "empty");
             empty.append(
               icon,
               element(
@@ -626,8 +629,7 @@
             const remove = element("button", "rule-delete");
             remove.type = "button";
             remove.setAttribute("aria-label", "ลบกฎ " + title);
-            const icon = element("i", "bi bi-trash3");
-            icon.setAttribute("aria-hidden", "true");
+            const icon = ruleIcon("trash");
             remove.append(icon, element("span", "", "ลบ"));
             remove.addEventListener("click", () =>
               deleteRule(

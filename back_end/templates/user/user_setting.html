@@ -105,7 +105,7 @@
                         <button type="button" class="btn-edit" id="editProfile" aria-controls="profileForm" aria-expanded="false">
                             <i class="bi bi-pencil-square" aria-hidden="true"></i>แก้ไขชื่อ
                         </button>
-                        <button type="button" class="settings-cancel" id="cancelProfile" hidden>ยกเลิกแก้ไขชื่อ</button>
+                        <button type="button" class="settings-cancel" id="cancelProfile" hidden>ยกเลิก</button>
                     </div>
                 </form>
             </section>
@@ -122,16 +122,16 @@
                     <div id="passwordFields" hidden>
                         <div class="settings-field">
                             <label for="oldPassword">รหัสผ่านปัจจุบัน</label>
-                            <input type="password" id="oldPassword" autocomplete="current-password" required disabled>
+                            <input type="password" id="oldPassword" autocomplete="current-password" disabled>
                         </div>
                         <div class="settings-field">
                             <label for="newPassword">รหัสผ่านใหม่</label>
-                            <input type="password" id="newPassword" autocomplete="new-password" minlength="8" maxlength="12" required disabled>
+                            <input type="password" id="newPassword" autocomplete="new-password" minlength="8" maxlength="12" disabled>
                             <p class="settings-note">ใช้รหัสผ่านความยาว 8–12 ตัวอักษร</p>
                         </div>
                         <div class="settings-field">
                             <label for="confirmPassword">ยืนยันรหัสผ่านใหม่</label>
-                            <input type="password" id="confirmPassword" autocomplete="new-password" minlength="8" maxlength="12" required disabled>
+                            <input type="password" id="confirmPassword" autocomplete="new-password" minlength="8" maxlength="12" disabled>
                         </div>
                     </div>
                     <p class="settings-note">ระบบจะส่ง OTP ไปยังอีเมลของบัญชีเพื่อยืนยันก่อนบันทึก</p>
@@ -139,7 +139,7 @@
                         <button type="button" class="btn-edit" id="editPassword" aria-controls="passwordFields" aria-expanded="false">
                             <i class="bi bi-pencil-square" aria-hidden="true"></i>แก้ไขรหัสผ่าน
                         </button>
-                        <button type="button" class="settings-cancel" id="cancelPassword" hidden>ยกเลิกแก้ไขรหัสผ่าน</button>
+                        <button type="button" class="settings-cancel" id="cancelPassword" hidden>ยกเลิก</button>
                     </div>
                 </form>
             </section>
@@ -186,16 +186,23 @@
         });
 
         function hasProfileChanged() {
-            const fn = document.getElementById('firstname').value.trim();
-            const ln = document.getElementById('lastname').value.trim();
+            const fn = (document.getElementById('firstname')?.value || '').trim();
+            const ln = (document.getElementById('lastname')?.value || '').trim();
             return (fn !== initialUserFirstname || ln !== initialUserLastname) && fn !== '' && ln !== '';
         }
 
-        function hasPasswordFilled() {
-            const oldPass = document.getElementById('oldPassword').value;
-            const newPass = document.getElementById('newPassword').value;
-            const confirmPass = document.getElementById('confirmPassword').value;
-            return oldPass.length > 0 && newPass.length > 0 && confirmPass.length > 0;
+        function hasAnyPasswordInput() {
+            const oldPass = document.getElementById('oldPassword')?.value || '';
+            const newPass = document.getElementById('newPassword')?.value || '';
+            const confirmPass = document.getElementById('confirmPassword')?.value || '';
+            return oldPass.length > 0 || newPass.length > 0 || confirmPass.length > 0;
+        }
+
+        function isPasswordValid() {
+            const oldPass = document.getElementById('oldPassword')?.value || '';
+            const newPass = document.getElementById('newPassword')?.value || '';
+            const confirmPass = document.getElementById('confirmPassword')?.value || '';
+            return oldPass.length > 0 && newPass.length >= 8 && newPass.length <= 12 && newPass === confirmPass;
         }
 
         function updateSaveButtonState() {
@@ -204,17 +211,25 @@
             const anyEditing = editingState.profile || editingState.password;
             saveBar.hidden = !anyEditing;
 
+            const profChanged = editingState.profile && hasProfileChanged();
+            const passInput = editingState.password && hasAnyPasswordInput();
+            const passValid = editingState.password && isPasswordValid();
+
             let canSave = false;
             if (editingState.profile && editingState.password) {
-                canSave = hasProfileChanged() && hasPasswordFilled();
+                if (passInput) {
+                    canSave = passValid;
+                } else {
+                    canSave = profChanged;
+                }
             } else if (editingState.profile) {
-                canSave = hasProfileChanged();
+                canSave = profChanged;
             } else if (editingState.password) {
-                canSave = hasPasswordFilled();
+                canSave = passValid;
             }
 
             saveBtn.disabled = !canSave || settingsSaving;
-            saveBtn.title = canSave ? 'คลิกเพื่อบันทึกการเปลี่ยนแปลง' : 'กรุณาแก้ไขข้อมูลในส่วนที่เปิดอยู่ให้ครบก่อนบันทึก';
+            saveBtn.title = canSave ? 'คลิกเพื่อบันทึกการเปลี่ยนแปลง' : 'กรุณาแก้ไขข้อมูลก่อนบันทึก';
         }
 
         function setSettingsEditing(section, editing) {
@@ -243,24 +258,62 @@
             const editPass = editingState.password;
             if (!editProf && !editPass) return;
 
-            if (editProf && !settingsSections.profile.form.reportValidity()) return;
-            if (editPass && !settingsSections.password.form.reportValidity()) return;
+            const profChanged = editProf && hasProfileChanged();
+            const passInput = editPass && hasAnyPasswordInput();
+            const passValid = editPass && isPasswordValid();
 
-            const action = (editProf && editPass) ? 'both' : (editProf ? 'profile' : 'password');
-            const payload = { action };
-
-            if (editProf) {
-                payload.firstname = document.getElementById('firstname').value.trim();
-                payload.lastname = document.getElementById('lastname').value.trim();
-                if (!payload.firstname || !payload.lastname) return Swal.fire('กรุณากรอกข้อมูล', 'กรอกชื่อและนามสกุลให้ครบ', 'warning');
-                if (payload.firstname === initialUserFirstname && payload.lastname === initialUserLastname) {
+            let action = '';
+            if (editProf && editPass) {
+                if (profChanged && passInput) {
+                    action = 'both';
+                } else if (profChanged && !passInput) {
+                    action = 'profile';
+                } else if (!profChanged && passValid) {
+                    action = 'password';
+                } else if (passInput && !passValid) {
+                    const oldPass = document.getElementById('oldPassword').value;
+                    const newPass = document.getElementById('newPassword').value;
+                    const confirmPass = document.getElementById('confirmPassword').value;
+                    if (!oldPass) return Swal.fire('กรุณากรอกรหัสผ่านเดิม', 'กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยัน', 'warning');
+                    if (newPass.length < 8 || newPass.length > 12) return Swal.fire('ความยาวรหัสผ่านไม่ถูกต้อง', 'รหัสผ่านใหม่ต้องมีความยาว 8–12 ตัวอักษร', 'warning');
+                    if (newPass !== confirmPass) return Swal.fire('รหัสผ่านไม่ตรงกัน', 'กรอกรหัสผ่านใหม่และช่องยืนยันให้ตรงกัน', 'warning');
+                } else {
+                    return Swal.fire('ไม่มีการเปลี่ยนแปลง', 'คุณยังไม่ได้แก้ไขชื่อหรือกรอกรหัสผ่านใหม่', 'info');
+                }
+            } else if (editProf) {
+                if (!profChanged) {
                     return Swal.fire('ไม่มีการเปลี่ยนแปลง', 'คุณยังไม่ได้แก้ไขชื่อหรือนามสกุล', 'info');
                 }
+                action = 'profile';
+            } else if (editPass) {
+                if (!passValid) {
+                    const oldPass = document.getElementById('oldPassword').value;
+                    const newPass = document.getElementById('newPassword').value;
+                    const confirmPass = document.getElementById('confirmPassword').value;
+                    if (!oldPass) return Swal.fire('กรุณากรอกรหัสผ่านเดิม', 'กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยัน', 'warning');
+                    if (newPass.length < 8 || newPass.length > 12) return Swal.fire('ความยาวรหัสผ่านไม่ถูกต้อง', 'รหัสผ่านใหม่ต้องมีความยาว 8–12 ตัวอักษร', 'warning');
+                    if (newPass !== confirmPass) return Swal.fire('รหัสผ่านไม่ตรงกัน', 'กรอกรหัสผ่านใหม่และช่องยืนยันให้ตรงกัน', 'warning');
+                }
+                action = 'password';
             }
-            if (editPass) {
-                payload.old_password = document.getElementById('oldPassword').value;
-                payload.new_password = document.getElementById('newPassword').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
+
+            const payload = { action };
+
+            if (action === 'profile' || action === 'both') {
+                payload.firstname = (document.getElementById('firstname')?.value || '').trim();
+                payload.lastname = (document.getElementById('lastname')?.value || '').trim();
+                if (!payload.firstname || !payload.lastname) {
+                    return Swal.fire('กรุณากรอกข้อมูล', 'กรอกชื่อและนามสกุลให้ครบ', 'warning');
+                }
+            }
+
+            if (action === 'password' || action === 'both') {
+                payload.old_password = document.getElementById('oldPassword')?.value || '';
+                payload.new_password = document.getElementById('newPassword')?.value || '';
+                const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+                if (!payload.old_password) {
+                    return Swal.fire('กรุณากรอกรหัสผ่านเดิม', 'กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยัน', 'warning');
+                }
                 if (payload.new_password.length < 8 || payload.new_password.length > 12) {
                     return Swal.fire('ความยาวรหัสผ่านไม่ถูกต้อง', 'รหัสผ่านใหม่ต้องมีความยาว 8–12 ตัวอักษร', 'warning');
                 }
@@ -293,17 +346,21 @@
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
                 const data = await settingsRequest('/user/api/update_settings', payload);
                 if (data.status !== 'success') throw new Error(data.message || 'บันทึกไม่สำเร็จ');
-                if (editProf) {
+
+                if (action === 'profile' || action === 'both') {
                     initialUserFirstname = payload.firstname;
                     initialUserLastname = payload.lastname;
                     settingsSections.profile.fields.forEach(id => document.getElementById(id).defaultValue = payload[id]);
                     setSettingsEditing('profile', false);
                 }
-                if (editPass) {
+                if (action === 'password' || action === 'both') {
                     setSettingsEditing('password', false);
                 }
+                if (action === 'profile' && editPass) setSettingsEditing('password', false);
+                if (action === 'password' && editProf) setSettingsEditing('profile', false);
+
                 await Swal.fire('บันทึกสำเร็จ', data.message, 'success');
-                if (editProf) window.location.reload();
+                if (action === 'profile' || action === 'both') window.location.reload();
             } catch (error) {
                 Swal.fire('บันทึกไม่สำเร็จ', error.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
             } finally {

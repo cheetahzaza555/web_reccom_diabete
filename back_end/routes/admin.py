@@ -208,13 +208,16 @@ def update_admin_settings():
     if not isinstance(data, dict):
         return jsonify({"status": "error", "message": "ข้อมูลคำขอไม่ถูกต้อง"}), 400
     action = data.get('action')
-    if action not in ('profile', 'password'):
+    if action not in ('profile', 'password', 'both'):
         return jsonify({"status": "error", "message": "กรุณาเลือกส่วนที่ต้องการแก้ไข"}), 400
     if (not session.get('register_otp') or data.get('otp') != session.get('register_otp')
             or not session.get('email') or session.get('register_email') != session.get('email')):
         return jsonify({"status": "error", "message": "รหัส OTP ไม่ถูกต้อง กรุณาขอรหัสใหม่"}), 400
 
-    if action == 'profile':
+    firstname = lastname = None
+    new_hash = None
+
+    if action in ('profile', 'both'):
         firstname = data.get('firstname', '')
         lastname = data.get('lastname', '')
         if not isinstance(firstname, str) or not isinstance(lastname, str):
@@ -222,27 +225,37 @@ def update_admin_settings():
         firstname, lastname = firstname.strip(), lastname.strip()
         if not firstname or not lastname or max(len(firstname), len(lastname)) > 100:
             return jsonify({"status": "error", "message": "กรุณากรอกชื่อและนามสกุล ไม่เกินช่องละ 100 ตัวอักษร"}), 400
-        success = update_user_profile_db(admin_id, firstname, lastname)
-    else:
+
+    if action in ('password', 'both'):
         old_password = data.get('old_password', '')
         new_password = data.get('new_password', '')
         if not isinstance(old_password, str) or not old_password:
             return jsonify({"status": "error", "message": "กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยัน"}), 400
-        if not isinstance(new_password, str) or not 6 <= len(new_password) <= 128:
-            return jsonify({"status": "error", "message": "รหัสผ่านใหม่ต้องมีความยาว 6–128 ตัวอักษร"}), 400
+        if not isinstance(new_password, str) or not 8 <= len(new_password) <= 12:
+            return jsonify({"status": "error", "message": "รหัสผ่านใหม่ต้องมีความยาว 8–12 ตัวอักษร"}), 400
         current_hash = get_password_hash_by_id(admin_id)
         if not current_hash or not check_password_hash(current_hash, old_password):
             return jsonify({"status": "error", "message": "รหัสผ่านปัจจุบันไม่ถูกต้อง"}), 400
-        success = update_password_db(admin_id, generate_password_hash(new_password))
+        new_hash = generate_password_hash(new_password)
+
+    if action == 'profile':
+        success = update_user_profile_db(admin_id, firstname, lastname)
+        msg = "แก้ไขชื่อสำเร็จ"
+    elif action == 'password':
+        success = update_password_db(admin_id, new_hash)
+        msg = "เปลี่ยนรหัสผ่านสำเร็จ"
+    else:
+        success = update_user_profile_db(admin_id, firstname, lastname, new_hash)
+        msg = "บันทึกชื่อและเปลี่ยนรหัสผ่านสำเร็จ"
 
     if not success:
         return jsonify({"status": "error", "message": "เกิดข้อผิดพลาดในการบันทึกข้อมูล"}), 500
-    if action == 'profile':
+    if action in ('profile', 'both'):
         session['firstname'] = firstname
         session['lastname'] = lastname
     session.pop('register_otp', None)
     session.pop('register_email', None)
-    return jsonify({"status": "success", "message": "แก้ไขชื่อสำเร็จ" if action == 'profile' else "เปลี่ยนรหัสผ่านสำเร็จ"})
+    return jsonify({"status": "success", "message": msg})
 
 @admin_bp.route('/category', methods=['GET'])
 @admin_required

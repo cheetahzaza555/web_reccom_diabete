@@ -8,6 +8,21 @@ import datetime
 from .connection import sparql_read, sparql_write, escape_sparql
 
 
+def is_username_taken(username):
+    if not username:
+        return False
+    check_query = f"""
+    PREFIX ex: <http://example.org/diabetes#>
+    ASK {{ ?p ex:username "{escape_sparql(username)}" . }}
+    """
+    try:
+        sparql_read.setQuery(check_query)
+        return bool(sparql_read.query().convert().get("boolean", False))
+    except Exception as e:
+        print(f"Error checking username: {e}")
+        return False
+
+
 def register_new_patient(username, password_hash, firstname, lastname, email, role="user"):
     if not username or not password_hash:
         return {"success": False, "message": "ข้อมูลไม่ครบถ้วน"}
@@ -16,13 +31,8 @@ def register_new_patient(username, password_hash, firstname, lastname, email, ro
     pid = f"Patient{new_id}"
     created_at = datetime.datetime.now().isoformat()
 
-    check_query = f"""
-    PREFIX ex: <http://example.org/diabetes#>
-    ASK {{ ?p ex:username "{escape_sparql(username)}" . }}
-    """
     try:
-        sparql_read.setQuery(check_query)
-        if sparql_read.query().convert().get("boolean", False):
+        if is_username_taken(username):
             return {"success": False, "message": "Username นี้มีผู้ใช้งานแล้ว"}
 
         insert_query = f"""
@@ -179,16 +189,18 @@ def update_user_profile_db(user_id, firstname, lastname, new_hash=None):
 
 
 def update_password_db(patient_id, new_password_hash):
+    clean_id = str(patient_id).replace("Patient", "").replace("SUPA", "")
+    pid = f"Patient{clean_id}"
     query = f"""
     PREFIX ex: <http://example.org/diabetes#>
     DELETE {{
         ?patient ex:passwordHash ?oldHash .
     }}
     INSERT {{
-        ?patient ex:passwordHash "{new_password_hash}" .
+        ?patient ex:passwordHash "{escape_sparql(new_password_hash)}" .
     }}
     WHERE {{
-        BIND(ex:Patient{patient_id} AS ?patient)
+        BIND(ex:{pid} AS ?patient)
         OPTIONAL {{ ?patient ex:passwordHash ?oldHash . }}
     }}
     """

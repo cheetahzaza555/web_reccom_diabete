@@ -165,7 +165,7 @@
             else if (href === '/user/recommendations' && (currentPath.includes('/user/select_exercise') || currentPath.includes('/select_plan'))) {
                 link.classList.add('active');
             }
-            else if (href === '/user/exercises' && currentPath.includes('/user/exercises/')) {
+            else if (href === '/user/exercises' && (currentPath.includes('/user/exercises/') || currentPath.includes('/user/exercise-detail/'))) {
                 link.classList.add('active');
             }
         });

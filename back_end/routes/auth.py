@@ -4,7 +4,7 @@ from modules.auth_utils import generate_token
 import random
 from modules.email_utils import send_otp_email
 # เปลี่ยนมานำเข้าฟังก์ชันจาก database.py แทน (เพราะเราจะย้ายคำสั่ง SPARQL ไปรวมไว้ที่นั่น)
-from modules.db import register_new_patient, get_user_for_login, get_user_by_id, get_user_for_login, update_user_profile_db, update_password_db
+from modules.db import is_username_taken, register_new_patient, get_user_for_login, get_user_by_id, update_user_profile_db, update_password_db
 
 auth = Blueprint("auth", __name__)
 
@@ -68,6 +68,9 @@ def register():
         username = data["username"]
         password = data["password"]
 
+        if not (8 <= len(password) <= 12):
+            return jsonify({"error": "รหัสผ่านต้องมีความยาว 8–12 ตัวอักษร"}), 400
+
         hashed_password = generate_password_hash(password)
         result = register_new_patient(username, hashed_password, firstname, lastname, email)
         
@@ -91,7 +94,7 @@ def login():
         user = get_user_for_login(data["username"])
 
         if not user:
-            return jsonify({"status": "error", "message": "User not found"}), 401
+            return jsonify({"status": "error", "message": "ไม่พบผู้ใช้งาน"}), 401
 
         # 2. นำ Hash จาก GraphDB มาเทียบกับรหัสที่ผู้ใช้พิมพ์
         if not check_password_hash(user["password_hash"], data["password"]):
@@ -134,6 +137,28 @@ def get_current_user():
         print("Error fetching current user:", e)
         return jsonify({"error": str(e)}), 500
     
+@auth.route("/api/check_username", methods=["POST", "GET"])
+def check_username():
+    try:
+        if request.method == "POST":
+            data = request.json or {}
+            username = (data.get("username") or "").strip()
+        else:
+            username = (request.args.get("username") or "").strip()
+
+        if not username:
+            return jsonify({"available": False, "taken": False, "message": ""})
+
+        taken = is_username_taken(username)
+        return jsonify({
+            "available": not taken,
+            "taken": taken,
+            "message": "ชื่อบัญชีผู้ใช้นี้มีผู้ใช้งานแล้ว" if taken else "สามารถใช้ชื่อบัญชีผู้ใช้นี้ได้"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
     # --- 1. API สำหรับส่ง OTP ไปที่อีเมล ---
 @auth.route("/api/request_otp", methods=["POST"])
 def request_otp():
@@ -144,12 +169,15 @@ def request_otp():
         action = data.get("action", "register")
 
         # 2. ดึงอีเมลให้ถูกที่
-        if action in ("update_settings", "update_admin_settings", "update_admin_profile", "update_admin_password"): 
+        if action in ("update_settings", "update_profile", "update_password", "update_admin_settings", "update_admin_profile", "update_admin_password"): 
             email = session.get('email') or data.get('email') # หน้าตั้งค่า ดึงจาก Session หรือ input เผื่อกรณี session หลุด
             if email and not session.get('email'):
                 session['email'] = email
         else:
             email = data.get('email') # หน้าสมัครสมาชิก ดึงจากที่ผู้ใช้พิมพ์เข้ามา
+            username = (data.get('username') or '').strip()
+            if username and is_username_taken(username):
+                return jsonify({"error": "ชื่อบัญชีผู้ใช้นี้มีผู้ใช้งานแล้ว กรุณาตั้งชื่อบัญชีผู้ใช้อื่น"}), 400
 
         if not email:
             return jsonify({"error": "ไม่พบข้อมูลอีเมล กรุณาระบุอีเมล"}), 400
@@ -222,6 +250,9 @@ def forgot_password_reset():
             
         if not patient_id:
             return jsonify({"error": "เกิดข้อผิดพลาดของระบบ (Session หมดอายุ)"}), 400
+
+        if not new_password or not (8 <= len(new_password) <= 12):
+            return jsonify({"error": "รหัสผ่านต้องมีความยาว 8–12 ตัวอักษร"}), 400
 
         # เข้ารหัสผ่านใหม่
         new_hash = generate_password_hash(new_password)

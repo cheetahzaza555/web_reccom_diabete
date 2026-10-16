@@ -436,7 +436,7 @@
 
         <div class="sidebar-bottom">
             <div class="bottom-nav-item">
-                <a href="/admin/settings" class="bottom-nav-link">
+                <a href="/admin/settings" class="nav-link">
                     {{ admin_icon('gear-fill', '') }}
                     <span>การตั้งค่า</span>
                 </a>
@@ -553,7 +553,7 @@
         const currentFullUrl = window.location.pathname + window.location.search;
         const currentPath = window.location.pathname;
 
-        document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
             const href = link.getAttribute('href');
             
             // ลบ class active ทั้งหมดออกก่อน

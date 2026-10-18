@@ -453,9 +453,44 @@ function renderResults(json) {
     exEl.innerHTML = "";
 
     if (!json.exercises || json.exercises.length === 0) {
-        exEl.innerHTML = `<li class="text-muted">- เนื่องจากสภาวะร่างกายหรือความเสี่ยงร่วมของท่านในปัจจุบัน ไม่สอดคล้องกับเกณฑ์ความเข้มข้นของประเภทกิจกรรมที่เลือก <br>
+        exEl.innerHTML = `<li class="text-danger p-3 bg-danger bg-opacity-10 rounded-3 text-center border border-danger-subtle fw-medium">- เนื่องจากสภาวะร่างกายหรือความเสี่ยงร่วมของท่านในปัจจุบัน ไม่สอดคล้องกับเกณฑ์ความเข้มข้นของประเภทกิจกรรมที่เลือก <br>
                 เพื่อป้องกันการบาดเจ็บหรืออันตรายต่อระบบหัวใจและหลอดเลือด ระบบจึงของดแนะนำกิจกรรมดังกล่าวชั่วคราว -</li>`;
+        
+        // 🛑 ป้องกันบัค: ปรับปุ่มไม่ให้ไปหน้าเลือกแผนเมื่อไม่มีท่าออกกำลังกายที่ปลอดภัย
+        const btnNext = document.getElementById('btnNext');
+        if (btnNext) {
+            btnNext.innerHTML = '<i class="bi bi-house-door me-1"></i> กลับสู่หน้าหลัก';
+            btnNext.className = 'btn-next bg-secondary border-0';
+            btnNext.onclick = function () {
+                window.location.href = "/user/dashboard";
+            };
+        }
+
+        // แจ้งเตือนผู้ใช้ด้วย SweetAlert เพื่อความเข้าใจที่ชัดเจน
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'งดแนะนำการออกกำลังกายชั่วคราว',
+                text: 'เนื่องจากระดับน้ำตาลหรือความดันโลหิตของคุณยังอยู่ในเกณฑ์ที่ต้องระมัดระวังเป็นพิเศษ ระบบจึงยังไม่สามารถจัดตารางออกกำลังกายได้ กรุณาปรึกษาแพทย์เพื่อควบคุมอาการก่อน หรือกด "แก้ไขข้อมูล" หากระบุตัวเลขผิดพลาด',
+                icon: 'warning',
+                confirmButtonText: 'รับทราบ',
+                confirmButtonColor: '#3085d6'
+            });
+        }
         return;
+    }
+
+    // กรณีมีท่าออกกำลังกายที่แนะนำ คืนค่าปุ่มให้ไปหน้าเลือกแผนตามปกติ
+    const btnNext = document.getElementById('btnNext');
+    if (btnNext) {
+        btnNext.innerHTML = 'ยืนยันและไปเลือกแผน <i class="bi bi-arrow-right ms-1"></i>';
+        btnNext.className = 'btn-next';
+        btnNext.onclick = function () {
+            if (currentPatientID) {
+                window.location.href = "/user/select_plan/Patient" + currentPatientID;
+            } else {
+                alert("ไม่พบ ID ผู้ป่วย กรุณากดประมวลผลใหม่อีกครั้ง");
+            }
+        };
     }
 
     console.log("ข้อมูลท่าออกกำลังกายที่ได้รับ:", json.exercises);

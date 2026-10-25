@@ -114,14 +114,14 @@
     </style>
     {{ admin_layout_styles() }}
     <style>
-        .admin-page .table-card .user-table { table-layout: fixed; min-width: 900px; }
-        .user-table .col-id { width: 80px; }
+        .admin-page .table-card .user-table { table-layout: auto; min-width: 900px; }
+        .user-table .col-id { width: 1%; }
         .user-table .col-username { width: 18%; }
         .user-table .col-role { width: 152px; }
         .user-table .col-change { width: 180px; }
         .user-table .col-delete { width: 130px; }
         .admin-page .user-table th { white-space: nowrap; }
-        .admin-page .user-table :is(th, td):first-child { width: 80px; }
+        .admin-page .user-table :is(th, td):first-child { width: 1%; white-space: nowrap; }
         .admin-page .user-table td:nth-child(2) { overflow-wrap: break-word; word-break: normal; }
         .admin-page .user-table .badge { white-space: nowrap; }
         .admin-page .user-table .role-select { width: 100%; min-height: 44px; }

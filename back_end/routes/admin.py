@@ -19,12 +19,10 @@ from modules.db import (
 
 admin_bp = Blueprint('admin', __name__)
 
-# ==========================================
-# 🛑 ฝั่ง API สำหรับการเรียกดึง/ลบ ข้อมูลคนไข้
-# ==========================================
 
+# API สำหรับการเรียกดึง/ลบ ข้อมูลคนไข้
 @admin_bp.route('/api/patient/<id>', methods=['GET'])
-@admin_required  # 🔒 ดักสิทธิ์: ถ้าไม่ล็อกอิน/ไม่ใช่แอดมิน จะโดนดีดออกทันที
+@admin_required  # ดักสิทธิ์: ถ้าไม่ล็อกอิน/ไม่ใช่แอดมิน จะโดนดีดออกทันที
 def get_patient(id):
     profile = get_patient_profile(id)
     if profile:
@@ -33,7 +31,7 @@ def get_patient(id):
 
 
 @admin_bp.route('/api/patient/<id>', methods=['DELETE'])
-@admin_required  # 🔒 ดักสิทธิ์: ป้องกันคนนอกแอบมายิง API ลบคนไข้
+@admin_required
 def delete_patient_route(id):
     if not validate_id(id):
         return jsonify({"status": "error", "message": "ไอดีบัญชีไม่ถูกต้อง"}), 400
@@ -47,27 +45,15 @@ def delete_patient_route(id):
         return jsonify({"status": "deleted"})
     return jsonify({"status": "error", "message": "ไม่สามารถลบข้อมูลได้"}), 500
 
-
-# ==========================================
-# 🩺 API สำหรับ Admin ดูข้อมูลสุขภาพผู้ป่วย (bmi/fpg/type)
-# ==========================================
-
-@admin_bp.route('/api/patients/health-summary', methods=['GET'])
-@admin_required  # 🔒 เฉพาะแอดมินเท่านั้นที่ดูข้อมูลสุขภาพผู้ป่วยทั้งหมดได้
-def patients_health_summary():
-    patients = get_patient_health_summary()
-    return jsonify({"status": "ok", "patients": patients})
-
-
 # ==========================================
 # 📊 ฝั่งแสดงผลหน้ากากเว็บ (HTML Pages)
 # ==========================================
 
 @admin_bp.route("/dashboard")
-@admin_required  # 🔒 ใช้ยามคุมแทนการเขียน if-else ซ้ำซ้อน
+@admin_required 
 def dashboard_page():
 
-    # 📊 เรียกดึงข้อมูลจริงจากคลังฐานข้อมูล GraphDB
+    # เรียกดึงข้อมูลจริงจากคลังฐานข้อมูล GraphDB
     stats_data = get_admin_dashboard_stats()
     recent_users = get_recent_registered_users()
 
@@ -81,9 +67,9 @@ def dashboard_page():
 
 
 @admin_bp.route("/users")
-@admin_required  # 🔒 บล็อกถาวร พอล็อกเอาต์แล้วเปิดหน้านี้จะโดนเด้งกลับหน้าแรกทันที
+@admin_required  
 def users_management_page():
-    # ดึงรายชื่อผู้ใช้ทั้งหมดพร้อมสิทธิ์ (role) สำหรับหน้าจัดการสิทธิ์
+    # ดึงรายชื่อผู้ใช้ทั้งหมดพร้อมสิทธิ์สำหรับหน้าจัดการสิทธิ์
     patients = get_all_users_with_roles()
 
     return render_template(
@@ -95,9 +81,8 @@ def users_management_page():
 
 
 @admin_bp.route("/update-role", methods=["POST"])
-@admin_required  # 🔒 ดักฝั่ง API เปลี่ยนสิทธิ์
+@admin_required 
 def update_user_role():
-    # 📦 แกะแกนข้อมูลที่หน้าบ้านส่งมาผ่าน JSON
     data = request.get_json()
     user_id = data.get("user_id")
     new_role = data.get("new_role")
@@ -105,7 +90,7 @@ def update_user_role():
     if not user_id or not new_role:
         return jsonify({"success": False, "message": "ข้อมูลที่ได้รับไม่ครบถ้วน"}), 400
 
-    # 🔄 เรียกใช้งานฟังก์ชันแยกเพื่อเปลี่ยนข้อมูลในคลัง GraphDB
+    # เรียกใช้งานฟังก์ชันแยกเพื่อเปลี่ยนข้อมูลในคลัง GraphDB
     success, message = update_user_role_in_graphdb(user_id, new_role)
 
     if success:
@@ -132,7 +117,7 @@ def add_exercise():
         data = request.get_json()
         
         name = data.get('name')
-        exercise_type = data.get('type')  # คลาสย่อยที่เลือกจาก Dropdown (เช่น Walking, Running)
+        exercise_type = data.get('type')
         mets = data.get('mets')
         youtube_id = data.get('youtube_id')
 
@@ -183,7 +168,6 @@ def update_exercise():
         if not exercise_id or not name or not exercise_type or not mets:
             return jsonify({"success": False, "message": "กรุณากรอกข้อมูลให้ครบถ้วน"}), 400
 
-        # Validate and replace editable properties in one database update.
         result = insert_exercise_to_ontology_v2(exercise_id, name, exercise_type, mets, youtube_id)
 
         if result.get("success"):
@@ -260,7 +244,6 @@ def update_admin_settings():
 @admin_bp.route('/category', methods=['GET'])
 @admin_required
 def categories_page():
-    # ดึงข้อมูลหมวดหมู่จริงจาก GraphDB
     categories_data = get_all_categories_from_ontology()
     return render_template('admin/edit_category.html', categories=categories_data)
 
@@ -271,9 +254,9 @@ def api_update_category_hierarchy():
     try:
         data = request.get_json()
         
-        category_id = data.get('category_id')          # เช่น "Walking"
-        parent_category_id = data.get('parent_id')     # เช่น "Aerobic"
-        label_th = data.get('label_th')                 # เช่น "การเดิน" (ส่งหรือไม่ส่งก็ได้)
+        category_id = data.get('category_id')          
+        parent_category_id = data.get('parent_id')     
+        label_th = data.get('label_th')                 
 
         # Validation ตรวจสอบข้อมูลจำเป็น
         if not category_id or not parent_category_id:

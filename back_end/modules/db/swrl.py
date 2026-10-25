@@ -619,9 +619,31 @@ INTENSITY_MET = {
     EX + 'Vigorous': ('MET > 6', [('greaterThan', '6')]),
 }
 OBJECT_INPUTS = {'type': ('patient', 'ประเภทเบาหวาน', 'diabetType'),
-                 'special': ('complication', 'ภาวะแทรกซ้อนในผลตรวจสุขภาพ', 'hasSpecialComplication'),
-                 'comorbidity': ('complication', 'โรคร่วม (ผลประเมิน)', 'hasComorbidity'),
-                 'complication': ('complication', 'ภาวะแทรกซ้อน (ผลประเมิน)', 'hasComplication')}
+                 'comorbidity': ('complication', 'โรคร่วม', 'hasComorbidity'),
+                 'complication': ('complication', 'ภาวะแทรกซ้อนทั่วไป', 'hasComplication'),
+                 'special': ('complication', 'ภาวะแทรกซ้อนอื่นๆ', 'hasSpecialComplication')}
+
+# Match the findings collected by the patient's health form.
+OTHER_COMPLICATIONS = {
+    'HeartDisease': 'โรคหัวใจ',
+    'Retinopathy': 'จอประสาทตาผิดปกติจากเบาหวาน',
+    'PeripheralNeuropathy': 'ประสาทส่วนปลายจากเบาหวาน',
+    'AutonomicNeuropathy': 'ระบบประสาทอัตโนมัติผิดปกติ',
+    'NoOtherComplication': 'ไม่มีภาวะแทรกซ้อนอื่นๆ',
+}
+BUILDER_THAI_LABELS = {
+    **OTHER_COMPLICATIONS,
+    'NoComorbidity': 'ไม่มีโรคร่วม',
+    'NoGeneralComplication': 'ไม่มีภาวะแทรกซ้อนทั่วไป',
+    'ModerateHypertension': 'ความดันโลหิตสูงระดับปานกลาง',
+    'SevereHypertension': 'ความดันโลหิตสูงระดับรุนแรง',
+    'Dyslipidemia': 'ภาวะไขมันในเลือดผิดปกติ',
+    'Obesity': 'โรคอ้วนและน้ำหนักเกิน',
+    'DKA': 'ภาวะกรดคีโตนในเลือดสูง',
+    'Hyperglycemia': 'ภาวะที่ร่างกายมีระดับน้ำตาลกลูโคสในกระแสเลือดสูง',
+    'Hypoglycemia': 'ภาวะที่ระดับน้ำตาลกลูโคสในเลือดลดลงต่ำกว่าเกณฑ์ปกติ',
+    'Microalbuminuria': 'ภาวะโปรตีนอัลบูมินรั่วออกมาในปัสสาวะ',
+}
 
 
 def get_builder_catalog():
@@ -669,9 +691,23 @@ def get_builder_catalog():
         kind, uri = row['kind']['value'], row['item']['value']
         if kind not in groups or not uri.startswith(EX) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_-]*', uri[len(EX):]):
             continue
+        item_id = uri[len(EX):]
+        if kind in ('special', 'complication'):
+            if item_id == 'NoComorbidity':
+                continue
+            kind = 'special' if item_id in OTHER_COMPLICATIONS else 'complication'
         candidates = [row[k] for k in ('description', 'label') if row.get(k, {}).get('value')]
-        best = max(candidates, key=lambda v: (v.get('xml:lang', '').startswith('th'), v.get('xml:lang', '') == ''), default={})
+        best = max(candidates, key=lambda v: (bool(re.search(r'[ก-๙]', v['value'])), v.get('xml:lang', '').startswith('th'), v.get('xml:lang', '') == ''), default={})
         label = best.get('value', uri[len(EX):])
+        if kind in ('comorbidity', 'complication', 'special'):
+            canonical_id = next((key for key in BUILDER_THAI_LABELS
+                                 if key.casefold() == item_id.casefold()), item_id)
+            label = BUILDER_THAI_LABELS.get(canonical_id, label)
+            english = re.sub(r'(?<=[a-z0-9])(?=[A-Z])', ' ', canonical_id).replace('_', ' ')
+            if not re.search(r'[ก-๙]', label):
+                label = f'ยังไม่มีชื่อภาษาไทย ({label})'
+            elif not re.search(r'\([^)]*[A-Za-z][^)]*\)', label):
+                label = f'{label} ({english})'
         rank = (best.get('xml:lang', '').startswith('th'), bool(candidates), label)
         if uri not in groups[kind] or rank > groups[kind][uri][0]:
             groups[kind][uri] = (rank, {'value': uri, 'label': label, 'parent': row.get('parent', {}).get('value', '')})
@@ -686,7 +722,7 @@ def get_builder_catalog():
     # it is still matched as a positive assertion, never inferred from missing data.
     for key, label in [('ketone', 'ผลตรวจคีโตน'), ('micro', 'ผลไมโครอัลบูมินในปัสสาวะ')]:
         fields[key] = {'category': 'lab', 'label': label, 'options': [
-            {'value': 'Negative', 'label': 'Negative'}, {'value': 'Positive', 'label': 'Positive'}]}
+            {'value': 'Negative', 'label': 'ผลลบ (Negative)'}, {'value': 'Positive', 'label': 'ผลบวก (Positive)'}]}
     return {'categories': CATEGORIES, 'fields': fields, 'results': {key: groups[key] for key in OUTPUTS}}
 
 

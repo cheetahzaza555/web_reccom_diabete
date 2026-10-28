@@ -1,196 +1,380 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DiaBalance - User Panel</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* ... (Style เดิมทั้งหมด ไม่ต้องแก้) ... */
-        :root { --sidebar-width: 260px; --primary-blue: #3366CC; --primary-dark: #2952A3; --hover-bg: #4A7BD4; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Kanit', sans-serif; overflow-x: hidden; margin-left: var(--sidebar-width); transition: margin-left 0.3s ease; }
-        .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-dark) 100%); box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15); z-index: 1000; display: flex; flex-direction: column; overflow-y: auto; }
-        .sidebar-header { padding: 1.25rem 1rem; text-align: center; border-bottom: 2px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); }
-        .brand-logo { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-        .brand-logo i { font-size: 2rem; color: white; }
-        .brand-name { font-size: 1.5rem; font-weight: 700; color: white; margin: 0; letter-spacing: 0.5px; }
-        .sidebar-nav { flex: 1; padding: 1rem 0; }
-        .nav-item { margin: 0.25rem 0.75rem; }
-        .nav-link { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1.25rem; color: white; text-decoration: none; border-radius: 0.5rem; transition: all 0.3s ease; font-size: 0.9rem; font-weight: 500; }
-        .nav-link:hover { background: var(--hover-bg); transform: translateX(5px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
-        .nav-link.active { background: white; color: var(--primary-blue); font-weight: 600; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3); }
-        .sidebar-bottom { margin-top: auto; border-top: 2px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.1); }
-        .bottom-nav-item { margin: 0.5rem 0.75rem; }
-        .bottom-nav-link { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1.25rem; color: white; text-decoration: none; border-radius: 0.5rem; transition: all 0.3s ease; font-size: 1rem; font-weight: 500; }
-        .bottom-nav-link:hover { background: rgba(255, 255, 255, 0.15); color: white; }
-        .sidebar-user { padding: 1rem; display: flex; align-items: center; gap: 1rem; background: rgba(0, 0, 0, 0.2); }
-        .user-avatar { width: 50px; height: 50px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; color: var(--primary-blue); font-size: 1.75rem; flex-shrink: 0; }
-        .user-details { display: flex; flex-direction: column; overflow: hidden; }
-        .user-fullname { color: white; font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
-        .user-username { color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; margin-bottom: 2px; }
-        .user-role-badge { display: inline-block; background: #20c997; color: #fff; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; width: fit-content; }
-        .sidebar-toggle { position: fixed; top: 1rem; left: 1rem; z-index: 999; display: none; background: var(--primary-blue); color: white; border: none; border-radius: 0.5rem; width: 45px; height: 45px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
-        @media (max-width: 768px) { body { margin-left: 0; } .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; } .sidebar.active { transform: translateX(0); } .sidebar-toggle { display: flex; align-items: center; justify-content: center; } .sidebar.active ~ .sidebar-toggle { left: calc(var(--sidebar-width) + 1rem); } }
-        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999; }
-        .sidebar-overlay.active { display: block; }
-    </style>
-</head>
-<body>
-    <button class="sidebar-toggle" id="sidebarToggle">
-        <i class="bi bi-list"></i>
-    </button>
+<!-- Sidebar Navigation for User Panel -->
+<style>
+    :root { 
+        --sidebar-width: 260px; 
+        --primary-blue: #3366CC; 
+        --primary-dark: #2952A3; 
+        --hover-bg: #4A7BD4; 
+    }
+    
+    body { 
+        font-family: 'Prompt', system-ui, -apple-system, sans-serif; 
+        overflow-x: hidden; 
+        margin-left: var(--sidebar-width); 
+        transition: margin-left 0.3s ease; 
+    }
+    
+    .sidebar { 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        height: 100vh; 
+        width: var(--sidebar-width); 
+        background: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-dark) 100%); 
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15); 
+        z-index: 1000; 
+        display: flex; 
+        flex-direction: column; 
+        overflow-y: auto; 
+    }
+    
+    .sidebar-header { 
+        padding: 1.25rem 1rem; 
+        text-align: center; 
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2); 
+        background: rgba(255, 255, 255, 0.05); 
+    }
+    
+    .brand-logo { 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 0.5rem; 
+        margin-bottom: 0.25rem; 
+    }
+    
+    .brand-logo svg, .brand-logo i { 
+        font-size: 2rem; 
+        color: white; 
+    }
+    
+    .brand-name { 
+        font-size: 1.5rem; 
+        font-weight: 700; 
+        color: white; 
+        margin: 0; 
+        letter-spacing: 0.5px; 
+        display: inline-block;
+    }
+    
+    .sidebar-nav { 
+        flex: 1; 
+        padding: 1rem 0; 
+    }
+    
+    .nav-item { 
+        margin: 0.25rem 0.75rem; 
+    }
+    
+    .nav-link { 
+        display: flex; 
+        align-items: center; 
+        gap: 1rem; 
+        padding: 0.85rem 1.25rem; 
+        color: white; 
+        text-decoration: none; 
+        border-radius: 0.5rem; 
+        transition: all 0.3s ease; 
+        font-size: 0.95rem; 
+        font-weight: 500; 
+    }
+    
+    .nav-link:hover { 
+        background: var(--hover-bg); 
+        transform: translateX(5px); 
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+        color: white;
+    }
+    
+    .nav-link.active { 
+        background: white; 
+        color: var(--primary-blue) !important; 
+        font-weight: 700; 
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3); 
+    }
+    
+    .sidebar-bottom { 
+        margin-top: auto; 
+        border-top: 2px solid rgba(255, 255, 255, 0.2); 
+        background: rgba(0, 0, 0, 0.1); 
+    }
+    
+    .bottom-nav-item { 
+        margin: 0.5rem 0.75rem; 
+    }
+    
+    .bottom-nav-link { 
+        display: flex; 
+        align-items: center; 
+        gap: 1rem; 
+        padding: 0.85rem 1.25rem; 
+        color: white; 
+        text-decoration: none; 
+        border-radius: 0.5rem; 
+        transition: all 0.3s ease; 
+        font-size: 1rem; 
+        font-weight: 500; 
+    }
+    
+    .bottom-nav-link:hover { 
+        background: rgba(255, 255, 255, 0.15); 
+        color: white; 
+    }
+    
+    .sidebar-user { 
+        padding: 1rem; 
+        display: flex; 
+        align-items: center; 
+        gap: 1rem; 
+        background: rgba(0, 0, 0, 0.2); 
+    }
+    
+    .user-avatar { 
+        width: 48px; 
+        height: 48px; 
+        border-radius: 50%; 
+        background: white; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        color: var(--primary-blue); 
+        font-size: 1.5rem; 
+        flex-shrink: 0; 
+    }
+    
+    .user-details { 
+        display: flex; 
+        flex-direction: column; 
+        overflow: hidden; 
+    }
+    
+    .user-fullname { 
+        color: white; 
+        font-weight: 600; 
+        font-size: 0.95rem; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+        line-height: 1.2; 
+    }
+    
+    .user-username { 
+        color: #e2e8f0; 
+        font-size: 0.82rem; 
+        margin-bottom: 2px; 
+    }
+    
+    .user-role-badge { 
+        display: inline-block; 
+        background: #20c997; 
+        color: #0b1f3a; 
+        font-size: 0.68rem; 
+        font-weight: 700; 
+        padding: 2px 8px; 
+        border-radius: 4px; 
+        text-transform: uppercase; 
+        width: fit-content; 
+    }
+    
+    .sidebar-toggle { 
+        position: fixed; 
+        top: 1rem; 
+        left: 1rem; 
+        z-index: 999; 
+        display: none; 
+        background: var(--primary-blue); 
+        color: white; 
+        border: none; 
+        border-radius: 0.5rem; 
+        width: 45px; 
+        height: 45px; 
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 
+    }
+    
+    @media (max-width: 768px) { 
+        body { margin-left: 0; } 
+        .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; } 
+        .sidebar.active { transform: translateX(0); } 
+        .sidebar-toggle { display: flex; align-items: center; justify-content: center; } 
+        .sidebar.active ~ .sidebar-toggle { left: calc(var(--sidebar-width) + 1rem); } 
+    }
+    
+    .sidebar-overlay { 
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0, 0, 0, 0.5); 
+        z-index: 999; 
+    }
+    
+    .sidebar-overlay.active { 
+        display: block; 
+    }
+</style>
 
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="เปิดเมนูนำทาง">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+        <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+    </svg>
+</button>
 
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="brand-logo">
-                <i class="bi bi-heart-pulse-fill"></i>
-                <h1 class="brand-name">DiaBalance</h1>
-            </div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="brand-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                <path fill-rule="evenodd" d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+            </svg>
+            <span class="brand-name">DiaBalance</span>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-item">
+            <a href="/user/dashboard" class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L8 2.207l6.646 6.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/>
+                    <path d="m8 3.293 6 6V13.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5V9.293l6-6Z"/>
+                </svg>
+                <span>หน้าหลัก</span>
+            </a>
         </div>
 
-        <nav class="sidebar-nav">
-            <div class="nav-item">
-                <a href="/user/dashboard" class="nav-link">
-                    <i class="bi bi-house-door-fill"></i>
-                    <span>หน้าหลัก</span>
-                </a>
-            </div>
+        <div class="nav-item">
+            <a href="/user/recommendations" class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6zm6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1z"/>
+                </svg>
+                <span>แนะนำการออกกำลังกาย</span>
+            </a>
+        </div>
 
-            <div class="nav-item">
-                <a href="/user/recommendations" class="nav-link">
-                    <i class="bi bi-lightbulb-fill"></i>
-                    <span>แนะนำการออกกำลังกาย</span>
-                </a>
-            </div>
+        <div class="nav-item">
+            <a href="/user/exercises" class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path fill-rule="evenodd" d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                </svg>
+                <span>ท่าออกกำลังกาย</span>
+            </a>
+        </div>
 
-            <div class="nav-item">
-                <a href="/user/exercises" class="nav-link">
-                    <i class="bi bi-heart-pulse"></i>
-                    <span>ท่าออกกำลังกาย</span>
-                </a>
-            </div>
+        <div class="nav-item">
+            <a href="/user/knowledge" class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M4 1h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H4z"/>
+                    <path d="M4.5 4a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1h-7zM4 6.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm.5 2.5a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1h-4z"/>
+                </svg>
+                <span>ความรู้เพิ่มเติมเกี่ยวกับ<br>โรคเบาหวาน</span>
+            </a>
+        </div>
+    </nav>
 
-            <div class="nav-item">
-                <a href="/user/knowledge" class="nav-link">
-                    <i class="bi bi-journal-text"></i>
-                    <span>ความรู้เพิ่มเติมเกี่ยวกับ<br>โรคเบาหวาน</span>
-                </a>
-            </div>
-        </nav>
+    <div class="sidebar-bottom">
+        <div class="bottom-nav-item">
+            <a href="/user/settings" class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+                </svg>
+                <span>การตั้งค่า</span>
+            </a>
+        </div>
 
-        <div class="sidebar-bottom">
-            <div class="bottom-nav-item">
-                <a href="/user/settings" class="nav-link">
-                    <i class="bi bi-gear-fill"></i>
-                    <span>การตั้งค่า</span>
-                </a>
-            </div>
+        <div class="bottom-nav-item">
+            <a href="#" class="bottom-nav-link" id="logoutBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                    <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                </svg>
+                <span>ออกจากระบบ</span>
+            </a>
+        </div>
 
-            <div class="bottom-nav-item">
-                <a href="#" class="bottom-nav-link" id="logoutBtn">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span>ออกจากระบบ</span>
-                </a>
+        <div class="sidebar-user">
+            <div class="user-avatar" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                </svg>
             </div>
-
-            <div class="sidebar-user">
-                <div class="user-avatar">
-                    <i class="bi bi-person-fill"></i>
+            <div class="user-details">
+                <div class="user-fullname">
+                    {% if session.get('firstname') %}
+                        {{ session.get('firstname') }} {{ session.get('lastname') }}
+                    {% else %}
+                        {{ session.get('username') }}
+                    {% endif %}
                 </div>
-                <div class="user-details">
-                    <div class="user-fullname">
-                        {% if session.get('firstname') %}
-                            {{ session.get('firstname') }} {{ session.get('lastname') }}
-                        {% else %}
-                            {{ session.get('username') }}
-                        {% endif %}
-                    </div>
-                    
-                    <div class="user-username">
-                        @{{ session.get('username') }}
-                    </div>
-                    
-                    <div class="user-role-badge">
-                        {{ session.get('role', 'USER') }}
-                    </div>
+                
+                <div class="user-username">
+                    @{{ session.get('username') }}
+                </div>
+                
+                <div class="user-role-badge">
+                    {{ session.get('role', 'USER') }}
                 </div>
             </div>
         </div>
-    </aside>
+    </div>
+</aside>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // ----------------------------------------------------
-        // ✅ เหลือแค่ Logic พื้นฐาน (Toggle Menu / Logout)
-        // ❌ ลบ fetchCurrentUser() ออกไปแล้ว
-        // ----------------------------------------------------
+<script>
+    // Mobile Sidebar Toggle
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-        // Mobile Sidebar Toggle
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('active');
-                sidebarOverlay.classList.toggle('active');
-            });
-        }
-
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-            });
-        }
-
-        // Set active navigation based on current path
-        const currentPath = window.location.pathname;
-        
-        document.querySelectorAll('.nav-link').forEach(link => {
-            const href = link.getAttribute('href');
-            
-            // ล้าง active เก่าออกก่อน
-            link.classList.remove('active');
-
-            // Logic การ Active เมนู
-            if (href === currentPath) {
-                link.classList.add('active');
-            } 
-            else if (href === '/user/recommendations' && (currentPath.includes('/user/select_exercise') || currentPath.includes('/select_plan'))) {
-                link.classList.add('active');
-            }
-            else if (href === '/user/exercises' && (currentPath.includes('/user/exercises/') || currentPath.includes('/user/exercise-detail/'))) {
-                link.classList.add('active');
-            }
+    if (sidebarToggle && sidebar && sidebarOverlay) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
         });
 
-        // Logout Handler
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                try {
-                    const response = await fetch('/api/logout', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                    if (response.ok) {
-                        window.location.href = '/login';
-                    } else {
-                        alert('เกิดข้อผิดพลาดในการออกจากระบบ');
-                    }
-                } catch (error) {
-                    console.error('Logout error:', error);
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        });
+    }
+
+    // Set active navigation based on current path
+    const currentPath = window.location.pathname;
+    
+    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+        const href = link.getAttribute('href');
+        link.classList.remove('active');
+
+        if (href === currentPath) {
+            link.classList.add('active');
+        } 
+        else if (href === '/user/recommendations' && (currentPath.includes('/user/select_exercise') || currentPath.includes('/select_plan'))) {
+            link.classList.add('active');
+        }
+        else if (href === '/user/exercises' && (currentPath.includes('/user/exercises/') || currentPath.includes('/user/exercise-detail/'))) {
+            link.classList.add('active');
+        }
+    });
+
+    // Logout Handler
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
                     alert('เกิดข้อผิดพลาดในการออกจากระบบ');
                 }
-            });
-        }
-    </script>
-</body>
-</html>
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('เกิดข้อผิดพลาดในการออกจากระบบ');
+            }
+        });
+    }
+</script>

@@ -3,16 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ลงทะเบียน - DiaBalance</title>
+    <title>ลงทะเบียน | DiaBalance - Diabetes Expert System</title>
+    <meta name="description" content="ลงทะเบียนเข้าใช้งาน DiaBalance ระบบแนะนำการออกกำลังกายและการดูแลสุขภาพสำหรับผู้ป่วยโรคเบาหวาน">
+    <meta name="theme-color" content="#375b97">
+    <link rel="canonical" href="https://diabalance.tech/register">
 
+    <!-- Inline SVG Favicon to avoid 404 console errors -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23375b97'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E">
+
+    <!-- Preconnect origins for performance -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <!-- Non-render-blocking Google Fonts -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    </noscript>
 
     <style>
         body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #eef1f6; /* สีพื้นหลังรอบนอก */
+            font-family: 'Prompt', system-ui, -apple-system, sans-serif;
+            background-color: #f1f4f9;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -22,36 +39,46 @@
 
         /* กล่องสีน้ำเงินเข้ม */
         .auth-card {
-            background-color: #375b97; /* อิงจากสีในภาพ Login */
-            border-radius: 15px;
-            padding: 3rem 2.5rem;
+            background-color: #375b97;
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
             color: white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
             width: 100%;
             max-width: 650px;
         }
 
-        .auth-icon {
-            font-size: 4rem;
-            line-height: 1;
-            margin-bottom: 10px;
-            display: block;
+        .auth-icon-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            margin-bottom: 0.75rem;
         }
 
         /* ช่องกรอกข้อมูลแบบเม็ดยา (Pill) */
         .input-pill {
-            background-color: white;
+            background-color: #ffffff;
             border-radius: 50rem;
             display: flex;
             align-items: center;
-            padding: 4px 20px;
-            margin-bottom: 1rem;
+            padding: 4px 18px;
+            margin-bottom: 0.85rem;
+            border: 1px solid transparent;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .input-pill i {
+        .input-pill .icon-wrap {
             color: #375b97;
-            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin-right: 12px;
+            flex-shrink: 0;
         }
 
         .input-pill input {
@@ -59,60 +86,63 @@
             background: transparent;
             padding: 10px 0;
             width: 100%;
-            color: #333;
+            color: #1e293b;
             outline: none;
             font-size: 1rem;
         }
 
         .input-pill input::placeholder {
-            color: #6c757d;
+            color: #556987;
+            opacity: 1;
         }
 
-        /* ปุ่มกดสีฟ้าอ่อน */
+        /* ปุ่มกดสีฟ้าอ่อน ปรับ Contrast ให้อ่านง่าย */
         .btn-auth {
             background-color: #8ca7f9;
-            color: white;
+            color: #0b1f3a;
             border-radius: 50rem;
             padding: 12px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 1.1rem;
             border: none;
             width: 100%;
             margin-top: 15px;
-            transition: all 0.3s;
+            transition: background-color 0.2s, box-shadow 0.2s;
         }
 
-        .btn-auth:hover:not(:disabled) {
-            background-color: #7694f5;
-            color: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        .btn-auth:hover:not(:disabled), .btn-auth:focus {
+            background-color: #7494f5;
+            color: #0b1f3a;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
         }
 
         /* ลิงก์ด้านล่าง */
         .auth-footer {
-            margin-top: 2rem;
+            margin-top: 1.75rem;
             font-size: 0.95rem;
-            color: #d1dcf5;
+            color: #e2e8f0;
         }
 
         .auth-link {
-            color: white;
+            color: #ffffff;
             text-decoration: underline;
-            font-weight: 600;
+            font-weight: 700;
+            margin-left: 4px;
             transition: 0.2s;
         }
 
         .auth-link:hover {
-            color: #8ca7f9;
+            color: #cdd9f7;
         }
         
         .form-label-custom {
-            font-size: 0.85rem;
-            color: #d1dcf5;
+            font-size: 0.88rem;
+            color: #e2e8f0;
             margin-bottom: 5px;
             padding-left: 15px;
             display: block;
             text-align: left;
+            font-weight: 500;
         }
 
         .input-pill.pill-taken {
@@ -127,7 +157,7 @@
             font-size: 0.82rem;
             text-align: left;
             padding-left: 15px;
-            margin-top: -8px;
+            margin-top: -6px;
             margin-bottom: 10px;
             min-height: 20px;
             display: none;
@@ -141,70 +171,100 @@
         }
 
         .username-status.taken {
-            color: #ff9b9b;
+            color: #ffb4b4;
         }
 
         .username-status.available {
-            color: #96f2ab;
+            color: #a3f7b5;
         }
 
         .username-status.checking {
-            color: #d1dcf5;
+            color: #e2e8f0;
         }
     </style>
 </head>
 <body>
 
-    <div class="auth-card text-center">
-        <i class="bi bi-person-vcard auth-icon"></i>
-        <h2 class="fw-bold mb-4">ลงทะเบียน</h2>
+    <main class="auth-card text-center my-auto">
+        <div class="auth-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M5 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm4-2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5zM9 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4A.5.5 0 0 1 9 8zm1 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/>
+                <path d="M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H2zM1 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H8.96c.026-.163.04-.33.04-.5C9 10.567 7.21 9 5 9c-2.086 0-3.8 1.398-3.984 3.181A1.006 1.006 0 0 1 1 12V4z"/>
+            </svg>
+        </div>
+        <h1 class="fw-bold mb-4 fs-2 text-white">ลงทะเบียน</h1>
 
-        <form id="registerForm" onsubmit="handleRegister(event)">
+        <form id="registerForm" onsubmit="handleRegister(event)" novalidate>
             
             <div class="row g-2">
                 <div class="col-md-6">
-                    <label class="form-label-custom">ชื่อจริง</label>
+                    <label for="firstname" class="form-label-custom">ชื่อจริง</label>
                     <div class="input-pill">
-                        <i class="bi bi-person"></i>
-                        <input type="text" id="firstname" placeholder="ชื่อจริง" required>
+                        <span class="icon-wrap" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#375b97" viewBox="0 0 16 16">
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                            </svg>
+                        </span>
+                        <input type="text" id="firstname" name="firstname" placeholder="ชื่อจริง" autocomplete="given-name" required aria-label="ชื่อจริง">
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label-custom">นามสกุล</label>
+                    <label for="lastname" class="form-label-custom">นามสกุล</label>
                     <div class="input-pill">
-                        <i class="bi bi-person"></i>
-                        <input type="text" id="lastname" placeholder="นามสกุล" required>
+                        <span class="icon-wrap" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#375b97" viewBox="0 0 16 16">
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                            </svg>
+                        </span>
+                        <input type="text" id="lastname" name="lastname" placeholder="นามสกุล" autocomplete="family-name" required aria-label="นามสกุล">
                     </div>
                 </div>
             </div>
 
-            <label class="form-label-custom mt-2">ชื่อบัญชีผู้ใช้</label>
+            <label for="username" class="form-label-custom mt-2">ชื่อบัญชีผู้ใช้</label>
             <div class="input-pill" id="usernamePill">
-                <i class="bi bi-person-badge"></i>
-                <input type="text" id="username" placeholder="ตั้งชื่อบัญชีผู้ใช้" autocomplete="off" required>
-                <i id="usernameStatusIcon" class="bi" style="margin-right: 0; margin-left: 8px; display: none;"></i>
+                <span class="icon-wrap" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#375b97" viewBox="0 0 16 16">
+                        <path d="M6.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                        <path d="M4.5 0A2.5 2.5 0 0 0 2 2.5V14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2.5A2.5 2.5 0 0 0 11.5 0h-7zM3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2.5z"/>
+                    </svg>
+                </span>
+                <input type="text" id="username" name="username" placeholder="ตั้งชื่อบัญชีผู้ใช้" autocomplete="username" required aria-label="ชื่อบัญชีผู้ใช้">
+                <span id="usernameStatusIcon" style="margin-right: 0; margin-left: 8px; display: none;"></span>
             </div>
-            <div id="usernameStatus" class="username-status"></div>
+            <div id="usernameStatus" class="username-status" role="status" aria-live="polite"></div>
 
-            <label class="form-label-custom mt-2">อีเมล</label>
+            <label for="email" class="form-label-custom mt-2">อีเมล</label>
             <div class="input-pill">
-                <i class="bi bi-envelope"></i>
-                <input type="email" id="email" placeholder="อีเมลของคุณ" required>
+                <span class="icon-wrap" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#375b97" viewBox="0 0 16 16">
+                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/>
+                    </svg>
+                </span>
+                <input type="email" id="email" name="email" placeholder="อีเมลของคุณ" autocomplete="email" required aria-label="อีเมล">
             </div>
 
             <div class="row g-2 mt-2">
                 <div class="col-md-6">
-                    <label class="form-label-custom">รหัสผ่าน</label>
+                    <label for="password" class="form-label-custom">รหัสผ่าน</label>
                     <div class="input-pill">
-                        <i class="bi bi-lock"></i>
-                        <input type="password" id="password" placeholder="รหัสผ่าน 8–12 ตัวอักษร" required minlength="8" maxlength="12">
+                        <span class="icon-wrap" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#375b97" viewBox="0 0 16 16">
+                                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+                            </svg>
+                        </span>
+                        <input type="password" id="password" name="password" placeholder="รหัสผ่าน 8–12 ตัวอักษร" autocomplete="new-password" required minlength="8" maxlength="12" aria-label="รหัสผ่าน">
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label-custom">ยืนยันรหัสผ่าน</label>
+                    <label for="confirmPassword" class="form-label-custom">ยืนยันรหัสผ่าน</label>
                     <div class="input-pill">
-                        <i class="bi bi-lock-fill"></i>
-                        <input type="password" id="confirmPassword" placeholder="ยืนยันรหัสผ่าน" required minlength="8" maxlength="12">
+                        <span class="icon-wrap" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#375b97" viewBox="0 0 16 16">
+                                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                            </svg>
+                        </span>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="ยืนยันรหัสผ่าน" autocomplete="new-password" required minlength="8" maxlength="12" aria-label="ยืนยันรหัสผ่าน">
                     </div>
                 </div>
             </div>
@@ -217,14 +277,18 @@
                 มีบัญชีผู้ใช้แล้ว? <a href="/login" class="auth-link">เข้าสู่ระบบ</a>
             </div>
         </form>
-    </div>
+    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SweetAlert2 deferred to not block rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     <script>
         let usernameTimer = null;
         let lastCheckedUsername = '';
         let isUsernameTakenFlag = false;
+
+        const checkSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2b8a3e" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>';
+        const errorSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#dc3545" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.646-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>';
 
         const usernameInput = document.getElementById('username');
         const usernamePill = document.getElementById('usernamePill');
@@ -264,18 +328,16 @@
                     usernamePill.classList.remove('pill-available');
                     usernamePill.classList.add('pill-taken');
                     usernameStatus.className = 'username-status show taken';
-                    usernameStatus.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> ชื่อบัญชีผู้ใช้นี้มีผู้ใช้งานแล้ว กรุณาใช้ชื่ออื่น';
-                    usernameStatusIcon.className = 'bi bi-x-circle-fill';
-                    usernameStatusIcon.style.color = '#dc3545';
+                    usernameStatus.innerHTML = errorSvg + ' <span>ชื่อบัญชีผู้ใช้นี้มีผู้ใช้งานแล้ว กรุณาใช้ชื่ออื่น</span>';
+                    usernameStatusIcon.innerHTML = errorSvg;
                     usernameStatusIcon.style.display = 'inline-block';
                     return false;
                 } else {
                     usernamePill.classList.remove('pill-taken');
                     usernamePill.classList.add('pill-available');
                     usernameStatus.className = 'username-status show available';
-                    usernameStatus.innerHTML = '<i class="bi bi-check-circle-fill"></i> สามารถใช้ชื่อบัญชีผู้ใช้นี้ได้';
-                    usernameStatusIcon.className = 'bi bi-check-circle-fill';
-                    usernameStatusIcon.style.color = '#2b8a3e';
+                    usernameStatus.innerHTML = checkSvg + ' <span>สามารถใช้ชื่อบัญชีผู้ใช้นี้ได้</span>';
+                    usernameStatusIcon.innerHTML = checkSvg;
                     usernameStatusIcon.style.display = 'inline-block';
                     return true;
                 }
@@ -359,7 +421,7 @@
                         showCancelButton: true,
                         confirmButtonText: 'ยืนยัน',
                         cancelButtonText: 'ยกเลิก',
-                        confirmButtonColor: '#8ca7f9', // สีปุ่ม Popup ให้เหมือนสีปุ่มลงทะเบียน
+                        confirmButtonColor: '#8ca7f9',
                         inputValidator: (value) => {
                             if (!value || value.length !== 6) return 'กรุณากรอกรหัส OTP ให้ครบ 6 หลัก';
                         }

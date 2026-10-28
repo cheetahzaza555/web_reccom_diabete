@@ -3,16 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>หน้าหลัก - DiaBalance</title>
+    <title>หน้าหลัก | DiaBalance - Diabetes Expert System</title>
+    <meta name="description" content="แดชบอร์ดหน้าหลัก DiaBalance ติดตามตารางออกกำลังกาย สถิติ Streak และแผนสุขภาพเฉพาะบุคคลสำหรับผู้ป่วยเบาหวาน">
+    <meta name="theme-color" content="#3366CC">
+    <link rel="canonical" href="https://diabalance.tech/user/dashboard">
 
+    <!-- Inline SVG Favicon to avoid 404 console errors -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233366CC'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E">
+
+    <!-- Preconnect origins for performance -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Non-render-blocking Bootstrap Icons -->
+    <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    </noscript>
+
+    <!-- Non-render-blocking Google Fonts -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    </noscript>
 
     <style>
         body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Prompt', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
             min-height: 100vh;
         }
 
@@ -22,10 +46,18 @@
             gap: 10px;
         }
 
+        #calendarDays {
+            min-height: 460px; /* Reduce Cumulative Layout Shift (CLS) */
+        }
+
         .weekday-header {
-            text-align: center; font-weight: bold; color: #6c757d;
+            text-align: center; 
+            font-weight: 700; 
+            color: #1e293b;
             padding: 10px 0;
-            background: #e9ecef; border-radius: 8px;
+            background: #e2e8f0; 
+            border-radius: 8px;
+            font-size: 0.95rem;
         }
 
         .day-card {
@@ -34,37 +66,56 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             min-height: 110px; 
             padding: 10px;
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            border: 1px solid #dee2e6;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between;
+            border: 1px solid #cbd5e1;
             position: relative;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .today-card {
-            border: 2px solid #4f7cff !important;
-            background-color: #f0f7ff !important;
-            transform: scale(1.05);
+            border: 2px solid #2563eb !important;
+            background-color: #eff6ff !important;
+            transform: scale(1.03);
             z-index: 10;
-            box-shadow: 0 4px 15px rgba(79, 124, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
             opacity: 1 !important; 
         }
+
         .today-badge {
-            background-color: #4f7cff; color: white;
-            padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;
-            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            background-color: #1d4ed8; 
+            color: #ffffff;
+            padding: 2px 8px; 
+            border-radius: 10px; 
+            font-size: 0.72rem;
+            font-weight: 600;
+            position: absolute; 
+            top: -10px; 
+            left: 50%; 
+            transform: translateX(-50%);
         }
 
         .date-number {
-            font-size: 1.1rem; font-weight: bold; color: #333;
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            color: #0f172a;
             align-self: flex-start;
             margin-bottom: 5px;
         }
-        .today-card .date-number { color: #4f7cff; }
 
-        .exercise-icon { font-size: 1.5rem; color: #198754; }
+        .today-card .date-number { 
+            color: #1e40af; 
+        }
+
+        .exercise-icon { 
+            font-size: 1.5rem; 
+            color: #15803d; 
+        }
         
         .ex-name { 
-            font-size: 0.75rem; 
+            font-size: 0.78rem; 
             font-weight: 600; 
             text-align: center; 
             line-height: 1.25;
@@ -76,53 +127,93 @@
             padding: 0 4px;
         }
 
-        .check-btn { font-size: 1.5rem; color: #e9ecef; cursor: default; }
-        .check-btn.completed { color: #198754; }
+        .check-btn { 
+            font-size: 1.5rem; 
+            color: #e2e8f0; 
+            cursor: default; 
+        }
+
+        .check-btn.completed { 
+            color: #15803d; 
+        }
 
         .day-missed {
-            background-color: #fff5f5 !important;
-            border-color: #f5c2c7 !important;
+            background-color: #fef2f2 !important;
+            border-color: #fecaca !important;
         }
-        .missed-icon { font-size: 1.5rem; color: #dc3545; }
+
+        .missed-icon { 
+            font-size: 1.5rem; 
+            color: #b91c1c; 
+        }
         
         .nav-arrow {
-            background: white; border: 1px solid #dee2e6; color: #4f7cff; border-radius: 50%;
-            width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s; flex-shrink: 0;
+            background: white; 
+            border: 1px solid #cbd5e1; 
+            color: #1d4ed8; 
+            border-radius: 50%;
+            width: 48px; 
+            height: 48px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.06); 
+            transition: all 0.2s ease; 
+            flex-shrink: 0;
         }
-        .nav-arrow i { font-size: 1.5rem; font-weight: bold; }
-        .nav-arrow:hover:not(:disabled) { background: #4f7cff; color: white; transform: scale(1.1); }
-        .nav-arrow:disabled { color: #dee2e6; background: #f8f9fa; cursor: not-allowed; box-shadow: none; }
 
-        /* ✅ ปุ่มดูวิธีเชื่อมต่อการแจ้งเตือน LINE */
+        .nav-arrow i { 
+            font-size: 1.3rem; 
+            font-weight: bold; 
+        }
+
+        .nav-arrow:hover:not(:disabled) { 
+            background: #1d4ed8; 
+            color: white; 
+            transform: scale(1.08); 
+        }
+
+        .nav-arrow:disabled { 
+            color: #cbd5e1; 
+            background: #f1f5f9; 
+            cursor: not-allowed; 
+            box-shadow: none; 
+        }
+
+        /* ปุ่มดูวิธีเชื่อมต่อการแจ้งเตือน LINE */
         .btn-line-info {
-            border: 2px solid #06C755;
+            border: 2px solid #047857;
             border-radius: 30px;
             padding: 8px 18px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             background-color: white;
-            color: #06C755;
-            font-weight: 600;
+            color: #047857;
+            font-weight: 700;
             font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.2s ease;
         }
+
         .btn-line-info:hover {
-            background-color: #f0fff7;
-            box-shadow: 0 4px 10px rgba(6, 199, 85, 0.15);
+            background-color: #f0fdf4;
+            box-shadow: 0 4px 10px rgba(4, 120, 87, 0.15);
         }
+
         .btn-line-info:active {
             transform: scale(0.98);
         }
+
         .btn-line-info.active {
-            background-color: #06C755;
+            background-color: #047857;
             color: white;
         }
+
         .btn-line-info .bi-chevron-down {
             transition: transform 0.25s ease;
         }
+
         .btn-line-info.active .bi-chevron-down {
             transform: rotate(180deg);
         }
@@ -130,14 +221,35 @@
         .line-qr-close-btn {
             background: none;
             border: none;
-            color: #6c757d;
+            color: #4b5563;
             font-size: 1.3rem;
             line-height: 1;
             cursor: pointer;
             padding: 4px;
         }
+
         .line-qr-close-btn:hover {
-            color: #dc3545;
+            color: #b91c1c;
+        }
+
+        .btn-outline-primary {
+            color: #0d5cb6 !important;
+            border-color: #0d5cb6 !important;
+        }
+        .btn-outline-primary:hover {
+            background-color: #0d5cb6 !important;
+            border-color: #0d5cb6 !important;
+            color: #ffffff !important;
+        }
+
+        .btn-outline-danger {
+            color: #b91c1c !important;
+            border-color: #b91c1c !important;
+        }
+        .btn-outline-danger:hover {
+            background-color: #b91c1c !important;
+            border-color: #b91c1c !important;
+            color: #ffffff !important;
         }
 
         @media (max-width: 768px) {
@@ -145,7 +257,7 @@
             .weekday-header { display: none; } 
             .day-card { flex-direction: row; min-height: auto; padding: 15px; }
             .date-number { margin-bottom: 0; margin-right: 15px; width: 30px; }
-            .nav-arrow { width: 40px; height: 40px; }
+            .nav-arrow { width: 42px; height: 42px; }
         }
     </style>
 </head>
@@ -153,7 +265,7 @@
 
     {% include 'includes/navbar_user.html' %}
 
-    <div class="container py-4 px-3 px-md-4 d-flex flex-column">
+    <main class="container py-4 px-3 px-md-4 d-flex flex-column">
 
         {% if schedule %}
             <!-- ส่วนหัว: ชื่อเดือน, วันที่ และ กลุ่มปุ่มจัดการ -->
@@ -161,58 +273,58 @@
                 
                 <!-- ฝั่งซ้าย: ชื่อเดือน และ วันที่ -->
                 <div>
-                    <h2 class="fw-bold mb-0 text-dark" id="monthTitle">กำลังโหลด...</h2>
-                    <p class="text-muted mb-0 mt-2">
-                        <i class="bi bi-calendar-event me-1"></i> วันนี้: {{ info.day }} {{ info.month_name }}
+                    <h1 class="fw-bold mb-0 text-dark fs-2" id="monthTitle">ตารางกิจกรรม</h1>
+                    <p class="mb-0 mt-2" style="color: #475569;">
+                        <i class="bi bi-calendar-event me-1" aria-hidden="true"></i> วันนี้: {{ info.day }} {{ info.month_name }}
                     </p>
                 </div>
                 
                 <!-- ฝั่งขวา: กลุ่มปุ่ม (เปิดการแจ้งเตือน + ลบตาราง) -->
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <!-- ปุ่มดูวิธีเชื่อมต่อการแจ้งเตือน LINE (expand/collapse) -->
-                    <button type="button" class="btn-line-info" id="lineInfoBtn" onclick="toggleLineQR()">
-                        <i class="bi bi-line"></i>
+                    <button type="button" class="btn-line-info" id="lineInfoBtn" onclick="toggleLineQR()" aria-expanded="false" aria-controls="lineQrSection">
+                        <i class="bi bi-line" aria-hidden="true"></i>
                         <span>รับการแจ้งเตือนผ่าน LINE</span>
-                        <i class="bi bi-chevron-down"></i>
+                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
                     </button>
                     
                     <!-- ปุ่มนำทางไปหน้าแก้ไขตาราง -->
                     <a href="/user/edit_schedule" class="btn btn-outline-primary d-flex align-items-center justify-content-center" style="height: 40px; padding: 0 16px; border-radius: 8px; font-weight: 600;">
-                        <i class="bi bi-pencil-square me-1"></i> แก้ไขตาราง
+                        <i class="bi bi-pencil-square me-1" aria-hidden="true"></i> แก้ไขตาราง
                     </a>
 
                     <!-- ปุ่มลบตาราง -->
-                    <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center" onclick="confirmClearPlan()" style="height: 40px; padding: 0 16px; border-radius: 8px;">
-                        <i class="bi bi-trash me-1"></i> ลบตาราง
+                    <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center" onclick="confirmClearPlan()" style="height: 40px; padding: 0 16px; border-radius: 8px; font-weight: 600;">
+                        <i class="bi bi-trash me-1" aria-hidden="true"></i> ลบตาราง
                     </button>
                 </div>
             </div>
 
             <!-- 🌟 กล่อง QR Code (ซ่อนไว้เป็นค่าเริ่มต้น) -->
-            <div id="lineQrSection" class="card border-0 shadow-sm mb-4" style="display: none; background-color: #f6fffa; border-left: 5px solid #06C755 !important;">
+            <div id="lineQrSection" class="card border-0 shadow-sm mb-4" style="display: none; background-color: #f6fffa; border-left: 5px solid #047857 !important;">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h5 class="fw-bold mb-0" style="color: #06C755;">
-                            <i class="bi bi-line"></i> เชื่อมต่อการแจ้งเตือนผ่าน LINE
-                        </h5>
-                        <button type="button" class="line-qr-close-btn" onclick="closeLineQR()" aria-label="ปิด">
-                            <i class="bi bi-x-lg"></i>
+                        <h2 class="fw-bold mb-0 fs-5" style="color: #047857;">
+                            <i class="bi bi-line me-1" aria-hidden="true"></i> เชื่อมต่อการแจ้งเตือนผ่าน LINE
+                        </h2>
+                        <button type="button" class="line-qr-close-btn" onclick="closeLineQR()" aria-label="ปิดกล่องแนะนำ LINE">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
                         </button>
                     </div>
-                    <p class="text-muted small mb-3">ทำ 2 ขั้นตอน เพื่อรับการแจ้งเตือนผ่าน LINE ได้ทันที </p>
+                    <p class="small mb-3" style="color: #475569;">ทำ 2 ขั้นตอน เพื่อรับการแจ้งเตือนผ่าน LINE ได้ทันที</p>
 
                     <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
                         <div class="text-center text-md-start">
-                            <p class="mb-1 text-dark">1. สแกน QR Code เพื่อเพิ่มเพื่อน DiaBalance</p>
-                            <p class="mb-2 text-dark">2. พิมพ์รหัสของคุณส่งไปในแชทเพื่อยืนยันตัวตน:</p>
+                            <p class="mb-1 text-dark fw-medium">1. สแกน QR Code เพื่อเพิ่มเพื่อน DiaBalance</p>
+                            <p class="mb-2 text-dark fw-medium">2. พิมพ์รหัสของคุณส่งไปในแชทเพื่อยืนยันตัวตน:</p>
 
                             <!-- ⚠️ รหัสผู้ใช้ -->
-                            <h3 class="fw-bold text-dark bg-white px-3 py-2 rounded d-inline-block shadow-sm border mt-1">
+                            <div class="fw-bold text-dark bg-white px-3 py-2 rounded d-inline-block shadow-sm border mt-1 fs-4">
                                 #{{ session['user_id'] }}
-                            </h3>
+                            </div>
                         </div>
                         <div class="text-center bg-white p-2 rounded shadow-sm border">
-                            <img src="{{ url_for('static', filename='images/lineqr.png') }}" alt="LINE QR Code" style="width: 130px; height: 130px; object-fit: cover;">
+                            <img src="{{ url_for('static', filename='images/lineqr.png') }}" alt="LINE QR Code สำหรับเพิ่มเพื่อนและเชื่อมต่อการแจ้งเตือน" width="130" height="130" style="width: 130px; height: 130px; object-fit: cover;">
                         </div>
                     </div>
                 </div>
@@ -224,17 +336,17 @@
                     
                     <!-- ฝั่งซ้าย: ไอคอนไฟ + ตัวเลข Streak -->
                     <div class="d-flex align-items-center">
-                        <div class="streak-icon-box me-3 d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 60px; height: 60px;">
-                            <i class="bi bi-fire text-danger" style="font-size: 2.2rem; filter: drop-shadow(0px 2px 4px rgba(255,107,107,0.4));"></i>
+                        <div class="streak-icon-box me-3 d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 60px; height: 60px;" aria-hidden="true">
+                            <i class="bi bi-fire text-danger" style="font-size: 2.2rem; filter: drop-shadow(0px 2px 4px rgba(239,68,68,0.4));"></i>
                         </div>
                         <div>
                             <div class="d-flex align-items-baseline">
-                                <h1 class="fw-bold mb-0 me-2 lh-1" id="streakCount" style="font-size: 2.5rem;">
+                                <span class="fw-bold mb-0 me-2 lh-1 text-dark" id="streakCount" style="font-size: 2.5rem;">
                                     {{ streak_info.current_streak if streak_info else '—' }}
-                                </h1>
-                                <span class="fs-5 fw-semibold">วันต่อเนื่อง!</span>
+                                </span>
+                                <span class="fs-5 fw-bold text-dark">วันต่อเนื่อง!</span>
                             </div>
-                            <p class="mb-0 opacity-90 small" id="streakMessage">
+                            <p class="mb-0 small fw-medium" id="streakMessage" style="color: #334155;">
                                 {% if not streak_info %}
                                     ไม่สามารถโหลด streak ได้ กรุณาลองใหม่
                                 {% elif streak_info.current_streak > 0 %}
@@ -248,8 +360,8 @@
 
                     <!-- ฝั่งขวา: Badge สถิติสูงสุด -->
                     <div class="d-none d-md-block text-end">
-                        <span class="badge bg-white text-danger px-3 py-2 rounded-pill shadow-sm fw-bold">
-                            <i class="bi bi-trophy-fill me-1"></i> สถิติสูงสุด: 
+                        <span class="badge bg-white px-3 py-2 rounded-pill shadow-sm fw-bold border" style="color: #b91c1c; font-size: 0.9rem;">
+                            <i class="bi bi-trophy-fill me-1" aria-hidden="true"></i> สถิติสูงสุด: 
                             <span id="maxStreakCount">
                                 {{ streak_info.max_streak if streak_info else '—' }}
                             </span> วัน
@@ -267,15 +379,15 @@
                         <span class="fw-bold text-primary progress-text">0 / 150 นาที</span>
                     </div>
                     <div class="progress" style="height: 15px;">
-                        <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="150" aria-label="ความคืบหน้าเป้าหมายการออกกำลังกายสัปดาห์นี้"></div>
                     </div>
                 </div>
             </div>
 
             <!-- ปฏิทิน -->
             <div class="d-flex align-items-center justify-content-center w-100 flex-grow-1">
-                <button id="prevMonthBtn" class="nav-arrow me-2 me-md-4" onclick="changeMonth(-1)">
-                    <i class="bi bi-chevron-left"></i>
+                <button id="prevMonthBtn" class="nav-arrow me-2 me-md-4" onclick="changeMonth(-1)" aria-label="เดือนก่อนหน้า">
+                    <i class="bi bi-chevron-left" aria-hidden="true"></i>
                 </button>
 
                 <div class="flex-grow-1 w-100">
@@ -291,8 +403,8 @@
                     <div class="calendar-grid" id="calendarDays"></div>
                 </div>
 
-                <button id="nextMonthBtn" class="nav-arrow ms-2 ms-md-4" onclick="changeMonth(1)">
-                    <i class="bi bi-chevron-right"></i>
+                <button id="nextMonthBtn" class="nav-arrow ms-2 ms-md-4" onclick="changeMonth(1)" aria-label="เดือนถัดไป">
+                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
                 </button>
             </div>
 
@@ -320,18 +432,18 @@
         {% else %}
             <div class="d-flex justify-content-center align-items-center h-100 mt-5">
                 <div class="text-center bg-white p-5 rounded-4 shadow-sm" style="max-width: 600px;">
-                    <i class="bi bi-clipboard2-pulse text-primary display-1 mb-3"></i>
+                    <i class="bi bi-clipboard2-pulse text-primary display-1 mb-3" aria-hidden="true"></i>
                     <h2 class="fw-bold">ยังไม่มีตารางกิจกรรม</h2>
-                    <p class="text-muted">กรุณาทำแบบประเมินเพื่อสร้างแผนการออกกำลังกาย</p>
-                    <a href="/user/recommendations" class="btn btn-primary rounded-pill px-4 mt-3">เริ่มต้นใช้งาน</a>
+                    <p class="text-secondary">กรุณาทำแบบประเมินเพื่อสร้างแผนการออกกำลังกาย</p>
+                    <a href="/user/recommendations" class="btn btn-primary rounded-pill px-4 mt-3 fw-bold">เริ่มต้นใช้งาน</a>
                 </div>
             </div>
         {% endif %}
 
-    </div>
+    </main>
     
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Scripts deferred to not block render -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 
     <script>
         const fullThaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -390,9 +502,6 @@
 
                 renderCalendar(monthsArray[currentIndex]);
             }
-
-            // ✅ เรียกคำนวณ Streak ใหม่ทันทีหลังดึงข้อมูล rawData
-
         }
 
         initDashboard();
@@ -441,42 +550,41 @@
                     if (plan.status === 'Missed') {
                         contentHtml = `
                             <div class="text-center">
-                                <i class="bi bi-x-circle-fill missed-icon"></i>
-                                <div class="ex-name mt-1 text-danger" style="font-size: 0.75rem;"> ไม่ได้ออกกำลังกาย </div>
+                                <i class="bi bi-x-circle-fill missed-icon" aria-hidden="true"></i>
+                                <div class="ex-name mt-1 text-danger" style="font-size: 0.75rem; font-weight: 700;">ไม่ได้ออกกำลังกาย</div>
                             </div>
                             <div style="height: 24px;"></div>
                         `;
                     } else if (plan.isExercise) {
                         if (plan.completed) {
-                            // ✅ แก้ไข UI เมื่อทำกิจกรรมสำเร็จ ให้คลีนและแสดงเวลา (นาที) ชัดเจน
                             contentHtml = `
                                 <div class="text-center">
-                                    <i class="bi bi-activity exercise-icon text-success"></i>
-                                    <div class="ex-name mt-1 text-success">${plan.exName}</div>
-                                    <small class="text-muted fw-semibold" style="font-size: 0.7rem;">${plan.duration} นาที</small>
+                                    <i class="bi bi-activity exercise-icon" style="color: #15803d;" aria-hidden="true"></i>
+                                    <div class="ex-name mt-1" style="color: #15803d; font-weight: 700;">${plan.exName}</div>
+                                    <small class="fw-semibold" style="font-size: 0.72rem; color: #475569;">${plan.duration} นาที</small>
                                 </div>
                                 <div class="mt-1" style="z-index: 20;">
-                                    <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}"></i>
+                                    <i class="bi bi-check-circle-fill check-btn completed" id="btn-${plan.id}" aria-hidden="true"></i>
                                 </div>
                             `;
                         } else {
                             let displayExerciseName = plan.exName || "ต้องออกกำลังกาย";
                             contentHtml = `
                                 <div class="text-center w-100">
-                                    <i class="bi bi-person-walking text-primary" style="font-size: 1.4rem;"></i>
-                                    <div class="ex-name mt-1 text-primary" title="${displayExerciseName}">
+                                    <i class="bi bi-person-walking" style="font-size: 1.4rem; color: #1d4ed8;" aria-hidden="true"></i>
+                                    <div class="ex-name mt-1" style="color: #1d4ed8; font-weight: 700;" title="${displayExerciseName}">
                                         ${displayExerciseName}
                                     </div>
-                                    <small class="text-muted" style="font-size: 0.65rem;">(${plan.duration} นาที)</small>
+                                    <small style="font-size: 0.72rem; color: #475569;">(${plan.duration} นาที)</small>
                                 </div>
                                 <div style="height: 12px;"></div>
                             `;
                         }
                     } else {
                         contentHtml = `
-                            <div class="text-center opacity-50">
-                                <i class="bi bi-cup-hot-fill text-secondary" style="font-size: 1.5rem;"></i>
-                                <div class="ex-name mt-1 text-secondary" style="font-size: 0.75rem;">วันพักผ่อน</div>
+                            <div class="text-center">
+                                <i class="bi bi-cup-hot-fill" style="font-size: 1.4rem; color: #64748b;" aria-hidden="true"></i>
+                                <div class="ex-name mt-1" style="font-size: 0.75rem; color: #475569; font-weight: 600;">วันพักผ่อน</div>
                             </div>
                             <div style="height: 24px;"></div>
                         `;
@@ -488,8 +596,10 @@
                 }
             }
 
-            document.getElementById('prevMonthBtn').disabled = (currentIndex === 0);
-            document.getElementById('nextMonthBtn').disabled = (currentIndex === monthsArray.length - 1);
+            const prevBtn = document.getElementById('prevMonthBtn');
+            const nextBtn = document.getElementById('nextMonthBtn');
+            if (prevBtn) prevBtn.disabled = (currentIndex === 0);
+            if (nextBtn) nextBtn.disabled = (currentIndex === monthsArray.length - 1);
 
             updateStartButton();
             updateWeeklyProgress();
@@ -519,7 +629,7 @@
                     if (todayPlan.completed) {
                         container.innerHTML = `
                             <button class="btn btn-success w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem;">
-                                <i class="bi bi-check-circle-fill me-2"></i> วันนี้คุณออกกำลังกายแล้ว
+                                <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i> วันนี้คุณออกกำลังกายแล้ว
                             </button>
                         `;
                     } else {
@@ -531,36 +641,47 @@
                     }
                 } else {
                     container.innerHTML = `
-                        <button class="btn btn-secondary w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem; background-color: #6c757d;">
-                            <i class="bi bi-cup-hot-fill me-2"></i> วันนี้เป็นวันพักผ่อน (ไม่ต้องออกกำลังกาย)
+                        <button class="btn btn-secondary w-100 py-3 fw-bold shadow-sm" disabled style="border-radius: 12px; font-size: 1.2rem; background-color: #475569;">
+                            <i class="bi bi-cup-hot-fill me-2" aria-hidden="true"></i> วันนี้เป็นวันพักผ่อน (ไม่ต้องออกกำลังกาย)
                         </button>
                     `;
                 }
             } else {
-                container.innerHTML = `<button class="btn btn-secondary w-100 py-3 fw-bold opacity-50" disabled style="border-radius: 12px;">วันนี้ไม่มีตาราง</button>`;
+                container.innerHTML = `<button class="btn btn-secondary w-100 py-3 fw-bold opacity-75" disabled style="border-radius: 12px;">วันนี้ไม่มีตาราง</button>`;
             }
         }
 
         function confirmClearPlan() {
-            Swal.fire({
-                title: 'ยืนยันการลบตาราง?',
-                text: "หากลบตารางแล้ว จะต้องสร้างตารางใหม่ทั้งหมด",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'ใช่, ล้างตารางเลย!',
-                cancelButtonText: 'ยกเลิก'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, willOpen: () => { Swal.showLoading(); } });
-                    fetch('/user/reset_plan', { method: 'POST' })
-                    .then(response => {
-                        if(response.ok) { window.location.reload(); } 
-                        else { Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการล้างแผน', 'error'); }
-                    }).catch(err => { Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); });
-                }
-            });
+            function triggerSwal() {
+                Swal.fire({
+                    title: 'ยืนยันการลบตาราง?',
+                    text: "หากลบตารางแล้ว จะต้องสร้างตารางใหม่ทั้งหมด",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'ใช่, ล้างตารางเลย!',
+                    cancelButtonText: 'ยกเลิก'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, willOpen: () => { Swal.showLoading(); } });
+                        fetch('/user/reset_plan', { method: 'POST' })
+                        .then(response => {
+                            if(response.ok) { window.location.reload(); } 
+                            else { Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการล้างแผน', 'error'); }
+                        }).catch(err => { Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); });
+                    }
+                });
+            }
+
+            if (typeof Swal === 'undefined') {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                s.onload = triggerSwal;
+                document.body.appendChild(s);
+            } else {
+                triggerSwal();
+            }
         }
 
         function updateWeeklyProgress() {
@@ -591,9 +712,10 @@
 
             if (progressBar && progressText) {
                 progressBar.style.width = percent + '%';
+                progressBar.setAttribute('aria-valuenow', totalMinutes);
                 progressText.innerText = `${totalMinutes} / ${target} นาที`;
                 
-                if(percent >= 100) {
+                if (percent >= 100) {
                     progressBar.classList.replace('bg-primary', 'bg-success');
                     progressText.classList.replace('text-primary', 'text-success');
                 } else {
@@ -606,10 +728,14 @@
         function toggleLineQR() {
             const btn = document.getElementById("lineInfoBtn");
             const qrSection = document.getElementById("lineQrSection");
+            if (!qrSection) return;
             const isOpen = qrSection.style.display === "block";
 
             if (!isOpen) {
-                btn.classList.add("active");
+                if (btn) {
+                    btn.classList.add("active");
+                    btn.setAttribute("aria-expanded", "true");
+                }
                 qrSection.style.opacity = 0;
                 qrSection.style.display = "block";
                 let opacity = 0;
@@ -627,7 +753,10 @@
         function closeLineQR() {
             const btn = document.getElementById("lineInfoBtn");
             const qrSection = document.getElementById("lineQrSection");
-            if (btn) btn.classList.remove("active");
+            if (btn) {
+                btn.classList.remove("active");
+                btn.setAttribute("aria-expanded", "false");
+            }
             if (qrSection) qrSection.style.display = "none";
         }
     </script>

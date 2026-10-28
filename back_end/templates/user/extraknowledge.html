@@ -3,150 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รู้จักเบาหวาน - DiaBalance</title>
+    <title>รู้จักเบาหวาน | DiaBalance - Diabetes Expert System</title>
+    <meta name="description" content="ทำความเข้าใจโรคเบาหวาน ประเภท สัญญาณเตือน ความเชื่อผิดๆ และวิธีดูแลสุขภาพที่ถูกต้องเพื่อควบคุมระดับน้ำตาลในเลือด - DiaBalance">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="canonical" href="https://diabalance.tech/user/knowledge">
 
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Inline SVG Favicon to eliminate 404 console errors -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231d4ed8'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E">
+
+    <!-- Preconnect CDNs -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Non-render-blocking Google Font: Prompt -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    </noscript>
 
     <style>
         :root {
-            --primary-dark: #385A8C;
-            --primary-light: #8BA4EB;
-            --bg-color: #f4f6f9;
-            --card-border: #e9ecef;
-            --text-main: #2b3035;
-            --text-muted: #6c757d;
+            --primary-dark: #1e3a8a;
+            --primary-blue: #1d4ed8;
+            --primary-light: #eff6ff;
+            --bg-color: #f8fafc;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #475569;
         }
 
         body {
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Prompt', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             line-height: 1.6;
         }
 
         .header-section {
-            background-color: #8ca7f9;
-            color: white; padding: 40px 0; margin-bottom: 40px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: #ffffff;
+            padding: 42px 0;
+            margin-bottom: 36px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.15);
         }
         @media (max-width: 768px) {
             .header-section {
-                padding: 22px 60px;
+                padding: 24px 20px;
                 text-align: center;
             }
             .header-section h1 {
-                font-size: 1.6rem !important;
+                font-size: 1.65rem !important;
             }
         }
 
         /* --- Minimal Cards --- */
         .minimal-card {
-            background: white;
+            background: #ffffff;
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 30px 25px;
+            border-radius: 16px;
+            padding: 30px 24px;
             height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .minimal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
         }
         
         .icon-circle {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
-            background-color: #f0f4fc;
-            color: var(--primary-dark);
+            background-color: var(--primary-light);
+            color: var(--primary-blue);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
             margin: 0 auto 20px;
         }
         
         .badge-minimal {
-            background-color: #f0f4fc;
+            background-color: var(--primary-light);
             color: var(--primary-dark);
-            font-weight: 500;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
             display: inline-block;
         }
 
         /* --- Symptoms Minimal --- */
         .symptom-box {
-            background: white;
+            background: #ffffff;
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 20px 15px;
+            border-radius: 14px;
+            padding: 22px 14px;
             text-align: center;
             height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .symptom-box:hover {
+            transform: translateY(-3px);
+            border-color: #93c5fd;
         }
         
         .symptom-icon {
-            font-size: 28px;
-            color: var(--primary-light);
-            margin-bottom: 10px;
+            color: var(--primary-blue);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* --- Myth vs Fact Static Card --- */
         .myth-fact-card {
-            background: white;
+            background: #ffffff;
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 25px;
+            border-radius: 16px;
+            padding: 26px;
             height: 100%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
         }
         
         .myth-section {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
         
         .fact-section {
             background-color: #f8fafc;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-light);
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-blue);
         }
 
         /* --- Buttons & Text --- */
         .btn-theme {
-            background-color: var(--primary-light);
-            color: white;
-            border-radius: 8px;
-            padding: 10px 30px;
-            font-weight: 500;
+            background-color: var(--primary-blue);
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 12px 32px;
+            font-weight: 600;
             border: none;
+            box-shadow: 0 4px 14px rgba(29, 78, 216, 0.25);
+            transition: background-color 0.2s ease, transform 0.2s ease;
         }
         
-        .btn-theme:hover {
-            background-color: #7792e3;
-            color: white;
+        .btn-theme:hover, .btn-theme:focus-visible {
+            background-color: var(--primary-dark);
+            color: #ffffff;
+            transform: translateY(-2px);
         }
         
         .section-header {
             color: var(--primary-dark);
             font-weight: 700;
-            margin-bottom: 5px;
-            font-size: 1.25rem;
+            margin-bottom: 6px;
+            font-size: 1.35rem;
+        }
+
+        .section-subtext {
+            color: var(--text-muted);
+            font-size: 0.95rem;
         }
         
         .cta-box {
-            background: white;
-            border-radius: 12px;
-            padding: 40px 30px;
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 44px 32px;
             border: 1px solid var(--card-border);
-            max-width: 800px;
+            max-width: 820px;
             margin-left: auto;
             margin-right: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        }
+
+        .text-fact {
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
+
+        .text-myth {
+            color: #dc2626;
+            font-weight: 700;
         }
     </style>
 </head>
@@ -154,116 +207,187 @@
 
     {% include 'includes/navbar_user.html' %}
 
-    <div class="header-section">
+    <header class="header-section">
         <div class="container-fluid px-3 px-md-5 text-center text-md-start">
-            <h1 class="fw-bold mb-0" style="font-size: 2.5rem;"><i class="bi bi-journal-text me-2"></i> รู้จักเบาหวาน</h1>
+            <h1 class="fw-bold mb-0 d-flex align-items-center justify-content-center justify-content-md-start gap-3" style="font-size: 2.3rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"/>
+                    <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/>
+                    <path fill-rule="evenodd" d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+                <span>รู้จักเบาหวาน</span>
+            </h1>
         </div>
-    </div>
+    </header>
 
-    <div class="container mb-5">
+    <main class="container mb-5" id="main-content">
         
         <!-- ประเภทของเบาหวาน -->
-        <div class="row g-4 mb-5 justify-content-center">
+        <section class="row g-4 mb-5 justify-content-center" aria-labelledby="heading-types">
             <div class="col-12 text-center mb-2">
-                <h4 class="section-header"><i class="fas fa-dna me-2 opacity-75"></i>ประเภทของเบาหวาน</h4>
-                <p class="text-muted small">เบาหวานไม่ได้มีแค่แบบเดียว มารู้จักความแตกต่างกัน</p>
+                <h2 id="heading-types" class="section-header d-flex align-items-center justify-content-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-primary" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M13.627 5.15a.5.5 0 0 0-.7-.07 10.6 10.6 0 0 1-4.04 1.83 10.6 10.6 0 0 1-4.04-1.83.5.5 0 0 0-.63.77 11.6 11.6 0 0 0 4.37 1.99v.32a11.6 11.6 0 0 0-4.37 1.99.5.5 0 1 0 .63.77 10.6 10.6 0 0 1 4.04-1.83 10.6 10.6 0 0 1 4.04 1.83.5.5 0 1 0 .63-.77 11.6 11.6 0 0 0-4.37-1.99v-.32a11.6 11.6 0 0 0 4.37-1.99.5.5 0 0 0 .07-.7z"/>
+                    </svg>
+                    <span>ประเภทของเบาหวาน</span>
+                </h2>
+                <p class="section-subtext">เบาหวานไม่ได้มีแค่แบบเดียว มารู้จักความแตกต่างกัน</p>
             </div>
 
             <div class="col-md-4">
                 <div class="minimal-card text-center">
-                    <div class="icon-circle"><i class="fas fa-syringe"></i></div>
-                    <h6 class="fw-bold mb-3">เบาหวานชนิดที่ 1</h6>
+                    <div class="icon-circle" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.5 13.5l3-3 .7.7-2.3 2.3 1.4 1.4 2.3-2.3.7.7-3 3a.5.5 0 0 1-.7 0l-2.1-2.1a.5.5 0 0 1 0-.7zm13.1-9.9l-1.4-1.4c-.2-.2-.5-.2-.7 0L10 3.7l-1.4-1.4a.5.5 0 0 0-.7 0l-.7.7a.5.5 0 0 0 0 .7l1.4 1.4L4.8 8.9c-.2.2-.2.5 0 .7l1.6 1.6c.2.2.5.2.7 0l3.8-3.8 1.4 1.4a.5.5 0 0 0 .7 0l.7-.7a.5.5 0 0 0 0-.7L11.7 6l1.5-1.5c.2-.2.2-.5 0-.7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h5 fw-bold mb-3 text-dark">เบาหวานชนิดที่ 1</h3>
                     <div class="mb-3"><span class="badge-minimal">ร่างกายขาดอินซูลิน</span></div>
                     <p class="text-muted small mb-0">
-                        เกิดจากภูมิคุ้มกันทำลายเซลล์สร้างอินซูลิน มักพบในเด็กหรือวัยรุ่น ผู้ป่วยต้องพึ่งพาการฉีดอินซูลิน
+                        เกิดจากภูมิคุ้มกันทำลายเซลล์สร้างอินซูลิน มักพบในเด็กหรือวัยรุ่น ผู้ป่วยต้องพึ่งพาการฉีดอินซูลินเป็นประจำ
                     </p>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="minimal-card text-center">
-                    <div class="icon-circle"><i class="fas fa-hamburger"></i></div>
-                    <h6 class="fw-bold mb-3">เบาหวานชนิดที่ 2</h6>
+                    <div class="icon-circle" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 2a6 6 0 0 0-5.8 4.5h11.6A6 6 0 0 0 8 2zM1.5 8a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1H2a.5.5 0 0 1-.5-.5zm.5 2a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2zm.5 3a2.5 2.5 0 0 0 5 0h2a2.5 2.5 0 0 0 5 0H2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h5 fw-bold mb-3 text-dark">เบาหวานชนิดที่ 2</h3>
                     <div class="mb-3"><span class="badge-minimal">พบบ่อยที่สุด</span></div>
                     <p class="text-muted small mb-0">
-                        เกิดจากภาวะดื้ออินซูลิน สัมพันธ์กับน้ำหนักตัวและพฤติกรรม สามารถควบคุมได้ด้วยการปรับเปลี่ยนไลฟ์สไตล์
+                        เกิดจากภาวะดื้ออินซูลิน สัมพันธ์กับน้ำหนักตัวและพฤติกรรม สามารถควบคุมได้ด้วยการปรับเปลี่ยนไลฟ์สไตล์และออกกำลังกาย
                     </p>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="minimal-card text-center">
-                    <div class="icon-circle"><i class="fas fa-baby-carriage"></i></div>
-                    <h6 class="fw-bold mb-3">ขณะตั้งครรภ์</h6>
+                    <div class="icon-circle" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2.5 1a.5.5 0 0 0 0 1h1.7l1.6 6.3a2.5 2.5 0 0 0 2.4 1.9h4.3a.5.5 0 0 0 0-1H8.2a1.5 1.5 0 0 1-1.4-1l-.3-1.2h6.8c.8 0 1.5-.6 1.7-1.4l.7-3.2A.5.5 0 0 0 15.2 2H4.8l-.3-1H2.5zm4 13a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm6 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h5 fw-bold mb-3 text-dark">ขณะตั้งครรภ์</h3>
                     <div class="mb-3"><span class="badge-minimal">มักเป็นชั่วคราว</span></div>
                     <p class="text-muted small mb-0">
-                        เกิดจากการเปลี่ยนแปลงฮอร์โมนขณะตั้งครรภ์ มักหายไปหลังคลอด แต่มีความเสี่ยงเป็นชนิดที่ 2 ในอนาคต
+                        เกิดจากการเปลี่ยนแปลงฮอร์โมนขณะตั้งครรภ์ มักหายไปหลังคลอด แต่มีความเสี่ยงเกิดเป็นเบาหวานชนิดที่ 2 ในอนาคต
                     </p>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- 7 สัญญาณเตือน (หมายเหตุ: มี 6 การ์ด) -->
-        <div class="row mb-5 pt-2 justify-content-center">
+        <!-- 6 สัญญาณเตือน -->
+        <section class="row mb-5 pt-2 justify-content-center" aria-labelledby="heading-symptoms">
             <div class="col-12 text-center mb-3">
-                <h4 class="section-header"><i class="fas fa-heartbeat me-2 opacity-75"></i>6 สัญญาณเตือน!</h4>
-                <p class="text-muted small">หากคุณมีอาการเหล่านี้บ่อยครั้ง ควรปรึกษาแพทย์เพื่อตรวจเช็ค</p>
+                <h2 id="heading-symptoms" class="section-header d-flex align-items-center justify-content-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-danger" viewBox="0 0 16 16" aria-hidden="true">
+                        <path fill-rule="evenodd" d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                    </svg>
+                    <span>6 สัญญาณเตือนโรคเบาหวาน</span>
+                </h2>
+                <p class="section-subtext">หากคุณมีอาการเหล่านี้บ่อยครั้ง ควรปรึกษาแพทย์เพื่อตรวจเช็คระดับน้ำตาล</p>
             </div>
             
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
-                    <div class="symptom-icon"><i class="fas fa-tint"></i></div>
-                    <h6 class="fw-bold mb-0 fs-6">ปัสสาวะบ่อย</h6>
+                    <div class="symptom-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 16a6 6 0 0 0 6-6c0-3.3-4.5-8.5-5.3-9.4a.9.9 0 0 0-1.4 0C6.5 1.5 2 6.7 2 10a6 6 0 0 0 6 6z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h6 fw-bold mb-0 text-dark">ปัสสาวะบ่อย</h3>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
-                    <div class="symptom-icon"><i class="fas fa-glass-water"></i></div>
-                    <h6 class="fw-bold mb-0 fs-6">กระหายน้ำมาก</h6>
+                    <div class="symptom-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 2.5A.5.5 0 0 1 3.5 2h9a.5.5 0 0 1 .5.5v.5H3v-.5zm1 2h8l-.8 9.2a1.5 1.5 0 0 1-1.5 1.3H6.3a1.5 1.5 0 0 1-1.5-1.3L4 4.5zM5.1 6l.6 7h4.6l.6-7H5.1z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h6 fw-bold mb-0 text-dark">กระหายน้ำมาก</h3>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
-                    <div class="symptom-icon"><i class="fas fa-weight-scale"></i></div>
-                    <h6 class="fw-bold mb-0 fs-6">น้ำหนักลด</h6>
+                    <div class="symptom-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M7.5 1v1.1a5.5 5.5 0 0 0-5.4 4.9H1a.5.5 0 0 0 0 1h1.1A5.5 5.5 0 0 0 7.5 13v2H6a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H8.5v-2a5.5 5.5 0 0 0 5.4-5H15a.5.5 0 0 0 0-1h-1.1a5.5 5.5 0 0 0-5.4-4.9V1h1.5a.5.5 0 0 0 0-1h-4a.5.5 0 0 0 0 1h1.5zm.5 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a.5.5 0 0 0-.5.5v2.3l-1.4 1.4a.5.5 0 1 0 .7.7l1.7-1.7V5.5a.5.5 0 0 0-.5-.5z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h6 fw-bold mb-0 text-dark">น้ำหนักลด</h3>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
-                    <div class="symptom-icon"><i class="fas fa-eye-slash"></i></div>
-                    <h6 class="fw-bold mb-0 fs-6">ตามัว</h6>
+                    <div class="symptom-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755l.191.195zM11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-4.17 1.838a3.5 3.5 0 0 1-2.303-2.303l.823.823a2.5 2.5 0 0 0 1.48 1.48zM1.146 1.146a.5.5 0 0 1 .708 0l13 13a.5.5 0 0 1-.708.708l-1.637-1.637C11.13 13.9 9.6 14.5 8 14.5c-5 0-8-5.5-8-5.5a13.133 13.133 0 0 1 2.372-3.414L.438 3.646a.5.5 0 0 1 .708-.708l13-13zm2.5 3.208l1.32 1.32A5.94 5.94 0 0 0 2 8c.6 1.1 1.8 2.6 3.6 3.7.6.4 1.3.7 2 .8l1.3-1.3c-.3 0-.6.1-.9.1-1.9 0-3.5-1.6-3.5-3.5 0-.3 0-.6.1-.9L3.6 4.35z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h6 fw-bold mb-0 text-dark">ตามัว</h3>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
-                    <div class="symptom-icon"><i class="fas fa-battery-quarter"></i></div>
-                    <h6 class="fw-bold mb-0 fs-6">อ่อนเพลีย</h6>
+                    <div class="symptom-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2 6h10v4H2V6z"/>
+                            <path d="M2 4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H2zm10 1a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h10zm4 3a1.5 1.5 0 0 1-1.5 1.5v-3A1.5 1.5 0 0 1 16 8z"/>
+                            <rect x="2" y="6" width="3" height="4" rx="0.5"/>
+                        </svg>
+                    </div>
+                    <h3 class="h6 fw-bold mb-0 text-dark">อ่อนเพลีย</h3>
                 </div>
             </div>
             <div class="col-6 col-md-2 mb-3">
                 <div class="symptom-box">
-                    <div class="symptom-icon"><i class="fas fa-band-aid"></i></div>
-                    <h6 class="fw-bold mb-0 fs-6">แผลหายช้า</h6>
+                    <div class="symptom-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M14.12 10.12l-8.24-8.24a2.92 2.92 0 0 0-4.13 4.13l8.24 8.24a2.92 2.92 0 0 0 4.13-4.13zm-11.66-.7l6.23-6.24.71.71-6.24 6.24-.7-.71zm2.12 2.13l6.24-6.24.7.71-6.23 6.24-.71-.71z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h6 fw-bold mb-0 text-dark">แผลหายช้า</h3>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- จริง หรือ หลอก? -->
-        <div class="row mb-5 pt-2 justify-content-center">
+        <section class="row mb-5 pt-2 justify-content-center" aria-labelledby="heading-myths">
             <div class="col-12 text-center mb-3">
-                <h4 class="section-header"><i class="fas fa-question-circle me-2 opacity-75"></i>จริง หรือ หลอก?</h4>
-                <p class="text-muted small">ความจริงที่คุณอาจเข้าใจผิดเกี่ยวกับโรคเบาหวาน</p>
+                <h2 id="heading-myths" class="section-header d-flex align-items-center justify-content-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-primary" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+                    </svg>
+                    <span>จริง หรือ หลอก?</span>
+                </h2>
+                <p class="section-subtext">ความจริงที่คุณอาจเข้าใจผิดเกี่ยวกับโรคเบาหวาน</p>
             </div>
 
             <div class="col-md-4 mb-4">
                 <div class="myth-fact-card">
                     <div class="myth-section">
-                        <span class="text-danger fw-bold small"><i class="fas fa-times me-1"></i> ความเชื่อ</span>
-                        <h6 class="fw-bold mt-1">"คนเป็นเบาหวานห้ามกินของหวานเลย?"</h6>
+                        <span class="text-myth small d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                            <span>ความเชื่อ</span>
+                        </span>
+                        <h3 class="h6 fw-bold mt-2 text-dark">"คนเป็นเบาหวานห้ามกินของหวานเลย?"</h3>
                     </div>
                     <div class="fact-section">
-                        <span class="text-primary fw-bold small"><i class="fas fa-check me-1"></i> ความจริง</span>
-                        <p class="small mb-0 mt-1 text-muted">กินได้บ้าง แต่ต้องจำกัดปริมาณและนับคาร์โบไฮเดรตให้เหมาะสม ไม่จำเป็นต้องงดถาวรจนเครียดเกินไป</p>
+                        <span class="text-fact small d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022z"/>
+                            </svg>
+                            <span>ความจริง</span>
+                        </span>
+                        <p class="small mb-0 mt-1 text-muted" style="line-height: 1.6;">กินได้บ้าง แต่ต้องจำกัดปริมาณและนับคาร์โบไฮเดรตให้เหมาะสม ไม่จำเป็นต้องงดถาวรจนเกิดความเครียด</p>
                     </div>
                 </div>
             </div>
@@ -271,12 +395,22 @@
             <div class="col-md-4 mb-4">
                 <div class="myth-fact-card">
                     <div class="myth-section">
-                        <span class="text-danger fw-bold small"><i class="fas fa-times me-1"></i> ความเชื่อ</span>
-                        <h6 class="fw-bold mt-1">"คนผอมไม่มีทางเป็นโรคเบาหวาน?"</h6>
+                        <span class="text-myth small d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                            <span>ความเชื่อ</span>
+                        </span>
+                        <h3 class="h6 fw-bold mt-2 text-dark">"คนผอมไม่มีทางเป็นโรคเบาหวาน?"</h3>
                     </div>
                     <div class="fact-section">
-                        <span class="text-primary fw-bold small"><i class="fas fa-check me-1"></i> ความจริง</span>
-                        <p class="small mb-0 mt-1 text-muted">คนผอมก็เป็นได้ หากมีไขมันสะสมในช่องท้องเยอะ (TOFI) มีกรรมพันธุ์ หรือมีพฤติกรรมการกินที่ไม่ดี</p>
+                        <span class="text-fact small d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022z"/>
+                            </svg>
+                            <span>ความจริง</span>
+                        </span>
+                        <p class="small mb-0 mt-1 text-muted" style="line-height: 1.6;">คนผอมก็เป็นได้ หากมีไขมันสะสมในช่องท้องเยอะ (TOFI) มีปัจจัยทางกรรมพันธุ์ หรือมีพฤติกรรมการบริโภคที่ไม่เหมาะสม</p>
                     </div>
                 </div>
             </div>
@@ -284,28 +418,43 @@
             <div class="col-md-4 mb-4">
                 <div class="myth-fact-card">
                     <div class="myth-section">
-                        <span class="text-danger fw-bold small"><i class="fas fa-times me-1"></i> ความเชื่อ</span>
-                        <h6 class="fw-bold mt-1">"กินยารักษาเบาหวานนานๆ ทำให้ไตพัง?"</h6>
+                        <span class="text-myth small d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                            <span>ความเชื่อ</span>
+                        </span>
+                        <h3 class="h6 fw-bold mt-2 text-dark">"กินยารักษาเบาหวานนานๆ ทำให้ไตพัง?"</h3>
                     </div>
                     <div class="fact-section">
-                        <span class="text-primary fw-bold small"><i class="fas fa-check me-1"></i> ความจริง</span>
-                        <p class="small mb-0 mt-1 text-muted">การปล่อยให้น้ำตาลสูงต่างหากที่ทำลายไต ยาที่แพทย์สั่งช่วยคุมน้ำตาลเพื่อปกป้องไตในระยะยาว</p>
+                        <span class="text-fact small d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022z"/>
+                            </svg>
+                            <span>ความจริง</span>
+                        </span>
+                        <p class="small mb-0 mt-1 text-muted" style="line-height: 1.6;">การปล่อยให้น้ำตาลในเลือดสูงเรื้อรังต่างหากที่ทำลายไต ยาที่แพทย์สั่งช่วยควบคุมระดับน้ำตาลเพื่อปกป้องไตในระยะยาว</p>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- CTA Box -->
-        <div class="cta-box text-center mt-2">
-            <h5 class="fw-bold mb-2" style="color: var(--primary-dark);">สุขภาพดี เริ่มต้นที่ตัวคุณ!</h5>
-            <p class="text-muted small mb-4">เรียนรู้วิธีการออกกำลังกายและดูแลตัวเองอย่างถูกต้องเพื่อควบคุมระดับน้ำตาล</p>
-            <a href="/" class="btn btn-theme px-4 py-2">
-                <i class="fas fa-clipboard-check me-2"></i> เริ่มประเมินสุขภาพของคุณ
+        <section class="cta-box text-center mt-3" aria-labelledby="heading-cta">
+            <h2 id="heading-cta" class="h4 fw-bold mb-2" style="color: var(--primary-dark);">สุขภาพดี เริ่มต้นที่ตัวคุณ!</h2>
+            <p class="section-subtext mb-4">เรียนรู้วิธีการออกกำลังกายและดูแลตัวเองอย่างถูกต้องเพื่อควบคุมระดับน้ำตาล</p>
+            <a href="/" class="btn btn-theme px-4 py-2 d-inline-flex align-items-center justify-content-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                </svg>
+                <span>เริ่มประเมินสุขภาพของคุณ</span>
             </a>
-        </div>
+        </section>
 
-    </div>
+    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 </body>
 </html>

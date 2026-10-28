@@ -3,11 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ผลตรวจสุขภาพ - DiaBalance</title>
+    <title>ผลตรวจสุขภาพและประเมินกิจกรรม | DiaBalance - Diabetes Expert System</title>
+    <meta name="description" content="บันทึกผลการตรวจสุขภาพ ค่าน้ำตาลในเลือด โรคแทรกซ้อน และรับคำแนะนำกิจกรรมการออกกำลังกายเฉพาะบุคคลที่ปลอดภัยสำหรับผู้ป่วยเบาหวาน - DiaBalance">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="canonical" href="https://diabalance.tech/user/recommendations">
 
+    <!-- Inline SVG Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231d4ed8'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E">
+
+    <!-- Preconnect origins -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Non-render-blocking Google Font: Prompt -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    </noscript>
+
+    <!-- Non-render-blocking Bootstrap Icons CSS -->
+    <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    </noscript>
 
     <!-- CSS ที่แยกออกมา -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/rec_1.css') }}">
@@ -15,17 +39,23 @@
     <style>
         /* ตกแต่ง Breadcrumb */
         .breadcrumb {
-            --bs-breadcrumb-divider: '›'; /* เปลี่ยนตัวคั่นเป็นลูกศร */
-            font-size: 0.9rem;
+            --bs-breadcrumb-divider: '›';
+            font-size: 0.95rem;
         }
         .breadcrumb-item a {
             transition: color 0.2s;
+            color: #334155;
+            font-weight: 500;
         }
         .breadcrumb-item a:hover {
-            color: #4f7cff !important;
+            color: #1d4ed8 !important;
+        }
+        .breadcrumb-item.active {
+            color: #1d4ed8 !important;
+            font-weight: 600;
         }
 
-/* บังคับให้อนิเมชันหมุนทำงานตลอดเวลา */
+        /* บังคับให้อนิเมชันหมุนทำงานตลอดเวลา */
         @keyframes customSpin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -39,21 +69,25 @@
             border: 0.2em solid currentColor;
             border-right-color: transparent !important;
             border-radius: 50%;
-            animation: customSpin 0.75s linear infinite !important; /* สั่งหมุนตลอดเวลา */
+            animation: customSpin 0.75s linear infinite !important;
         }
-
     </style>
 </head>
 <body>
 
     {% include 'includes/navbar_user.html' %}
 
-    <div class="main-content">
-        <div class="header-section">
+    <main class="main-content" id="main-content">
+        <header class="header-section">
             <div class="container-fluid px-3 px-md-5 text-center text-md-start">
-                <h1 class="fw-bold mb-0" style="font-size: 2.5rem;"><i class="bi bi-lightbulb-fill me-2"></i> <span id="pageTitle">ผลตรวจสุขภาพ (1/3)</span></h1>
+                <h1 class="fw-bold mb-0 d-flex align-items-center justify-content-center justify-content-md-start gap-2" style="font-size: 2.3rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a2 2 0 0 0-.453-.618A5.98 5.98 0 0 1 2 6m6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1"/>
+                    </svg>
+                    <span id="pageTitle">ผลตรวจสุขภาพ (1/3)</span>
+                </h1>
             </div>
-        </div>
+        </header>
 
         <div class="form-wrapper">
             <form id="healthForm" onsubmit="return false;" style="display: contents;">
@@ -65,37 +99,44 @@
                             <!-- Breadcrumb Step 1 -->
                             <nav aria-label="breadcrumb" class="mb-3">
                                 <ol class="breadcrumb mb-0 bg-transparent p-0">
-                                    <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
-                                    <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">ผลตรวจสุขภาพ</li>
+                                    <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">ผลตรวจสุขภาพ</li>
                                 </ol>
                             </nav>
 
                             <div class="row gy-4">
                                 <div class="col-lg-6">
                                     <div class="form-section">
-                                        <h5 class="mb-3 text-primary fw-bold">ข้อมูลผู้เข้ารับการตรวจ</h5>
-                                        <div class="alert alert-light border d-flex align-items-center gap-3 mb-4">
+                                        <h2 class="h5 mb-3 fw-bold" style="color: #1e3a8a;">ข้อมูลผู้เข้ารับการตรวจ</h2>
+                                        <div class="alert alert-light border d-flex align-items-center gap-3 mb-4" style="background-color: #f8fafc;">
                                             <i class="bi bi-person-circle fs-2 text-primary"></i>
                                             <div>
                                                 <div class="text-muted small">ผู้ใช้งาน</div>
-                                                <div class="fw-bold fs-5" id="displayFullname">กำลังโหลดข้อมูล...</div>
+                                                <div class="fw-bold fs-5 text-dark" id="displayFullname">กำลังโหลดข้อมูล...</div>
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-6 mb-3"><label class="form-label">เพศ</label>
-                                                <select class="form-select" name="gender">
-                                                    <option value="Male">ชาย</option><option value="Female">หญิง</option>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="gender_select">เพศ</label>
+                                                <select class="form-select" id="gender_select" name="gender">
+                                                    <option value="Male">ชาย</option>
+                                                    <option value="Female">หญิง</option>
                                                 </select>
                                             </div>
-                                            <div class="col-6 mb-3"><label class="form-label">วันที่ตรวจ</label><input type="date" class="form-control" name="checkup_date" required></div>
-                                            <div class="col-12 mb-3"><label class="form-label">ประเภทเบาหวาน</label>
-                                                <select class="form-select" name="diabetes_type" required>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="checkup_date">วันที่ตรวจ</label>
+                                                <input type="date" class="form-control" id="checkup_date" name="checkup_date" required>
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label" for="diabetes_type">ประเภทเบาหวาน</label>
+                                                <select class="form-select" id="diabetes_type" name="diabetes_type" required>
                                                     <option value="T2DM">เบาหวานชนิดที่ 2 (T2DM)</option>
                                                     <option value="T1DM">เบาหวานชนิดที่ 1 (T1DM)</option>
                                                 </select>
                                             </div>
-                                            <div class="col-6 mb-3"><label class="form-label">การใช้อินซูลิน</label>
-                                                <select class="form-select" name="insulin_use" required>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="insulin_use">การใช้อินซูลิน</label>
+                                                <select class="form-select" id="insulin_use" name="insulin_use" required>
                                                     <option value="false">ไม่ได้ใช้</option>
                                                     <option value="true">ใช้</option>
                                                 </select>
@@ -104,26 +145,41 @@
                                     </div>
 
                                     <div class="form-section">
-                                        <h5 class="mb-3 text-primary fw-bold">สัดส่วนร่างกาย</h5>
+                                        <h2 class="h5 mb-3 fw-bold" style="color: #1e3a8a;">สัดส่วนร่างกาย</h2>
                                         <div class="row">
-                                            <div class="col-6 mb-3"><label class="form-label">น้ำหนัก (kg)</label><input type="number" class="form-control" id="weight" name="weight" step="0.1"></div>
-                                            <div class="col-6 mb-3"><label class="form-label">ส่วนสูง (cm)</label><input type="number" class="form-control" id="height" name="height" step="0.1"></div>
-                                            <div class="col-12 mb-3"><label class="form-label">BMI</label><input type="text" class="form-control bg-light" id="bmi_result" readonly></div>
-                                            <div class="col-6 mb-3"><label class="form-label">ความดันตัวบน (SBP)</label><input type="number" class="form-control" name="bp_high"></div>
-                                            <div class="col-6 mb-3"><label class="form-label">ความดันตัวล่าง (DBP)</label><input type="number" class="form-control" name="bp_low"></div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="weight">น้ำหนัก (kg)</label>
+                                                <input type="number" class="form-control" id="weight" name="weight" step="0.1">
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="height">ส่วนสูง (cm)</label>
+                                                <input type="number" class="form-control" id="height" name="height" step="0.1">
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label" for="bmi_result">BMI</label>
+                                                <input type="text" class="form-control bg-light" id="bmi_result" readonly>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="bp_high">ความดันตัวบน (SBP)</label>
+                                                <input type="number" class="form-control" id="bp_high" name="bp_high">
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="bp_low">ความดันตัวล่าง (DBP)</label>
+                                                <input type="number" class="form-control" id="bp_low" name="bp_low">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="col-lg-6">
                                     <div class="form-section">
-                                        <h5 class="mb-3 text-primary fw-bold">ผลตรวจเลือด (Lab Results)</h5>
+                                        <h2 class="h5 mb-3 fw-bold" style="color: #1e3a8a;">ผลตรวจเลือด (Lab Results)</h2>
 
                                         <div id="ocrDropZone">
                                             <div id="ocrPlaceholder">
                                                 <i class="bi bi-magic ocr-icon-magic mb-3 d-block"></i>
-                                                <h6 class="fw-bold text-primary mb-2">ตัวช่วยกรอกข้อมูลอัตโนมัติ (OCR)</h6>
-                                                <p class="small text-muted mb-0">คลิกที่นี่เพื่อ <strong class="text-primary">ถ่ายรูป</strong> หรือ <strong class="text-primary">อัปโหลดไฟล์</strong> ใบผลตรวจสุขภาพ</p>
+                                                <div class="fw-bold fs-5 mb-2" style="color: #1e3a8a;">ตัวช่วยกรอกข้อมูลอัตโนมัติ (OCR)</div>
+                                                <p class="small text-muted mb-0">คลิกที่นี่เพื่อ <strong style="color: #1d4ed8;">ถ่ายรูป</strong> หรือ <strong style="color: #1d4ed8;">อัปโหลดไฟล์</strong> ใบผลตรวจสุขภาพ</p>
                                                 <p class="small text-muted mt-1">(AI จะช่วยดึงตัวเลข HDL, LDL, FPG ให้อัตโนมัติ)</p>
                                             </div>
 
@@ -142,28 +198,48 @@
                                                 </div>
                                             </div>
 
-                                            <input type="file" id="ocrInput" accept="image/*" onchange="handleOCR(this)" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
+                                            <input type="file" id="ocrInput" accept="image/*" onchange="handleOCR(this)" aria-label="อัปโหลดภาพใบผลตรวจสุขภาพสำหรับสแกน OCR อัตโนมัติ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
                                         </div>
 
-                                        <div class="mb-3"><label class="form-label">วันที่เจาะเลือด</label><input type="date" class="form-control" name="blood_test_date"></div>
+                                        <div class="mb-3">
+                                            <label class="form-label" for="blood_test_date">วันที่เจาะเลือด</label>
+                                            <input type="date" class="form-control" id="blood_test_date" name="blood_test_date">
+                                        </div>
                                         <div class="row">
-                                            <div class="col-6 mb-3"><label class="form-label">HDL</label><input type="number" class="form-control" name="hdl" step="0.1"></div>
-                                            <div class="col-6 mb-3"><label class="form-label">LDL</label><input type="number" class="form-control" name="ldl" step="0.1"></div>
-                                            <div class="col-6 mb-3"><label class="form-label">Cholesterol</label><input type="number" class="form-control" name="cholesterol" step="0.1"></div>
-                                            <div class="col-6 mb-3"><label class="form-label">Triglyceride</label><input type="number" class="form-control" name="triglyceride" step="0.1"></div>
-                                            <div class="col-12 mb-3"><label class="form-label">FPG (ระดับน้ำตาลในเลือด)</label><input type="number" class="form-control " name="fpg" step="0.1"></div>
-                                            <div class="col-6 mb-3"><label class="form-label">Ketone ในปัสสาวะ</label>
-                                        <select class="form-select" name="ketone">
-                                            <option value="Negative">Negative (ปกติ)</option>
-                                            <option value="Positive">Positive (พบความเสี่ยง)</option>
-                                        </select>
-                                        </div>
-                                        <div class="col-6 mb-3"><label class="form-label">Microalbumin</label>
-                                            <select class="form-select" name="microalbumin">
-                                                <option value="Negative">Negative (ปกติ)</option>
-                                                <option value="Positive">Positive (พบความเสี่ยง)</option>
-                                            </select>
-                                        </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="hdl">HDL</label>
+                                                <input type="number" class="form-control" id="hdl" name="hdl" step="0.1">
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="ldl">LDL</label>
+                                                <input type="number" class="form-control" id="ldl" name="ldl" step="0.1">
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="cholesterol">Cholesterol</label>
+                                                <input type="number" class="form-control" id="cholesterol" name="cholesterol" step="0.1">
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="triglyceride">Triglyceride</label>
+                                                <input type="number" class="form-control" id="triglyceride" name="triglyceride" step="0.1">
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label" for="fpg">FPG (ระดับน้ำตาลในเลือด)</label>
+                                                <input type="number" class="form-control" id="fpg" name="fpg" step="0.1">
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="ketone">Ketone ในปัสสาวะ</label>
+                                                <select class="form-select" id="ketone" name="ketone">
+                                                    <option value="Negative">Negative (ปกติ)</option>
+                                                    <option value="Positive">Positive (พบความเสี่ยง)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label" for="microalbumin">Microalbumin</label>
+                                                <select class="form-select" id="microalbumin" name="microalbumin">
+                                                    <option value="Negative">Negative (ปกติ)</option>
+                                                    <option value="Positive">Positive (พบความเสี่ยง)</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -176,20 +252,60 @@
                                     <!-- Breadcrumb Step 2 -->
                                     <nav aria-label="breadcrumb" class="mb-3">
                                         <ol class="breadcrumb mb-0 bg-transparent p-0">
-                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
                                             <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
-                                            <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">โรคแทรกซ้อน</li>
+                                            <li class="breadcrumb-item active" aria-current="page">โรคแทรกซ้อน</li>
                                         </ol>
                                     </nav>
 
-                                    <h3 class="mb-2 fw-bold text-primary">โรคแทรกซ้อน</h3>
+                                    <h2 class="h4 mb-2 fw-bold" style="color: #1e3a8a;">โรคแทรกซ้อน</h2>
                                     <p class="text-muted mb-4">เลือกอาการที่คุณมี (ถ้าไม่มีให้เลือกข้อสุดท้าย)</p>
                                     <div class="row">
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="Retinopathy"><div><div class="selection-title">จอประสาทตาเสื่อม (Retinopathy)</div><p class="selection-desc">ตามัว มองไม่ชัด มีจุดดำลอย</p></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="HeartDisease"><div><div class="selection-title">โรคหัวใจ (Heart Disease)</div><p class="selection-desc">แน่นหน้าอก เหนื่อยง่าย</p></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="PeripheralNeuropathy"><div><div class="selection-title">ปลายประสาทเสื่อม (Neuropathy)</div><p class="selection-desc">ชาปลายมือ ปลายเท้า</p></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="special" value="AutonomicNeuropathy"><div><div class="selection-title">ระบบประสาทอัตโนมัติ</div><p class="selection-desc">หน้ามืดง่าย หัวใจเต้นผิดจังหวะ</p></div></label></div>
-                                        <div class="col-12"><label class="selection-card border-success" style="background-color:#f0fff4;"><input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)"><div><div class="selection-title text-success">ไม่มีภาวะแทรกซ้อน</div><p class="selection-desc">สุขภาพแข็งแรง ปกติดี</p></div></label></div>
+                                        <div class="col-md-6">
+                                            <label class="selection-card" for="spec_Retinopathy">
+                                                <input class="form-check-input" type="checkbox" name="special" value="Retinopathy" id="spec_Retinopathy">
+                                                <div>
+                                                    <div class="selection-title">จอประสาทตาเสื่อม (Retinopathy)</div>
+                                                    <p class="selection-desc">ตามัว มองไม่ชัด มีจุดดำลอย</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="selection-card" for="spec_HeartDisease">
+                                                <input class="form-check-input" type="checkbox" name="special" value="HeartDisease" id="spec_HeartDisease">
+                                                <div>
+                                                    <div class="selection-title">โรคหัวใจ (Heart Disease)</div>
+                                                    <p class="selection-desc">แน่นหน้าอก เหนื่อยง่าย</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="selection-card" for="spec_PeripheralNeuropathy">
+                                                <input class="form-check-input" type="checkbox" name="special" value="PeripheralNeuropathy" id="spec_PeripheralNeuropathy">
+                                                <div>
+                                                    <div class="selection-title">ปลายประสาทเสื่อม (Neuropathy)</div>
+                                                    <p class="selection-desc">ชาปลายมือ ปลายเท้า</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="selection-card" for="spec_AutonomicNeuropathy">
+                                                <input class="form-check-input" type="checkbox" name="special" value="AutonomicNeuropathy" id="spec_AutonomicNeuropathy">
+                                                <div>
+                                                    <div class="selection-title">ระบบประสาทอัตโนมัติ</div>
+                                                    <p class="selection-desc">หน้ามืดง่าย หัวใจเต้นผิดจังหวะ</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="selection-card border-success" for="chkNoOther" style="background-color:#f0fdf4;">
+                                                <input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)">
+                                                <div>
+                                                    <div class="selection-title text-success">ไม่มีภาวะแทรกซ้อน</div>
+                                                    <p class="selection-desc">สุขภาพแข็งแรง ปกติดี</p>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -201,30 +317,30 @@
                                     <!-- Breadcrumb Step 3 -->
                                     <nav aria-label="breadcrumb" class="mb-3">
                                         <ol class="breadcrumb mb-0 bg-transparent p-0">
-                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
                                             <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
                                             <li class="breadcrumb-item text-muted">โรคแทรกซ้อน</li>
-                                            <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">กิจกรรมที่สนใจ</li>
+                                            <li class="breadcrumb-item active" aria-current="page">กิจกรรมที่สนใจ</li>
                                         </ol>
                                     </nav>
 
-                                    <h3 class="mb-2 fw-bold text-primary">กิจกรรมที่สนใจ</h3>
+                                    <h2 class="h4 mb-2 fw-bold" style="color: #1e3a8a;">กิจกรรมที่สนใจ</h2>
                                     <p class="text-muted mb-4">เลือกประเภทที่คุณชอบ (อ้างอิงจากฐานข้อมูล)</p>
                                     <div class="row g-3">
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Running"><div><div class="selection-title">วิ่ง (Running)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Walking"><div><div class="selection-title">เดิน (Walking)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Bicycling"><div><div class="selection-title">ปั่นจักรยาน (Bicycling)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Dancing"><div><div class="selection-title">เต้นรำ (Dancing)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WaterActivity"><div><div class="selection-title">กิจกรรมทางน้ำ (WaterActivity)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Aerobic"><div><div class="selection-title">แอโรบิกทั่วไป (Aerobic)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicExercise"><div><div class="selection-title">แอโรบิกลงน้ำหนัก</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicExercise"><div><div class="selection-title">แอโรบิกไม่ลงน้ำหนัก</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicSport"><div><div class="selection-title">กีฬาแอโรบิกลงน้ำหนัก</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicSport"><div><div class="selection-title">กีฬาแอโรบิกไม่ลงน้ำหนัก</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="Resistance"><div><div class="selection-title">แรงต้านทั่วไป (Resistance)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="StretchingExercise"><div><div class="selection-title">ยืดเหยียด (StretchingExercise)</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingResistanceExercise"><div><div class="selection-title">แรงต้านลงน้ำหนัก</div></div></label></div>
-                                        <div class="col-md-6"><label class="selection-card"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingResistanceExercise"><div><div class="selection-title">แรงต้านไม่ลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_Running"><input class="form-check-input" type="checkbox" name="favorites" value="Running" id="fav_Running"><div><div class="selection-title">วิ่ง (Running)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_Walking"><input class="form-check-input" type="checkbox" name="favorites" value="Walking" id="fav_Walking"><div><div class="selection-title">เดิน (Walking)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_Bicycling"><input class="form-check-input" type="checkbox" name="favorites" value="Bicycling" id="fav_Bicycling"><div><div class="selection-title">ปั่นจักรยาน (Bicycling)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_Dancing"><input class="form-check-input" type="checkbox" name="favorites" value="Dancing" id="fav_Dancing"><div><div class="selection-title">เต้นรำ (Dancing)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_WaterActivity"><input class="form-check-input" type="checkbox" name="favorites" value="WaterActivity" id="fav_WaterActivity"><div><div class="selection-title">กิจกรรมทางน้ำ (WaterActivity)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_Aerobic"><input class="form-check-input" type="checkbox" name="favorites" value="Aerobic" id="fav_Aerobic"><div><div class="selection-title">แอโรบิกทั่วไป (Aerobic)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_WeightBearingAerobic"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicExercise" id="fav_WeightBearingAerobic"><div><div class="selection-title">แอโรบิกลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_NonWeightBearingAerobic"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicExercise" id="fav_NonWeightBearingAerobic"><div><div class="selection-title">แอโรบิกไม่ลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_WeightBearingSport"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingAerobicSport" id="fav_WeightBearingSport"><div><div class="selection-title">กีฬาแอโรบิกลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_NonWeightBearingSport"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingAerobicSport" id="fav_NonWeightBearingSport"><div><div class="selection-title">กีฬาแอโรบิกไม่ลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_Resistance"><input class="form-check-input" type="checkbox" name="favorites" value="Resistance" id="fav_Resistance"><div><div class="selection-title">แรงต้านทั่วไป (Resistance)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_Stretching"><input class="form-check-input" type="checkbox" name="favorites" value="StretchingExercise" id="fav_Stretching"><div><div class="selection-title">ยืดเหยียด (StretchingExercise)</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_WeightBearingResistance"><input class="form-check-input" type="checkbox" name="favorites" value="WeightBearingResistanceExercise" id="fav_WeightBearingResistance"><div><div class="selection-title">แรงต้านลงน้ำหนัก</div></div></label></div>
+                                        <div class="col-md-6"><label class="selection-card" for="fav_NonWeightBearingResistance"><input class="form-check-input" type="checkbox" name="favorites" value="NonWeightBearingResistanceExercise" id="fav_NonWeightBearingResistance"><div><div class="selection-title">แรงต้านไม่ลงน้ำหนัก</div></div></label></div>
                                     </div>
                                 </div>
                             </div>
@@ -234,21 +350,19 @@
                             <div class="row justify-content-center">
                                 <div class="col-xl-9 col-lg-10">
 
-<!-- Breadcrumb Step 4 (บังคับชิดซ้ายและเรียงลำดับให้ครบ) -->
-<nav aria-label="breadcrumb" class="mb-4 text-start w-100">
-    <ol class="breadcrumb mb-0 bg-transparent p-0 justify-content-start">
-        <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
-        <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
-        <li class="breadcrumb-item text-muted">โรคแทรกซ้อน</li>
-        <li class="breadcrumb-item text-muted">กิจกรรมที่สนใจ</li>
-        <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">สรุปผลการวิเคราะห์</li>
-    </ol>
-</nav>
+                                    <!-- Breadcrumb Step 4 -->
+                                    <nav aria-label="breadcrumb" class="mb-4 text-start w-100">
+                                        <ol class="breadcrumb mb-0 bg-transparent p-0 justify-content-start">
+                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                            <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
+                                            <li class="breadcrumb-item text-muted">โรคแทรกซ้อน</li>
+                                            <li class="breadcrumb-item text-muted">กิจกรรมที่สนใจ</li>
+                                            <li class="breadcrumb-item active" aria-current="page">สรุปผลการวิเคราะห์</li>
+                                        </ol>
+                                    </nav>
 
                                     <div class="text-center mb-5 animate__animated animate__fadeIn">
-                                        <div class="mb-2">
-                                        </div>
-                                        <h2 class="fw-extrabold text-dark tracking-tight mb-2" style="font-size: 1.85rem; letter-spacing: -0.03em;">ผลการประเมินสภาวะร่างกายและกิจกรรม</h2>
+                                        <h2 class="h3 fw-bold text-dark tracking-tight mb-2" style="font-size: 1.85rem; letter-spacing: -0.03em;">ผลการประเมินสภาวะร่างกายและกิจกรรม</h2>
                                     </div>
 
                                     <div class="d-flex flex-column gap-4">
@@ -260,8 +374,7 @@
                                                         <i class="bi bi-exclamation-octagon-fill fs-4 d-block"></i>
                                                     </div>
                                                     <div>
-                                                        <h5 class="fw-bold text-dark mb-0" style="font-size: 1.15rem;">ข้อจำกัดและสภาวะโรคร่วมที่ต้องพิจารณาก่อน</h5>
-                                                        
+                                                        <h3 class="h5 fw-bold text-dark mb-0">ข้อจำกัดและสภาวะโรคร่วมที่ต้องพิจารณาก่อน</h3>
                                                     </div>
                                                 </div>
                                             </div>
@@ -318,8 +431,7 @@
                                                             <i class="bi bi-person-walking fs-4 d-block"></i>
                                                         </div>
                                                         <div>
-                                                            <h5 class="fw-bold text-dark mb-0" style="font-size: 1.15rem;">กิจกรรมและท่าออกกำลังกายเฉพาะบุคคลที่ปลอดภัย</h5>
-                                                            
+                                                            <h3 class="h5 fw-bold text-dark mb-0">กิจกรรมและท่าออกกำลังกายเฉพาะบุคคลที่ปลอดภัย</h3>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -349,16 +461,16 @@
                 </div>
             </form>
         </div>
-    </div>
+    </main>
 
     <div class="modal fade" id="existingDataModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);">
                     <h5 class="modal-title"><i class="bi bi-clock-history"></i> พบข้อมูลสุขภาพล่าสุด</h5>
                 </div>
                 <div class="modal-body">
-                    <p>ระบบพบข้อมูลการตรวจล่าสุดของคุณเมื่อวันที่ <strong id="modalDate" class="text-primary">--/--/----</strong></p>
+                    <p>ระบบพบข้อมูลการตรวจล่าสุดของคุณเมื่อวันที่ <strong id="modalDate" style="color: #1d4ed8;">--/--/----</strong></p>
                     <p class="mb-0">ข้อมูลสุขภาพของคุณ (เช่น น้ำหนัก, ค่าน้ำตาล) มีการเปลี่ยนแปลงหรือไม่?</p>
                     <small class="text-muted">*หากข้อมูลไม่เปลี่ยน ผลการวิเคราะห์และแผนการออกกำลังกายจะเหมือนเดิม</small>
                 </div>
@@ -366,7 +478,7 @@
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-pencil"></i> ต้องการแก้ไขข้อมูล
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="skipToPlan()">
+                    <button type="button" class="btn btn-primary" onclick="skipToPlan()" style="background-color: #1d4ed8; border-color: #1d4ed8;">
                         <i class="bi bi-arrow-right-circle"></i> ข้อมูลคงเดิม (ไปเลือกแผนเลย)
                     </button>
                 </div>
@@ -375,12 +487,12 @@
     </div>
 
     <!-- 1. โหลด Bootstrap Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 
     <!-- 2. โหลด SweetAlert2 (ต้องอยู่ตรงนี้และอยู่ก่อน rec_1.js เสมอ) -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     <!-- 3. โหลด JS หลักของหน้า -->
-    <script src="{{ url_for('static', filename='js/rec_1.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/rec_1.js') }}" defer></script>
 </body>
 </html>

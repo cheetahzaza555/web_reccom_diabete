@@ -3,28 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แก้ไขตารางเวลา - DiaBalance</title>
-    
+    <title>แก้ไขตารางเวลาออกกำลังกาย | DiaBalance - Diabetes Expert System</title>
+    <meta name="description" content="แก้ไขและปรับเปลี่ยนตารางการออกกำลังกายและวันพักผ่อนเฉพาะบุคคลสำหรับผู้ป่วยเบาหวาน - DiaBalance">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="canonical" href="https://diabalance.tech/user/edit_schedule">
+
+    <!-- Inline SVG Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231d4ed8'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E">
+
+    <!-- Preconnect origins -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    
+
+    <!-- Non-render-blocking Google Font: Prompt -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap">
+    </noscript>
+
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; }
-        
-        .header-section {
-            background: #6d8ee6;
-            color: white; padding: 35px 0; margin-bottom: 25px;
-            border-radius: 0 0 30px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        :root {
+            --primary-dark: #1e3a8a;
+            --primary-blue: #1d4ed8;
+            --primary-hover: #1e40af;
+            --primary-light: #eff6ff;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+        }
+
+        body { 
+            font-family: 'Prompt', system-ui, -apple-system, sans-serif; 
+            background-color: #f8fafc; 
+            color: var(--text-main);
         }
         
-        .info-card { background: white; border-radius: 15px; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .info-label { color: #6c757d; font-size: 0.9rem; margin-bottom: 5px; }
-        .info-value { font-weight: 600; color: #212529; font-size: 1.2rem; }
+        .header-section {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: #ffffff; 
+            padding: 38px 0 32px; 
+            margin-bottom: 25px;
+            border-radius: 0 0 32px 32px; 
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.15);
+        }
+
+        .header-section h1 {
+            font-size: 2.1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header-subtext {
+            color: #f1f5f9;
+            font-size: 1.05rem;
+            margin-top: 6px;
+        }
+        
+        .info-card { 
+            background: #ffffff; 
+            border-radius: 18px; 
+            border: 1px solid var(--card-border); 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); 
+            overflow: hidden;
+        }
+        .info-label { color: var(--text-muted); font-size: 0.92rem; margin-bottom: 4px; font-weight: 500; }
+        .info-value { font-weight: 700; color: #0f172a; font-size: 1.25rem; }
         
         .highlight-box {
-            background-color: #f0f4ff; border-left: 5px solid #6d8ee6;
-            padding: 16px; border-radius: 8px;
+            background-color: var(--primary-light); 
+            border-left: 5px solid var(--primary-blue);
+            padding: 20px; 
+            border-radius: 12px;
+        }
+        .highlight-box .info-label {
+            color: var(--primary-dark);
+            font-weight: 600;
         }
         
         /* ปฏิทิน */
@@ -34,57 +91,143 @@
             gap: 8px;
             margin-top: 15px;
         }
+        #interactiveCalendar {
+            min-height: 480px;
+        }
         .weekday-header {
-            text-align: center; font-weight: bold; color: #6c757d;
-            padding: 8px 0; background: #e9ecef; border-radius: 8px; font-size: 0.9rem;
+            text-align: center; 
+            font-weight: 700; 
+            color: #1e293b;
+            padding: 10px 0; 
+            background: #e2e8f0; 
+            border-radius: 8px; 
+            font-size: 0.92rem;
+        }
+        .weekday-header.sunday {
+            color: #b91c1c;
+            background: #fee2e2;
         }
         .day-card {
-            background: white; border-radius: 8px; border: 2px solid #dee2e6;
-            min-height: 95px; padding: 6px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: space-between; cursor: pointer;
-            transition: all 0.2s; position: relative;
+            background: #ffffff; 
+            border-radius: 10px; 
+            border: 2px solid #cbd5e1;
+            min-height: 95px; 
+            padding: 8px 6px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between; 
+            cursor: pointer;
+            transition: all 0.2s ease; 
+            position: relative;
+            outline: none;
+            user-select: none;
         }
-        .day-card:hover:not(.disabled) { border-color: #577add; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        .day-card:hover:not(.disabled), .day-card:focus-visible:not(.disabled) { 
+            border-color: #3b82f6; 
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); 
+            transform: translateY(-2px);
+        }
         
         /* สไตล์เมื่อเป็นวันออกกำลังกาย */
         .day-card.exercise-day {
-            border-color: #6d8ee6; background-color: #f0f7ff;
+            border-color: var(--primary-blue); 
+            background-color: #eff6ff;
+            box-shadow: 0 2px 8px rgba(29, 78, 216, 0.08);
         }
         /* สไตล์วันพัก */
         .day-card.rest-day {
             background-color: #ffffff;
+            border-color: #e2e8f0;
         }
         .day-card.disabled { 
-            background-color: #f1f3f5; color: #adb5bd; cursor: not-allowed; opacity: 0.55; 
+            background-color: #f1f5f9; 
+            color: #94a3b8; 
+            cursor: not-allowed; 
+            opacity: 0.65; 
+            border-color: #e2e8f0;
         }
         
-        .date-num { font-size: 1.05rem; font-weight: bold; align-self: flex-start; }
+        .date-num { 
+            font-size: 1.05rem; 
+            font-weight: 700; 
+            color: #0f172a; 
+            align-self: flex-start; 
+        }
+        .day-card.disabled .date-num {
+            color: #94a3b8;
+        }
         
         .ex-badge {
-            font-size: 0.7rem; font-weight: 600; text-align: center;
-            line-height: 1.2; word-break: break-word;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-            overflow: hidden; color: #335da1;
+            font-size: 0.72rem; 
+            font-weight: 700; 
+            text-align: center;
+            line-height: 1.25; 
+            word-break: break-word;
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical;
+            overflow: hidden; 
+            color: #1e40af;
         }
         .rest-badge {
-            font-size: 0.7rem; color: #adb5bd;
+            font-size: 0.72rem; 
+            font-weight: 600; 
+            color: #475569;
+        }
+
+        .btn-calendar-nav {
+            background-color: #ffffff;
+            color: #1e293b;
+            border: 1.5px solid #cbd5e1;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .btn-calendar-nav:hover:not(:disabled), .btn-calendar-nav:focus-visible:not(:disabled) {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+        .btn-calendar-nav:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            background-color: #f8fafc;
+            color: #94a3b8;
+            border-color: #e2e8f0;
         }
 
         .btn-confirm-blue {
-            background-color: #577add !important; color: white !important;
-            border: none; transition: all 0.3s ease;
+            background-color: #1d4ed8 !important; 
+            color: #ffffff !important;
+            border: 1px solid #1d4ed8 !important; 
+            transition: all 0.2s ease;
         }
-        .btn-confirm-blue:hover {
-            background-color: #004ba0 !important;
-            box-shadow: 0 6px 12px rgba(0, 75, 160, 0.3) !important;
-            transform: translateY(-2px);
+        .btn-confirm-blue:hover, .btn-confirm-blue:focus-visible {
+            background-color: #1e40af !important;
+            border-color: #1e40af !important;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25) !important;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel-outline {
+            background-color: #ffffff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-cancel-outline:hover, .btn-cancel-outline:focus-visible {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            border-color: #94a3b8;
         }
 
         @media (max-width: 768px) {
             .day-card { min-height: 75px; padding: 4px; }
-            .date-num { font-size: 0.9rem; }
-            .weekday-header { font-size: 0.75rem; }
+            .date-num { font-size: 0.92rem; }
+            .weekday-header { font-size: 0.8rem; padding: 8px 0; }
             .ex-badge { font-size: 0.65rem; }
+            #interactiveCalendar { min-height: 380px; }
         }
     </style>
 </head>
@@ -92,34 +235,39 @@
 
     {% include 'includes/navbar_user.html' %}
 
-    <div class="header-section text-center">
+    <header class="header-section text-center">
         <div class="container">
-            <h2 class="fw-bold mb-1"><i class="bi bi-calendar2-range me-2"></i>แก้ไขตารางเวลา</h2>
-            <p class="lead mb-0 fs-6">คลิกเลือกวันที่บนปฏิทิน เพื่อกำหนดท่าออกกำลังกายหรือตั้งเป็นวันพักผ่อนตามที่คุณต้องการ</p>
+            <h1 class="fw-bold d-flex align-items-center justify-content-center gap-2 mb-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                </svg>
+                <span>แก้ไขตารางเวลา</span>
+            </h1>
+            <p class="header-subtext mb-0">คลิกเลือกวันที่บนปฏิทิน เพื่อกำหนดท่าออกกำลังกายหรือตั้งเป็นวันพักผ่อนตามที่คุณต้องการ</p>
         </div>
-    </div>
+    </header>
 
-    <div class="container pb-5" style="max-width: 960px;">
+    <main class="container pb-5" id="main-content" style="max-width: 960px;">
         
         <div class="card info-card mb-4">
             <div class="card-body p-4">
                 <div class="highlight-box">
                     <div class="row text-center">
                         <div class="col-md-4 mb-2 mb-md-0 border-end">
-                            <div class="info-label text-primary">🎯 เป้าหมายรวม 30 วัน</div>
+                            <div class="info-label">🎯 เป้าหมายรวม 30 วัน</div>
                             <div class="info-value">600 นาที</div>
                             <div class="small text-muted">(เฉลี่ย 150 นาที/สัปดาห์)</div>
                         </div>
                         <div class="col-md-4 mb-2 mb-md-0 border-end">
-                            <div class="info-label text-primary">📅 จำนวนวันออกกำลังกาย</div>
+                            <div class="info-label">📅 จำนวนวันออกกำลังกาย</div>
                             <div class="info-value">
-                                <span id="totalDaysDisplay" class="fs-4 fw-bold text-primary">0</span> วัน
+                                <span id="totalDaysDisplay" class="fs-4 fw-bold" style="color: var(--primary-blue);">0</span> วัน
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="info-label text-primary">⏱️ เป้าหมายรายครั้ง</div>
+                            <div class="info-label">⏱️ เป้าหมายรายครั้ง</div>
                             <div class="info-value">
-                                <span id="dailyTargetDisplay" class="text-primary fs-3 fw-bold">0</span> นาที / ครั้ง
+                                <span id="dailyTargetDisplay" class="fs-3 fw-bold" style="color: var(--primary-blue);">0</span> นาที / ครั้ง
                             </div>
                         </div>
                     </div>
@@ -129,13 +277,15 @@
 
         <div class="card info-card">
             <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-3 mb-2 border">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-bold" id="prevMonthBtn">
-                        <i class="bi bi-chevron-left"></i> ก่อนหน้า
+                <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-3 mb-2 border" style="border-color: var(--card-border);">
+                    <button type="button" class="btn btn-calendar-nav btn-sm px-3 fw-bold d-inline-flex align-items-center gap-1" id="prevMonthBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                        <span>ก่อนหน้า</span>
                     </button>
-                    <span class="fs-5 fw-bold text-primary" id="monthYearTitle">เดือน...</span>
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-bold" id="nextMonthBtn">
-                        ถัดไป <i class="bi bi-chevron-right"></i>
+                    <span class="fs-5 fw-bold" style="color: var(--primary-dark);" id="monthYearTitle">เดือน...</span>
+                    <button type="button" class="btn btn-calendar-nav btn-sm px-3 fw-bold d-inline-flex align-items-center gap-1" id="nextMonthBtn">
+                        <span>ถัดไป</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
                     </button>
                 </div>
 
@@ -146,36 +296,38 @@
                     <div class="weekday-header">พฤ.</div>
                     <div class="weekday-header">ศ.</div>
                     <div class="weekday-header">ส.</div>
-                    <div class="weekday-header text-danger">อา.</div>
+                    <div class="weekday-header sunday">อา.</div>
                 </div>
                 <div class="calendar-grid" id="interactiveCalendar"></div>
 
                 <div class="mt-4 d-flex justify-content-between align-items-center border-top pt-4">
-                    <a href="/user/dashboard" class="btn btn-secondary px-4 py-2">ยกเลิก</a>
-                    <button type="button" class="btn btn-confirm-blue px-4 py-2 fw-bold shadow-sm" onclick="saveEditedSchedule()">
-                        บันทึกการแก้ไขตาราง <i class="bi bi-check-circle-fill ms-1"></i>
+                    <a href="/user/dashboard" class="btn btn-cancel-outline px-4 py-2">ยกเลิก</a>
+                    <button type="button" class="btn btn-confirm-blue px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1" onclick="saveEditedSchedule()">
+                        <span>บันทึกการแก้ไขตาราง</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
                     </button>
                 </div>
             </div>
         </div>
 
-    </div>
+    </main>
 
-<!-- Modal เลือกท่าเฉพาะสำหรับวันนั้น พร้อมวิดีโอตัวอย่าง -->
-    <div class="modal fade" id="assignDayModal" tabindex="-1" aria-hidden="true">
+    <!-- Modal เลือกท่าเฉพาะสำหรับวันนั้น พร้อมวิดีโอตัวอย่าง -->
+    <div class="modal fade" id="assignDayModal" tabindex="-1" aria-labelledby="assignDayModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold">
-                        <i class="bi bi-pencil-square me-2"></i>เลือกกิจกรรมสำหรับวันที่ <span id="modalDateDisplay"></span>
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h2 class="modal-title h5 fw-bold mb-0 d-flex align-items-center" id="assignDayModalLabel">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2" viewBox="0 0 16 16" aria-hidden="true"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                        <span>เลือกกิจกรรมสำหรับวันที่ <span id="modalDateDisplay"></span></span>
+                    </h2>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="ปิด"></button>
                 </div>
                 <div class="modal-body p-4">
                     <input type="hidden" id="modalTargetDate">
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">รูปแบบวัน</label>
+                        <label for="modalDayType" class="form-label fw-bold">รูปแบบวัน</label>
                         <select class="form-select" id="modalDayType" onchange="toggleModalFields()">
                             <option value="exercise">🏋️ วันออกกำลังกาย</option>
                             <option value="rest">☕ วันพักผ่อน (Rest Day)</option>
@@ -183,7 +335,7 @@
                     </div>
 
                     <div id="modalExerciseGroup" class="mb-3">
-                        <label class="form-label fw-bold">เลือกท่าออกกำลังกาย (เฉพาะท่าที่ระบบแนะนำ)</label>
+                        <label for="modalExerciseSelect" class="form-label fw-bold">เลือกท่าออกกำลังกาย (เฉพาะท่าที่ระบบแนะนำ)</label>
                         <select class="form-select" id="modalExerciseSelect" onchange="updateVideoPreview()">
                             {% for rec in recommended_exercises %}
                                 <option value="{{ rec.id }}" 
@@ -196,9 +348,10 @@
                         </select>
 
                         <div id="videoPreviewContainer" class="mt-3">
-                            <label class="form-label small fw-bold text-muted mb-1">
-                                <i class="bi bi-play-btn-fill text-primary me-1"></i> ตัวอย่างท่าออกกำลังกาย
-                            </label>
+                            <span class="form-label small fw-bold d-block mb-1" style="color: var(--text-muted);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#1d4ed8" class="me-1" viewBox="0 0 16 16" aria-hidden="true"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM6.79 5.093A.5.5 0 0 0 6 5.5v5a.5.5 0 0 0 .79.407l3.5-2.5a.5.5 0 0 0 0-.814l-3.5-2.5z"/></svg>
+                                <span>ตัวอย่างท่าออกกำลังกาย</span>
+                            </span>
                             
                             <div id="mediaBox" class="ratio ratio-16x9 rounded overflow-hidden shadow-sm border bg-light d-flex justify-content-center align-items-center" style="display: none;">
                                 <iframe id="youtubePreviewFrame" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="display: none; width: 100%; height: 100%;"></iframe>
@@ -210,7 +363,8 @@
                             </div>
 
                             <div id="noVideoAlert" class="alert alert-light text-muted small text-center p-3 mt-2 border rounded" style="display: none;">
-                                <i class="bi bi-info-circle me-1"></i> ไม่มีภาพหรือวิดีโอตัวอย่างสำหรับท่านี้
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+                                <span>ไม่มีภาพหรือวิดีโอตัวอย่างสำหรับท่านี้</span>
                             </div>
                         </div>
 
@@ -236,8 +390,8 @@
         {% endfor %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     <script>
         const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -276,7 +430,7 @@
 
             calendarEl.innerHTML = '';
             for (let i = 0; i < offset; i++) {
-                calendarEl.innerHTML += `<div class="day-card border-0 bg-transparent"></div>`;
+                calendarEl.innerHTML += `<div class="day-card border-0 bg-transparent" aria-hidden="true"></div>`;
             }
 
             for (let d = 1; d <= daysInMonth; d++) {
@@ -286,7 +440,7 @@
                 
                 if (cellDate < today || cellDate > planEndDate) {
                     calendarEl.innerHTML += `
-                        <div class="day-card disabled">
+                        <div class="day-card disabled" aria-disabled="true">
                             <span class="date-num">${d}</span>
                         </div>
                     `;
@@ -297,18 +451,24 @@
                     let content = '';
                     if (dayInfo.isExercise) {
                         content = `
-                            <i class="bi bi-person-walking text-primary fs-5"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="#1d4ed8" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM6.44 3.752A.75.75 0 0 1 7 3.5h1.445c.402 0 .78.167 1.05.462l1.998 2.197a.75.75 0 1 1-1.11 1.01L9 5.617V9.5a.75.75 0 0 1-.412.67l-2.5 1.25a.75.75 0 1 1-.67-1.34l2.082-1.041V5.727L6.082 7.14a.75.75 0 0 1-1.024-.268l-1-1.732a.75.75 0 0 1 1.3-.75l.76 1.317 1.22-.61-1.037-1.037a.75.75 0 0 1-.22-.538V3.752z"/></svg>
                             <div class="ex-badge" title="${dayInfo.exName}">${dayInfo.exName || 'เลือกท่า'}</div>
                         `;
                     } else {
                         content = `
-                            <i class="bi bi-cup-hot text-muted opacity-50"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#64748b" viewBox="0 0 16 16" aria-hidden="true"><path d="M.5 4.5A.5.5 0 0 1 1 4h12.5a.5.5 0 0 1 .5.5v7a2.5 2.5 0 0 1-2.5 2.5h-8A2.5 2.5 0 0 1 1 11.5v-7zm1 0v7a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-7H1.5z"/><path d="M14 6h1a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-1v-1h1V7h-1V6zM4.5 1.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .5-.5zm3 0a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .5-.5zm3 0a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .5-.5z"/></svg>
                             <div class="rest-badge">พักผ่อน</div>
                         `;
                     }
 
                     calendarEl.innerHTML += `
-                        <div class="day-card selectable ${modeClass}" onclick="openAssignModal('${dateString}', ${d})">
+                        <div class="day-card selectable ${modeClass}" 
+                             data-date="${dateString}"
+                             role="button"
+                             tabindex="0"
+                             aria-label="วันที่ ${d} ${thaiMonths[viewMonth]} - ${dayInfo.isExercise ? (dayInfo.exName || 'ท่าออกกำลังกาย') : 'วันพักผ่อน'}"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
+                             onclick="openAssignModal('${dateString}', ${d})">
                             <span class="date-num">${d}</span>
                             ${content}
                         </div>
@@ -379,25 +539,20 @@
             } else if (exId && exId.trim() !== '') {
                 // 2. ถ้าไม่มี YouTube ID -> ให้ดึงไฟล์ MP4 มาแสดง
                 iframe.src = '';
-                
-                // ⚠️ ปรับโฟลเดอร์เก็บวิดีโอของคุณได้ที่นี่ (ตัวอย่าง: /static/videos/exercises/...)
                 mp4Video.src = `/static/images/exercises/${exId.trim()}.mp4`;
                 mp4Video.style.display = 'block';
                 
-                // สั่งโหลดและเล่นวิดีโอ
                 mp4Video.load();
                 mp4Video.play().catch(e => {
                     console.log("เบราว์เซอร์บล็อกการเล่นอัตโนมัติ หรือไม่พบไฟล์วิดีโอ:", e);
                 });
                 
-                // 3. จัดการกรณี Error 404 (ไม่มีไฟล์ MP4 นี้ในโฟลเดอร์)
                 mp4Video.onerror = function() {
                     mp4Video.style.display = 'none';
                     mediaBox.style.display = 'none';
                     noVideoBox.style.display = 'block';
                 };
             } else {
-                // ไม่มีข้อมูลใดๆ เลย
                 iframe.src = '';
                 mp4Video.pause();
                 mediaBox.style.display = 'none';
@@ -409,7 +564,6 @@
             if (!assignModal) {
                 assignModal = new bootstrap.Modal(document.getElementById('assignDayModal'));
                 
-                // หยุดเล่นวิดีโอทันทีเมื่อปิดหน้าต่าง Modal
                 document.getElementById('assignDayModal').addEventListener('hidden.bs.modal', function () {
                     const iframe = document.getElementById('youtubePreviewFrame');
                     const mp4Video = document.getElementById('mp4PreviewVideo');
@@ -434,14 +588,13 @@
             assignModal.show();
         }
 
-    function toggleModalFields() {
+        function toggleModalFields() {
             const isEx = document.getElementById('modalDayType').value === 'exercise';
             document.getElementById('modalExerciseGroup').style.display = isEx ? 'block' : 'none';
             
             if (isEx) {
                 updateVideoPreview();
             } else {
-                // หยุดวิดีโอเมื่อสลับเป็นวันพักผ่อน
                 const iframe = document.getElementById('youtubePreviewFrame');
                 const mp4Video = document.getElementById('mp4PreviewVideo');
                 if (iframe) iframe.src = '';
@@ -490,8 +643,8 @@
                 text: `คุณกำหนดวันออกกำลังกายทั้งหมด ${exerciseCount} วัน (เป้าหมายวันละ ${dailyTarget} นาที)`,
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#577add',
-                cancelButtonColor: '#6c757d',
+                confirmButtonColor: '#1d4ed8',
+                cancelButtonColor: '#64748b',
                 confirmButtonText: 'บันทึกตาราง',
                 cancelButtonText: 'แก้ไขต่อ'
             }).then((result) => {

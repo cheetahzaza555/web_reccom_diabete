@@ -3,19 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ ex.name }} - DiabBalance</title>
+    <title>{{ ex.name }} | DiaBalance - Diabetes Expert System</title>
+    <meta name="description" content="รายละเอียดท่าออกกำลังกาย {{ ex.name }} ค่า METs {{ ex.mets }} แนะนำขั้นตอนการปฏิบัติและข้อควรระวังสำหรับผู้ป่วยเบาหวาน - DiaBalance">
+    <meta name="theme-color" content="#3366CC">
+    <link rel="canonical" href="https://diabalance.tech/user/exercise-detail/{{ ex.id }}">
+
+    <!-- Inline SVG Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233366CC'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E">
+
+    <!-- Preconnect origins for performance -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {% if ex.video %}
+        <link rel="preconnect" href="https://img.youtube.com">
+    {% endif %}
+
+    <!-- Preload LCP Image -->
+    <link rel="preload" as="image" href="{{ (ex.img or '/static/images/exercises/exercise_default.png').replace('.png', '.webp') }}" type="image/webp" fetchpriority="high">
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Non-render-blocking Google Fonts -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    </noscript>
+
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f8f9fa; }
+        body { font-family: 'Prompt', system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
         .detail-header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            height: 200px; border-bottom-left-radius: 50px; border-bottom-right-radius: 50px;
+            background: linear-gradient(135deg, #1e40af 0%, #3366cc 100%);
+            height: 180px; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
         }
         .main-card {
-            margin-top: -100px; border: none; border-radius: 30px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden;
+            margin-top: -90px; border: none; border-radius: 28px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08); overflow: hidden;
             position: relative;
         }
         .ex-img-container { height: 300px; background-color: #fff; text-align: center; }
@@ -23,10 +48,10 @@
         
         /* สไตล์สำหรับตัวเลขขั้นตอน */
         .step-number {
-            width: 35px; height: 35px; background: #4facfe; color: white;
+            width: 36px; height: 36px; background: #1d4ed8; color: #ffffff;
             border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;
-            box-shadow: 0 4px 10px rgba(79, 172, 254, 0.3);
+            justify-content: center; font-weight: 700; margin-right: 15px; flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(29, 78, 216, 0.25);
         }
         
         /* กล่องวิดีโอ */
@@ -37,9 +62,16 @@
         }
 
         .warning-box {
-            background-color: #fff8e1; border-left: 5px solid #ffc107;
-            border-radius: 15px; padding: 25px; margin-top: 30px;
+            background-color: #fffbeb; border-left: 5px solid #d97706;
+            border-radius: 16px; padding: 25px; margin-top: 30px;
         }
+        .text-warning-emphasis {
+            color: #92400e !important;
+        }
+
+        .text-primary { color: #0d5cb6 !important; }
+        .text-muted { color: #475569 !important; }
+        .badge.bg-primary { background-color: #1d4ed8 !important; color: #ffffff !important; }
 
         /* ปุ่มย้อนกลับลอยด้านบน */
         .btn-back-top {
@@ -47,99 +79,111 @@
             top: 20px;
             left: 20px;
             z-index: 10;
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(5px);
-            border: 1px solid #dee2e6;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
             transition: all 0.2s ease;
         }
-        .btn-back-top:hover {
+        .btn-back-top:hover, .btn-back-top:focus-visible {
             background-color: #ffffff;
+            color: #0f172a;
             transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
     </style>
 </head>
 <body>
     {% include 'includes/navbar_user.html' %}
 
-    <div class="detail-header"></div>
+    <main>
+        <div class="detail-header"></div>
 
-    <div class="container pb-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card main-card">
-                    
-                    <!-- 📌 ปุ่มย้อนกลับด้านบนสุด (ลอยฝั่งซ้ายของรูปภาพ) -->
-                    <a href="/user/exercises" class="btn btn-back-top rounded-pill px-3 py-2 text-dark fw-bold">
-                        <i class="fas fa-arrow-left me-2 text-primary"></i>กลับหน้าคลังท่า
-                    </a>
-
-                    <div class="ex-img-container">
-                        <img src="{{ ex.img }}" class="ex-img" alt="{{ ex.name }}" onerror="this.src='/static/images/default_ex.png'">
-                    </div>
-
-                    <div class="card-body p-4 p-md-5">
-                        <div class="d-flex justify-content-between align-items-start mb-4">
-                            <div>
-                                <h2 class="fw-bold mb-1">{{ ex.name }}</h2>
-                                <span class="badge bg-primary rounded-pill px-3 py-2">{{ ex.type_th }}</span>
-                            </div>
-                            <div class="text-end">
-                                <div class="h3 fw-bold text-danger mb-0">{{ ex.mets }}</div>
-                                <small class="text-muted fw-bold">METs</small>
-                            </div>
-                        </div>
-
-                        <hr class="my-5 opacity-25">
-
-                        {% if ex.video %}
-                        <div class="mb-5">
-                            <h4 class="fw-bold mb-4">
-                                <i class="fab fa-youtube me-2 text-danger"></i>วิดีโอสาธิตการฝึก
-                            </h4>
-                            <div class="video-wrapper">
-                                <div class="ratio ratio-16x9">
-                                    <iframe 
-                                        src="https://www.youtube.com/embed/{{ ex.video }}?rel=0" 
-                                        title="{{ ex.video }}" 
-                                        frameborder="0" 
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                        allowfullscreen>
-                                    </iframe>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        <h4 class="fw-bold mb-4">
-                            <i class="fas fa-person-running me-2 text-primary"></i>วิธีปฏิบัติและขั้นตอน
-                        </h4>
-                        <div class="mb-5">
-                            {% if ex.steps %}
-                                {% for step in ex.steps %}
-                                <div class="d-flex align-items-start mb-4">
-                                    <div class="step-number">{{ loop.index }}</div>
-                                    <div class="fs-5 text-dark" style="line-height: 1.6;">{{ step }}</div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <p class="text-muted italic">ขออภัย กำลังจัดเตรียมข้อมูลขั้นตอนปฏิบัติ...</p>
-                            {% endif %}
-                        </div>
-
-                        <div class="warning-box">
-                            <h5 class="fw-bold text-warning-emphasis mb-3">
-                                <i class="fas fa-triangle-exclamation me-2"></i>ข้อควรระวังสำหรับผู้ป่วยเบาหวาน
-                            </h5>
-                            <p class="mb-0 text-dark fs-5">{{ ex.precaution }}</p>
-                        </div>
-
+        <div class="container pb-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card main-card">
                         
+                        <!-- 📌 ปุ่มย้อนกลับด้านบนสุด (ลอยฝั่งซ้ายของรูปภาพ) -->
+                        <a href="/user/exercises" class="btn btn-back-top rounded-pill px-3 py-2 fw-bold" aria-label="ย้อนกลับไปหน้าคลังท่าออกกำลังกาย">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-primary align-middle" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/></svg>กลับหน้าคลังท่า
+                        </a>
 
+                        <div class="ex-img-container">
+                            <picture>
+                                <source srcset="{{ (ex.img or '/static/images/exercises/exercise_default.png').replace('.png', '.webp') }}" type="image/webp">
+                                <img src="{{ ex.img or '/static/images/exercises/exercise_default.png' }}" class="ex-img" alt="ภาพประกอบท่าออกกำลังกาย {{ ex.name }}" fetchpriority="high" width="300" height="300" onerror="this.onerror=null;this.src='/static/images/exercises/exercise_default.png';">
+                            </picture>
+                        </div>
+
+                        <div class="card-body p-4 p-md-5">
+                            <div class="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h1 class="h2 fw-bold mb-1">{{ ex.name }}</h1>
+                                    <span class="badge bg-primary rounded-pill px-3 py-2">{{ ex.type_th }}</span>
+                                </div>
+                                <div class="text-end">
+                                    <div class="h3 fw-bold text-danger mb-0">{{ ex.mets }}</div>
+                                    <small class="text-muted fw-bold">METs</small>
+                                </div>
+                            </div>
+
+                            <hr class="my-5 opacity-25">
+
+                            {% if ex.video %}
+                            <div class="mb-5">
+                                <h2 class="h4 fw-bold mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="me-2 text-danger align-middle" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.01 2.01 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.01 2.01 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31 31 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.04c.045-.552.12-1.07.23-1.488a2.01 2.01 0 0 1 1.415-1.42c1.16-.312 5.569-.334 6.18-.335zM6.4 5.209v5.582l4.8-2.79z"/></svg>วิดีโอสาธิตการฝึก
+                                </h2>
+                                <div class="video-wrapper">
+                                    <div class="ratio ratio-16x9 position-relative bg-dark" id="ytContainer" role="button" tabindex="0" onclick="playVideo('{{ ex.video }}', '{{ ex.name }}')" onkeydown="if(event.key==='Enter'||event.key===' ')playVideo('{{ ex.video }}', '{{ ex.name }}')" aria-label="กดเพื่อเล่นวิดีโอสาธิตท่า {{ ex.name }}" style="cursor: pointer;">
+                                        <img src="https://img.youtube.com/vi/{{ ex.video }}/hqdefault.jpg" alt="ภาพตัวอย่างวิดีโอสาธิต {{ ex.name }}" class="w-100 h-100 object-fit-cover opacity-75" loading="lazy">
+                                        <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                            <button type="button" class="btn btn-danger btn-lg rounded-circle shadow-lg d-flex align-items-center justify-content-center p-3" style="width: 64px; height: 64px;" tabindex="-1" aria-hidden="true">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <h2 class="h4 fw-bold mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="me-2 text-primary align-middle" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0M4.2 4.4a.5.5 0 0 0-.7.2L2.1 7.2a.5.5 0 1 0 .8.5L4 5.8l1.4 1.4-1.2 3.5a.5.5 0 1 0 .9.3L6.4 7.6l1.2 1.2-1.5 4.5a.5.5 0 0 0 .9.3l1.8-5.3-1.6-1.6 1.4-1.4.9.9a.5.5 0 0 0 .7-.7l-1.3-1.3a.5.5 0 0 0-.7 0L6.4 5.2 4.9 3.7a.5.5 0 0 0-.7.7z"/></svg>วิธีปฏิบัติและขั้นตอน
+                            </h2>
+                            <div class="mb-5">
+                                {% if ex.steps %}
+                                    {% for step in ex.steps %}
+                                    <div class="d-flex align-items-start mb-4">
+                                        <div class="step-number">{{ loop.index }}</div>
+                                        <div class="fs-5 text-dark" style="line-height: 1.6;">{{ step }}</div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">ขออภัย กำลังจัดเตรียมข้อมูลขั้นตอนปฏิบัติ...</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="warning-box">
+                                <h2 class="h5 fw-bold text-warning-emphasis mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="me-2 text-warning align-middle" viewBox="0 0 16 16" aria-hidden="true"><path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.15.15 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.2.2 0 0 1-.054.06.1.1 0 0 1-.066.017H1.146a.1.1 0 0 1-.066-.017.2.2 0 0 1-.054-.06.18.18 0 0 1 .002-.183L7.884 2.073a.15.15 0 0 1 .054-.057m1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767z"/><path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/></svg>ข้อควรระวังสำหรับผู้ป่วยเบาหวาน
+                                </h2>
+                                <p class="mb-0 text-dark fs-5">{{ ex.precaution }}</p>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
+
+    <script>
+    function playVideo(vid, title) {
+        const el = document.getElementById('ytContainer');
+        if (!el) return;
+        el.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&rel=0" title="วิดีโอสาธิตการฝึก ${title}" class="w-100 h-100 border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+    }
+    </script>
 </body>
 </html>

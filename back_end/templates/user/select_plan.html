@@ -3,43 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เลือกกิจกรรมการออกกำลังกาย</title>
-    
+    <title>เลือกแผนการออกกำลังกาย | DiaBalance - Diabetes Expert System</title>
+    <meta name="description" content="เลือกกิจกรรมและท่าออกกำลังกายที่เหมาะสมกับสุขภาพของคุณเพื่อนำไปจัดตารางออกกำลังกายเฉพาะบุคคล - DiaBalance">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="canonical" href="https://diabalance.tech/user/select_plan/{{ patient_id }}">
+
+    <!-- Inline SVG Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231d4ed8'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E">
+
+    <!-- Preconnect origins -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <!-- Non-render-blocking Google Font: Prompt -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+    </noscript>
+
+    <!-- Non-render-blocking Bootstrap Icons CSS -->
+    <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    </noscript>
 
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; padding-bottom: 90px; }
+        :root {
+            --primary-dark: #1e3a8a;
+            --primary-blue: #1d4ed8;
+            --primary-hover: #1e40af;
+            --primary-light: #eff6ff;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+        }
+
+        body { 
+            font-family: 'Prompt', system-ui, -apple-system, sans-serif; 
+            background-color: #f8fafc; 
+            color: var(--text-main);
+            padding-bottom: 96px; 
+        }
         
         .header-section {
-            background: #6d8ee6;
-            color: white;
-            padding: 40px 0; margin-bottom: 30px;
-            border-radius: 0 0 30px 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: #ffffff;
+            padding: 42px 0 38px;
+            margin-bottom: 32px;
+            border-radius: 0 0 32px 32px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.15);
+        }
+
+        .header-section h1 {
+            font-size: 2.3rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header-subtext {
+            color: #f1f5f9;
+            font-size: 1.15rem;
+            margin-top: 8px;
         }
 
         .exercise-card {
-            border: 2px solid transparent;
-            border-radius: 16px;
-            transition: all 0.25s ease;
+            border: 2px solid var(--card-border);
+            border-radius: 18px;
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
             cursor: pointer;
-            background: white;
+            background: #ffffff;
             position: relative;
             user-select: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            outline: none;
         }
 
-        .exercise-card:hover {
+        .exercise-card:hover, .exercise-card:focus-visible {
             transform: translateY(-4px);
-            box-shadow: 0 10px 24px rgba(109, 142, 230, 0.18);
+            border-color: #60a5fa;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
         }
 
         /* สถานะเมื่อการ์ดถูกเลือก */
         .exercise-card.selected {
-            border-color: #4a6fdc;
-            background-color: #f8faff;
-            box-shadow: 0 8px 20px rgba(74, 111, 220, 0.22);
+            border-color: var(--primary-blue);
+            background-color: var(--primary-light);
+            box-shadow: 0 8px 22px rgba(29, 78, 216, 0.18);
         }
 
         /* ป้าย Checkmark มุมขวาบน */
@@ -47,29 +101,29 @@
             position: absolute;
             top: 14px;
             right: 14px;
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             border: 2px solid #cbd5e1;
-            background: white;
+            background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 1.05rem;
             color: transparent;
             transition: all 0.2s ease;
         }
 
         .exercise-card.selected .check-badge {
-            background: #4a6fdc;
-            border-color: #4a6fdc;
-            color: white;
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+            color: #ffffff;
         }
 
         .exercise-title {
             font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: #212529;
+            margin-bottom: 0.6rem;
+            color: #0f172a;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             line-clamp: 2;
@@ -80,87 +134,93 @@
         }
 
         .icon-wrapper {
-            background-color: #f0f4ff;
-            width: 68px;
-            height: 68px;
+            background-color: var(--primary-light);
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 10px auto 15px;
-            color: #6d8ee6;
-            font-size: 1.8rem;
+            margin: 10px auto 16px;
+            color: var(--primary-blue);
+            font-size: 1.85rem;
             transition: all 0.2s ease;
         }
 
         .exercise-card.selected .icon-wrapper {
-            background-color: #e2eafc;
-            color: #4a6fdc;
+            background-color: #dbeafe;
+            color: var(--primary-hover);
         }
 
         .met-badge {
-            background-color: #e2eafc;
-            color: #4a6fdc;
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: bold;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            border: 1px solid #bfdbfe;
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .exercise-card.selected .met-badge {
+            background-color: #dbeafe;
+            color: var(--primary-dark);
+            border-color: #93c5fd;
         }
 
         .btn-select-indicator {
             border-radius: 25px;
             font-weight: 600;
             font-size: 0.95rem;
-            padding: 8px 0;
+            padding: 9px 0;
             transition: all 0.2s ease;
             width: 100%;
+            pointer-events: none;
         }
 
         .exercise-card:not(.selected) .btn-select-indicator {
-            background-color: #f0f4ff;
-            color: #6d8ee6;
-            border: 1px solid #d4e0fc;
+            background-color: var(--primary-light);
+            color: var(--primary-blue);
+            border: 1px solid #bfdbfe;
         }
 
         .exercise-card.selected .btn-select-indicator {
-            background-color: #4a6fdc;
-            color: white;
-            border: 1px solid #4a6fdc;
+            background-color: var(--primary-blue);
+            color: #ffffff;
+            border: 1px solid var(--primary-blue);
         }
 
         .category-separator {
-            border-left: 5px solid #6d8ee6;
+            border-left: 5px solid var(--primary-blue);
             padding-left: 15px;
-            margin-top: 30px;
-            margin-bottom: 20px;
+            margin-top: 36px;
+            margin-bottom: 22px;
         }
 
         .category-title {
-            font-weight: bold;
-            color: #2c3e50;
+            font-weight: 700;
+            color: var(--primary-dark);
             margin: 0;
         }
 
-/* Sticky Bottom Floating Bar */
+        /* Sticky Bottom Floating Bar */
         .bottom-action-bar {
             position: fixed;
             bottom: 0;
             right: 0;
-            left: 260px; /* เว้นระยะฝั่งซ้ายสำหรับ Desktop */
+            left: 260px;
             background: #ffffff;
-            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12), 0 -2px 6px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08), 0 -2px 6px rgba(0, 0, 0, 0.03);
             padding: 16px 30px;
-            /* ปรับลด z-index ให้อยู่ต่ำกว่า Navbar/Sidebar Drawer (Bootstrap Drawer = 1040+) */
             z-index: 990; 
-            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            border-top: 1px solid var(--card-border);
         }
 
-        /* รองรับหน้าจอมือถือ/แท็บเล็ต */
         @media (max-width: 991.98px) {
             .bottom-action-bar {
                 left: 0;
-                padding: 12px 16px;
-                /* บน Mobile ให้ z-index ต่ำกว่า เพื่อไม่ให้ทับ Drawer เมนู */
+                padding: 14px 16px;
                 z-index: 990; 
             }
         }
@@ -170,109 +230,123 @@
 
     {% include 'includes/navbar_user.html' %}
 
-    <div class="header-section text-center">
+    <header class="header-section text-center">
         <div class="container">
-            <h1 class="fw-bold"><i class="bi bi-clipboard-check"></i> เลือกแผนการออกกำลังกาย</h1>
-            <p class="lead mb-0">คลิกเลือกกิจกรรมที่คุณสนใจ (เลือกได้หลายกิจกรรมเพื่อสลับสับเปลี่ยน)</p>
+            <h1 class="fw-bold d-flex align-items-center justify-content-center gap-2 mb-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                </svg>
+                <span>เลือกแผนการออกกำลังกาย</span>
+            </h1>
+            <p class="header-subtext mb-0">คลิกเลือกกิจกรรมที่คุณสนใจ (เลือกได้หลายกิจกรรมเพื่อสลับสับเปลี่ยน)</p>
         </div>
-    </div>
+    </header>
 
-    <div class="container mb-5">
+    <main class="container mb-5" id="main-content">
         {% if exercises %}
             {% for group in exercises|groupby('category') %}
                 
-                <div class="category-separator">
-                    <h3 class="category-title">{{ group.grouper }}</h3>
-                </div>
+                <section class="mb-4" aria-labelledby="cat-group-{{ loop.index }}">
+                    <div class="category-separator">
+                        <h2 id="cat-group-{{ loop.index }}" class="category-title h4">{{ group.grouper }}</h2>
+                    </div>
 
-                <div class="row g-4 mb-4">
-                    {% for ex in group.list %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card exercise-card shadow-sm p-4 text-center" 
-                             id="card-{{ ex.id }}"
-                             onclick="toggleSelect('{{ ex.id }}', '{{ ex.name }}')">
-                            
-                            <!-- ตัวติ๊ก Checkmark -->
-                            <div class="check-badge">
-                                <i class="bi bi-check-lg"></i>
-                            </div>
+                    <div class="row g-4 mb-4">
+                        {% for ex in group.list %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card exercise-card shadow-sm p-4 text-center" 
+                                 id="card-{{ ex.id }}"
+                                 role="button"
+                                 tabindex="0"
+                                 aria-pressed="false"
+                                 aria-label="เลือกท่า {{ ex.name }} ความเข้มข้น {{ ex.met }} METs"
+                                 onclick="toggleSelect('{{ ex.id }}', '{{ ex.name }}')"
+                                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSelect('{{ ex.id }}', '{{ ex.name }}');}">
+                                
+                                <!-- ตัวติ๊ก Checkmark -->
+                                <div class="check-badge" aria-hidden="true">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
 
-                            <div class="card-body p-0 d-flex flex-column align-items-center justify-content-between">
-                                
-                                <div class="icon-wrapper">
-                                    {% if 'วิ่ง' in ex.category or 'Run' in ex.category or 'Jog' in ex.name %} 
-                                        <i class="bi bi-speedometer2"></i>
-                                    {% elif 'เดิน' in ex.category or 'Walk' in ex.category %} 
-                                        <i class="bi bi-person-walking"></i>
-                                    {% elif 'จักรยาน' in ex.category or 'Bicy' in ex.category %} 
-                                        <i class="bi bi-bicycle"></i>
-                                    {% elif 'เต้น' in ex.category or 'Dancing' in ex.category %} 
-                                        <i class="bi bi-music-note-beamed"></i>
-                                    {% elif 'น้ำ' in ex.category or 'Water' in ex.category %} 
-                                        <i class="bi bi-water"></i>
-                                    {% elif 'แอโรบิก' in ex.category or 'Aerobic' in ex.category %} 
-                                        <i class="bi bi-heart-pulse"></i>
-                                    {% else %} 
-                                        <i class="bi bi-activity"></i>
-                                    {% endif %}
-                                </div>
-                                
-                                <h4 class="exercise-title">{{ ex.name }}</h4>
-                                
-                                <div class="mb-4">
-                                    <span class="met-badge" title="ค่าความหนัก">
-                                        <i class="bi bi-lightning-charge-fill"></i> ความเข้มข้น (METs): {{ ex.met }}
-                                    </span>
-                                </div>
-                                
-                                <div class="w-100">
-                                    <button type="button" class="btn btn-select-indicator">
-                                        <i class="bi bi-plus-circle me-1 action-icon"></i> <span class="action-text">คลิกเพื่อเลือก</span>
-                                    </button>
+                                <div class="card-body p-0 d-flex flex-column align-items-center justify-content-between">
+                                    
+                                    <div class="icon-wrapper" aria-hidden="true">
+                                        {% if 'วิ่ง' in ex.category or 'Run' in ex.category or 'Jog' in ex.name %} 
+                                            <i class="bi bi-speedometer2"></i>
+                                        {% elif 'เดิน' in ex.category or 'Walk' in ex.category %} 
+                                            <i class="bi bi-person-walking"></i>
+                                        {% elif 'จักรยาน' in ex.category or 'Bicy' in ex.category %} 
+                                            <i class="bi bi-bicycle"></i>
+                                        {% elif 'เต้น' in ex.category or 'Dancing' in ex.category %} 
+                                            <i class="bi bi-music-note-beamed"></i>
+                                        {% elif 'น้ำ' in ex.category or 'Water' in ex.category %} 
+                                            <i class="bi bi-water"></i>
+                                        {% elif 'แอโรบิก' in ex.category or 'Aerobic' in ex.category %} 
+                                            <i class="bi bi-heart-pulse"></i>
+                                        {% else %} 
+                                            <i class="bi bi-activity"></i>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h3 class="exercise-title h5">{{ ex.name }}</h3>
+                                    
+                                    <div class="mb-4">
+                                        <span class="met-badge" title="ค่าความหนัก">
+                                            <i class="bi bi-lightning-charge-fill me-1"></i>ความเข้มข้น (METs): {{ ex.met }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="w-100">
+                                        <div class="btn btn-select-indicator" aria-hidden="true">
+                                            <i class="bi bi-plus-circle me-1 action-icon"></i> <span class="action-text">คลิกเพื่อเลือก</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
+                </section>
             {% endfor %}
 
         {% else %}
             <div class="col-12 text-center py-5">
                 <div class="text-muted">
                     <i class="bi bi-shield-exclamation display-4 text-warning"></i>
-                    <h3 class="mt-3 text-dark fw-bold">ไม่พบรายการออกกำลังกายที่ปลอดภัยในขณะนี้</h3>
+                    <h2 class="mt-3 text-dark fw-bold h4">ไม่พบรายการออกกำลังกายที่ปลอดภัยในขณะนี้</h2>
                     <p class="text-muted">เนื่องจากสภาวะร่างกายหรือระดับน้ำตาล/ความดันของคุณยังอยู่ในเกณฑ์เสี่ยง ระบบจึงของดแนะนำกิจกรรมชั่วคราวเพื่อความปลอดภัย</p>
                     <div class="d-flex justify-content-center gap-2 mt-4">
                         <a href="/user/recommendations" class="btn btn-outline-primary px-4 py-2">
                             <i class="bi bi-pencil-square me-1"></i> ตรวจทานผลตรวจสุขภาพ
                         </a>
-                        <a href="/user/dashboard" class="btn btn-primary px-4 py-2">
+                        <a href="/user/dashboard" class="btn btn-primary px-4 py-2" style="background-color: var(--primary-blue); border-color: var(--primary-blue);">
                             <i class="bi bi-house-door me-1"></i> กลับสู่หน้าหลัก
                         </a>
                     </div>
                 </div>
             </div>
         {% endif %}
-    </div>
+    </main>
 
     <!-- Floating Action Bar ด้านล่าง (แสดงเฉพาะเมื่อมีรายการท่าให้เลือก) -->
     {% if exercises %}
-    <div class="bottom-action-bar">
-        <div class="container-fluid d-flex justify-content-between align-items-center px-4">
+    <aside class="bottom-action-bar" aria-label="แถบดำเนินการเลือกแผน">
+        <div class="container-fluid d-flex justify-content-between align-items-center px-2 px-md-4">
             <div class="d-flex align-items-center">
                 <span class="text-secondary fw-semibold">กิจกรรมที่เลือก:</span>
-                <span class="badge bg-primary bg-opacity-10 text-primary fs-6 px-3 py-1 rounded-pill ms-2 me-1 fw-bold" id="selected-count">0</span>
+                <span class="badge fs-6 px-3 py-1 rounded-pill ms-2 me-1 fw-bold" style="background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;" id="selected-count">0</span>
                 <span class="text-secondary fw-semibold">รายการ</span>
             </div>
-            <button class="btn btn-primary px-4 py-2 rounded-pill fw-bold shadow-sm" id="btn-submit-plan" onclick="submitMultiplePlan()" disabled>
+            <button type="button" class="btn btn-primary px-4 py-2 rounded-pill fw-bold shadow-sm" id="btn-submit-plan" onclick="submitMultiplePlan()" disabled style="background-color: var(--primary-blue); border-color: var(--primary-blue);">
                 ยืนยันการเลือกและไปต่อ <i class="bi bi-arrow-right ms-1"></i>
             </button>
         </div>
-    </div>
+    </aside>
     {% endif %}
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     <script>
         const patientId = "{{ patient_id }}";
@@ -281,22 +355,24 @@
 
         function toggleSelect(id, name) {
             const card = document.getElementById(`card-${id}`);
-            const btn = card.querySelector('.btn-select-indicator');
-            const actionText = btn.querySelector('.action-text');
-            const actionIcon = btn.querySelector('.action-icon');
+            if (!card) return;
+            const actionText = card.querySelector('.action-text');
+            const actionIcon = card.querySelector('.action-icon');
 
             if (selectedExercises.has(id)) {
                 // ยกเลิกการเลือก
                 selectedExercises.delete(id);
                 card.classList.remove('selected');
-                actionText.textContent = 'คลิกเพื่อเลือก';
-                actionIcon.className = 'bi bi-plus-circle me-1 action-icon';
+                card.setAttribute('aria-pressed', 'false');
+                if (actionText) actionText.textContent = 'คลิกเพื่อเลือก';
+                if (actionIcon) actionIcon.className = 'bi bi-plus-circle me-1 action-icon';
             } else {
                 // เลือก
                 selectedExercises.set(id, name);
                 card.classList.add('selected');
-                actionText.textContent = 'เลือกแล้ว';
-                actionIcon.className = 'bi bi-check2-circle me-1 action-icon';
+                card.setAttribute('aria-pressed', 'true');
+                if (actionText) actionText.textContent = 'เลือกแล้ว';
+                if (actionIcon) actionIcon.className = 'bi bi-check2-circle me-1 action-icon';
             }
 
             updateBottomBar();
@@ -304,9 +380,10 @@
 
         function updateBottomBar() {
             const count = selectedExercises.size;
-            document.getElementById('selected-count').textContent = count;
+            const countEl = document.getElementById('selected-count');
+            if (countEl) countEl.textContent = count;
             const submitBtn = document.getElementById('btn-submit-plan');
-            submitBtn.disabled = count === 0;
+            if (submitBtn) submitBtn.disabled = count === 0;
         }
 
         function submitMultiplePlan() {
@@ -315,20 +392,25 @@
             const namesList = Array.from(selectedExercises.values()).map(name => `• ${name}`).join('<br>');
             const ids = Array.from(selectedExercises.keys()).join(',');
 
-            Swal.fire({
-                title: `ยืนยันการเลือก ${selectedExercises.size} กิจกรรม?`,
-                html: `<div class="text-start p-3 bg-light rounded mt-2" style="max-height: 180px; overflow-y: auto;">${namesList}</div>`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#4a6fdc',
-                confirmButtonText: 'ยืนยันและสร้างแผน',
-                cancelButtonText: 'กลับไปเลือกเพิ่ม'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // ส่งรายการไอดีท่าทั้งหมด (คั่นด้วย comma) ไปหน้าถัดไป
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: `ยืนยันการเลือก ${selectedExercises.size} กิจกรรม?`,
+                    html: `<div class="text-start p-3 bg-light rounded mt-2" style="max-height: 180px; overflow-y: auto;">${namesList}</div>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#1d4ed8',
+                    confirmButtonText: 'ยืนยันและสร้างแผน',
+                    cancelButtonText: 'กลับไปเลือกเพิ่ม'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = `/user/select_plan2/${patientId}?exercises=${encodeURIComponent(ids)}`;
+                    }
+                });
+            } else {
+                if (confirm(`ยืนยันการเลือก ${selectedExercises.size} กิจกรรม?`)) {
                     window.location.href = `/user/select_plan2/${patientId}?exercises=${encodeURIComponent(ids)}`;
                 }
-            });
+            }
         }
     </script>
 </body>

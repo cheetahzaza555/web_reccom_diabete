@@ -1,7 +1,7 @@
 <!doctype html>
 {% from 'includes/navbar_admin.html' import admin_icon, admin_assets, admin_layout_styles with context %}
 <html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DiaBalance | เพิ่มกฎ</title><link rel="stylesheet" href="{{ url_for('static', filename='css/rule-builder.css') }}">
+<title>DiaBalance | เพิ่มกฎ</title><link rel="stylesheet" href="{{ url_for('static', filename='css/rule-builder.css', v='2.1') }}">
 
 {{ admin_assets() }}
 <script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
@@ -96,7 +96,7 @@
 
 <script nonce="{{ csp_nonce }}" id="builder-catalog" type="application/json">{{ catalog | tojson }}</script>
 
-<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/rule-builder.js') }}"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/rule-builder.js', v='2.1') }}"></script>
 {% endif %}
 
 </body></html>

@@ -450,3 +450,9 @@ body {font-family:'Kanit',sans-serif;background:#ffffff;margin-left:260px;}
 #voice-panel label { margin-top: 12px; }
 #voice-draft-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; padding: 16px; background: #f8fafc; }
 @media(max-width:580px) { .voice-launch { float: none; margin-bottom: 12px; } }
+
+#voice-record.recording {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #b91c1c !important;
+}

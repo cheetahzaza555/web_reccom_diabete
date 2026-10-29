@@ -23,9 +23,8 @@
         <p class="muted">กฎนี้จะใช้ในการประมวลผลคำแนะนำครั้งถัดไป</p>
       </div>
       <section id="voice-panel" class="card" hidden aria-label="กรอกกฎด้วยเสียง">
-        <p>พูดเงื่อนไขและผลลัพธ์ให้ครบ แล้วตรวจข้อความก่อนส่งให้ Gemini แปลงเป็นร่างกฎ ข้อความจะถูกส่งไปยัง Google และบริการรับเสียงของเบราว์เซอร์อาจส่งเสียงไปประมวลผลภายนอก กรุณาไม่ระบุชื่อหรือข้อมูลส่วนตัวของผู้ป่วย</p>
         <button type="button" class="btn" id="voice-record">เริ่มพูด</button>
-        <label for="voice-text">ข้อความจากเสียง (แก้ไขหรือพิมพ์เองได้)</label>
+        <label for="voice-text">ข้อความที่ได้จากการพูด (สามารถแก้ไขหรือพิมพ์เองได้)</label>
         <textarea id="voice-text" rows="5" maxlength="4000" placeholder="ระบุเงื่อนไข ตัวเลข และคำเตือน/ความถี่ที่ต้องการให้ชัดเจน"></textarea>
         <button type="button" class="btn" id="voice-convert">แปลงข้อความเป็นร่างกฎ</button>
         <p id="voice-status" role="status" aria-live="polite"></p>

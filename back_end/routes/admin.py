@@ -489,7 +489,8 @@ def voice_rule_draft():
         return jsonify(success=True, draft=draft)
     except ValueError as exc:
         return jsonify(success=False, message=str(exc)), 400
-    except Exception:
+    except Exception as exc:
+        print(f"❌ [SWRL VOICE] Error drafting rule: {exc}")
         return jsonify(success=False, message='แปลงข้อความไม่สำเร็จ กรุณาลองใหม่หรือตั้งค่ากฎด้วยตนเอง'), 503
 
 

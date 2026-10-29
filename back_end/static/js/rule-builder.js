@@ -629,43 +629,145 @@ reset();
   const record = $("voice-record");
   const convert = $("voice-convert");
   let recognition, listening = false, draft = null, pending = false;
+  let silenceTimer = null;
+
+  function resetRecordButton() {
+    listening = false;
+    record.textContent = "🎙️ เริ่มพูด (เปิดไมค์)";
+    record.classList.remove("recording");
+    convert.disabled = pending;
+  }
+
+  function stopRecognition(force = false) {
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+    }
+    resetRecordButton();
+    if (recognition) {
+      try {
+        if (force) {
+          recognition.abort(); // ตัดการเชื่อมต่อและปล่อยไมค์ทันที
+        } else {
+          recognition.stop();  // สั่งหยุดรับเสียง
+        }
+      } catch (_) {}
+    }
+  }
+
   const invalidate = () => { draft = null; $("voice-review").hidden = true; };
   text.addEventListener("input", invalidate);
   $("voice-open").onclick = () => {
     panel.hidden = !panel.hidden;
     $("voice-open").setAttribute("aria-expanded", String(!panel.hidden));
-    if (panel.hidden) recognition?.stop();
+    if (panel.hidden) stopRecognition(true);
     else text.focus();
   };
   const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+
   if (!Speech) {
     record.disabled = true;
-    status.textContent = "เบราว์เซอร์นี้ไม่รองรับการรับเสียง สามารถพิมพ์ข้อความเพื่อสร้างร่างได้";
+    status.textContent = "เบราว์เซอร์นี้ไม่รองรับการรับเสียง (แนะนำ Google Chrome หรือ Microsoft Edge) สามารถพิมพ์ข้อความเพื่อสร้างร่างได้";
   } else {
     recognition = new Speech();
     recognition.lang = "th-TH";
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
+    let baseText = "";
+
     recognition.onstart = () => {
-      listening = true; convert.disabled = true;
-      record.textContent = "หยุดพูด";
-      status.textContent = "กำลังฟัง…";
+      listening = true;
+      convert.disabled = true;
+      record.textContent = "⏹️ กดเพื่อปิดไมค์";
+      record.classList.add("recording");
+      status.textContent = "กำลังฟัง… พูดข้อความกฎได้เลย (ระบบจะปิดไมค์ให้อัตโนมัติเมื่อพูดจบ)";
+      baseText = text.value.trim() ? text.value.trim() + " " : "";
     };
+
     recognition.onresult = (event) => {
       invalidate();
-      const transcript = Array.from(event.results).map(r => r[0].transcript).join(" ");
-      text.value = (text.value + " " + transcript).trim().slice(0, 4000);
-      status.textContent = "รับข้อความแล้ว ตรวจตัวเลขและคำเปรียบเทียบก่อนแปลงเป็นร่าง";
+      let interimTranscript = "";
+      let finalTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      if (finalTranscript) {
+        baseText = (baseText + finalTranscript + " ").slice(0, 4000);
+        text.value = baseText.trim();
+        status.textContent = "รับข้อความแล้ว ปิดไมค์เรียบร้อย ตรวจตัวเลขก่อนแปลงเป็นร่าง";
+        // เมื่อได้รับข้อความที่สมบูรณ์แล้ว ให้ปิดไมค์อัตโนมัติหลังจากเว้นช่วงเล็กน้อย
+        if (silenceTimer) clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+          stopRecognition(false);
+        }, 800);
+      } else if (interimTranscript) {
+        text.value = (baseText + interimTranscript).slice(0, 4000);
+        status.textContent = "กำลังฟัง: " + interimTranscript;
+        // รีเซ็ต silence timer ขณะยังมีการพูดอยู่
+        if (silenceTimer) clearTimeout(silenceTimer);
+      }
     };
-    recognition.onerror = () => { status.textContent = "รับเสียงไม่สำเร็จ ตรวจสิทธิ์ไมโครโฟนและอินเทอร์เน็ต หรือพิมพ์ข้อความแทน"; };
-    recognition.onend = () => { listening = false; record.textContent = "เริ่มพูด"; convert.disabled = pending; };
+
+    recognition.onerror = (event) => {
+      console.warn("Speech recognition error:", event.error, event);
+      stopRecognition(true);
+
+      switch (event.error) {
+        case "not-allowed":
+        case "service-not-allowed":
+          if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+            status.textContent = "ไมโครโฟนถูกบล็อก: หากเข้าเว็บผ่าน IP (ไม่ใช่ localhost) เบราว์เซอร์จะไม่อนุญาตให้ใช้ไมค์ กรุณาเปิดผ่าน http://localhost:... หรือใช้ HTTPS";
+          } else {
+            status.textContent = "ไมโครโฟนถูกบล็อก: กรุณากดไอคอนแม่กุญแจ/สิทธิ์เว็บไซต์ที่แถบ URL เพื่ออนุญาต (Allow) ไมโครโฟน";
+          }
+          break;
+        case "no-speech":
+          status.textContent = "ไม่ได้ยินเสียงพูด (ปิดไมค์แล้ว) ลองตรวจระดับเสียงไมค์แล้วกดเริ่มพูดใหม่อีกครั้ง";
+          break;
+        case "network":
+          status.textContent = "เกิดข้อผิดพลาดด้านเครือข่าย Web Speech API ต้องใช้อินเทอร์เน็ตเชื่อมต่อเซิร์ฟเวอร์รู้จำเสียง";
+          break;
+        case "audio-capture":
+          status.textContent = "ไม่พบอุปกรณ์ไมโครโฟน หรือไมค์ถูกโปรแกรมอื่นล็อกไว้";
+          break;
+        case "aborted":
+          status.textContent = "ปิดไมโครโฟนเรียบร้อยแล้ว";
+          break;
+        default:
+          status.textContent = "รับเสียงไม่สำเร็จ (" + (event.error || "unknown") + ") ตรวจสิทธิ์ไมโครโฟนและอินเทอร์เน็ต หรือพิมพ์ข้อความแทน";
+      }
+    };
+
+    recognition.onend = () => {
+      resetRecordButton();
+    };
+
     record.onclick = () => {
-      if (listening) recognition.stop();
-      else { try { recognition.start(); } catch { status.textContent = "เปิดไมโครโฟนไม่ได้ กรุณาลองใหม่"; } }
+      if (listening) {
+        // เมื่อผู้ใช้กดปุ่มเพื่อปิดไมค์ ให้หยุดทันที
+        stopRecognition(true);
+        status.textContent = "ปิดไมโครโฟนแล้ว";
+      } else {
+        try {
+          if (silenceTimer) clearTimeout(silenceTimer);
+          recognition.start();
+        } catch (err) {
+          console.warn("Speech start error:", err);
+          status.textContent = "เปิดไมโครโฟนไม่ได้ กรุณาลองใหม่อีกครั้ง";
+          resetRecordButton();
+        }
+      }
     };
   }
   convert.onclick = async () => {
-    if (pending || listening || saving) return;
+    stopRecognition(true);
+    if (pending || saving) return;
     const instruction = text.value.trim();
     if (!instruction) { status.textContent = "กรุณาพูดหรือพิมพ์ข้อความก่อน"; return; }
     invalidate(); pending = true; convert.disabled = true; record.disabled = true; text.disabled = true;

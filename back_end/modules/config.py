@@ -14,5 +14,9 @@ GRAPHDB_READ = f"{GRAPHDB_BASE}/{REPO_NAME}"
 GRAPHDB_WRITE = f"{GRAPHDB_BASE}/{REPO_NAME}/statements"
 
 # ปริ้นเช็คตอนรัน
-print(f"✅ GraphDB Read Endpoint: {GRAPHDB_READ}")
-print(f"✅ GraphDB Write Endpoint: {GRAPHDB_WRITE}")
+try:
+    print(f"✅ GraphDB Read Endpoint: {GRAPHDB_READ}")
+    print(f"✅ GraphDB Write Endpoint: {GRAPHDB_WRITE}")
+except UnicodeEncodeError:
+    print(f"[OK] GraphDB Read Endpoint: {GRAPHDB_READ}")
+    print(f"[OK] GraphDB Write Endpoint: {GRAPHDB_WRITE}")

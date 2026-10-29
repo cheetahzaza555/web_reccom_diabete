@@ -14,7 +14,8 @@ from modules.db import (
     get_all_users_with_roles,
     get_patient_health_summary,
     get_recent_registered_users,
-    update_user_role_in_graphdb
+    update_user_role_in_graphdb,
+    get_google_users_list
 )
 
 admin_bp = Blueprint('admin', __name__)
@@ -56,13 +57,15 @@ def dashboard_page():
     # เรียกดึงข้อมูลจริงจากคลังฐานข้อมูล GraphDB
     stats_data = get_admin_dashboard_stats()
     recent_users = get_recent_registered_users()
+    google_users = get_google_users_list()
 
     return render_template(
         "admin/index.html",
         username=session.get("username"),
         role=session.get("role"),
         stats=stats_data,
-        recent_users=recent_users
+        recent_users=recent_users,
+        google_users=google_users
     )
 
 

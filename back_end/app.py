@@ -6,6 +6,7 @@ from routes.user import user_bp
 from flask_cors import CORS
 from routes.auth import auth
 from routes.admin import admin_bp
+from modules.oauth import init_oauth
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
@@ -23,6 +24,8 @@ if os.getenv("TRUST_PROXY") == "1":
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+# ตั้งค่า OAuth (Google Login)
+init_oauth(app)
 
 @app.get('/healthz')
 def health():
@@ -55,5 +58,9 @@ if os.getenv('LINE_CHANNEL_ACCESS_TOKEN') and os.getenv('LINE_CHANNEL_SECRET'):
     app.register_blueprint(webhook_bp, url_prefix='/line')
 
 if __name__ == '__main__':
-    print("🚀 Starting Flask Server (Powered by GraphDB Semantic Web)...")
-    app.run(debug=os.getenv("FLASK_DEBUG") == "1", use_reloader=False, port=5000)
+    port = int(os.getenv("PORT", 5001))
+    try:
+        print(f"🚀 Starting Flask Server on port {port} (Powered by GraphDB Semantic Web)...")
+    except UnicodeEncodeError:
+        print(f"[OK] Starting Flask Server on port {port} (Powered by GraphDB Semantic Web)...")
+    app.run(debug=os.getenv("FLASK_DEBUG") == "1", use_reloader=False, port=port)

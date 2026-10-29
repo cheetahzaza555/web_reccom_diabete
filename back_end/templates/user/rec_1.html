@@ -17,24 +17,194 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 
     <!-- Non-render-blocking Google Font: Prompt -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap">
     </noscript>
 
-    <!-- Non-render-blocking Bootstrap Icons CSS -->
-    <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" media="print" onload="this.media='all'">
-    <noscript>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    </noscript>
+    <style>
+/* --- rec_1.css : สไตล์สำหรับหน้าผลตรวจสุขภาพ --- */
 
-    <!-- CSS ที่แยกออกมา -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rec_1.css') }}">
+:root {
+    --primary-dark: #1e3a8a;
+    --primary-blue: #1d4ed8;
+    --primary-hover: #1e40af;
+    --primary-light: #eff6ff;
+    --card-border: #e2e8f0;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Prompt', system-ui, -apple-system, sans-serif; 
+    color: var(--text-main);
+}
+
+.main-content { display: flex; flex-direction: column; min-height: 100vh; }
+.header-section { 
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); 
+    color: #ffffff; 
+    padding: 38px 0; 
+    flex-shrink: 0; 
+    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.15);
+    contain: content;
+}
+.form-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.form-scroll-area { flex: 1; overflow-y: auto; padding: 25px 0 20px; }
+.button-area { 
+    background-color: #ffffff; 
+    padding: 18px 0; 
+    border-top: 1px solid var(--card-border); 
+    flex-shrink: 0; 
+    z-index: 10; 
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.form-label { font-weight: 600; color: #1e293b; margin-bottom: 8px; font-size: 1.05rem; }
+.form-control, .form-select { 
+    border-radius: 10px; 
+    padding: 12px 14px; 
+    border: 1px solid #cbd5e1; 
+    font-size: 1.05rem; 
+    min-height: 48px; 
+    color: #0f172a;
+}
+.form-control:focus, .form-select:focus { 
+    border-color: var(--primary-blue); 
+    box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.2); 
+    outline: none;
+}
+
+.btn-cancel { 
+    background-color: #f1f5f9; 
+    color: #334155; 
+    padding: 14px 0; 
+    border-radius: 10px; 
+    width: 100%; 
+    border: 1px solid #cbd5e1; 
+    font-size: 1.15rem; 
+    font-weight: 600; 
+    transition: all 0.2s ease; 
+}
+.btn-cancel:hover, .btn-cancel:focus-visible { 
+    background-color: #e2e8f0; 
+    color: #0f172a; 
+    border-color: #94a3b8;
+}
+
+.btn-next { 
+    background-color: var(--primary-blue); 
+    color: #ffffff; 
+    padding: 14px 0; 
+    border-radius: 10px; 
+    width: 100%; 
+    border: none; 
+    font-size: 1.15rem; 
+    font-weight: 600; 
+    box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+    transition: all 0.2s ease; 
+}
+.btn-next:hover, .btn-next:focus-visible { 
+    background-color: var(--primary-hover); 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 16px rgba(29, 78, 216, 0.35); 
+}
+
+.form-section { 
+    background: #ffffff; 
+    padding: 26px; 
+    border-radius: 14px; 
+    margin-bottom: 20px; 
+    border: 1px solid var(--card-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.selection-card { 
+    background: #ffffff; 
+    border: 1px solid var(--card-border); 
+    border-radius: 12px; 
+    padding: 18px 20px; 
+    margin-bottom: 14px; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    display: flex; 
+    align-items: flex-start; 
+    gap: 15px; 
+}
+.selection-card:hover { 
+    border-color: var(--primary-blue); 
+    background-color: var(--primary-light); 
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 12px rgba(29, 78, 216, 0.08); 
+}
+.form-check-input { 
+    width: 1.4em; 
+    height: 1.4em; 
+    margin-top: 0.2em; 
+    cursor: pointer; 
+    border-color: #94a3b8; 
+}
+.form-check-input:checked { 
+    background-color: var(--primary-blue); 
+    border-color: var(--primary-blue); 
+}
+.selection-title { font-size: 1.05rem; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+.selection-desc { font-size: 0.9rem; color: #475569; margin: 0; line-height: 1.5; }
+
+.result-header { text-align: center; margin-bottom: 30px; }
+.result-box { padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+.box-warning { background-color: #fffbeb; border: 1px solid #fef3c7; color: #92400e; }
+.box-danger { background-color: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; }
+.box-success { background-color: #f0fdf4; border: 1px solid #dcfce7; color: #166534; }
+.box-info { background-color: #f0f9ff; border: 1px solid #e0f2fe; color: #075985; }
+.result-list li { padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+
+/* สไตล์สำหรับหัวข้อหมวดหมู่ */
+.category-header {
+    font-weight: 700;
+    color: #166534;
+    background-color: #dcfce7;
+    padding: 8px 14px;
+    border-radius: 8px;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .header-section { padding: 22px 20px; text-align: center; }
+    .header-section h1 { font-size: 1.65rem !important; justify-content: center; }
+    .form-scroll-area { padding: 20px 14px; }
+    .button-area { padding: 14px; }
+}
+
+#ocrDropZone {
+    background-color: #f8fbff;
+    border: 2px dashed #3b82f6;
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 22px;
+}
+#ocrDropZone:hover {
+    background-color: #eff6ff;
+    border-style: solid;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+.ocr-icon-magic { font-size: 2.8rem; color: var(--primary-blue); }
+.success-pulse { color: #16a34a; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+    </style>
     
     <style>
         /* ตกแต่ง Breadcrumb */
@@ -72,6 +242,14 @@
             animation: customSpin 0.75s linear infinite !important;
         }
     </style>
+    <script>
+        window.initialCurrentUser = {
+            id: {{ session.get('user_id', 0)|tojson }},
+            firstname: {{ session.get('firstname', '')|tojson }},
+            lastname: {{ session.get('lastname', '')|tojson }},
+            username: {{ session.get('username', '')|tojson }}
+        };
+    </script>
 </head>
 <body>
 
@@ -99,7 +277,7 @@
                             <!-- Breadcrumb Step 1 -->
                             <nav aria-label="breadcrumb" class="mb-3">
                                 <ol class="breadcrumb mb-0 bg-transparent p-0">
-                                    <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                    <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><svg class="me-1" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/><path d="m8 3.293 6 6V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V9.293l6-6Z"/></svg> หน้าหลัก</a></li>
                                     <li class="breadcrumb-item active" aria-current="page">ผลตรวจสุขภาพ</li>
                                 </ol>
                             </nav>
@@ -109,10 +287,10 @@
                                     <div class="form-section">
                                         <h2 class="h5 mb-3 fw-bold" style="color: #1e3a8a;">ข้อมูลผู้เข้ารับการตรวจ</h2>
                                         <div class="alert alert-light border d-flex align-items-center gap-3 mb-4" style="background-color: #f8fafc;">
-                                            <i class="bi bi-person-circle fs-2 text-primary"></i>
+                                            <svg width="34" height="34" fill="currentColor" class="text-primary flex-shrink-0" viewBox="0 0 16 16" aria-hidden="true"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/></svg>
                                             <div>
                                                 <div class="text-muted small">ผู้ใช้งาน</div>
-                                                <div class="fw-bold fs-5 text-dark" id="displayFullname">กำลังโหลดข้อมูล...</div>
+                                                <div class="fw-bold fs-5 text-dark" id="displayFullname">{% if session.get('firstname') and session.get('lastname') %}{{ session.get('firstname') }} {{ session.get('lastname') }}{% elif session.get('username') %}{{ session.get('username') }}{% else %}ผู้ใช้งาน{% endif %}</div>
                                             </div>
                                         </div>
                                         <div class="row">
@@ -177,7 +355,7 @@
 
                                         <div id="ocrDropZone">
                                             <div id="ocrPlaceholder">
-                                                <i class="bi bi-magic ocr-icon-magic mb-3 d-block"></i>
+                                                <svg width="44" height="44" fill="currentColor" class="ocr-icon-magic mb-3 d-block mx-auto text-primary" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.672a.5.5 0 0 1 .656.32l.332 1.076a.5.5 0 0 0 .332.332l1.076.332a.5.5 0 0 1 0 .956l-1.076.332a.5.5 0 0 0-.332.332l-.332 1.076a.5.5 0 0 1-.956 0l-.332-1.076a.5.5 0 0 0-.332-.332L7.784 5.688a.5.5 0 0 1 0-.956l1.076-.332a.5.5 0 0 0 .332-.332l.332-1.076a.5.5 0 0 1 .32-.32zM2.87 9.87a.5.5 0 0 1 .656.32l.332 1.076a.5.5 0 0 0 .332.332l1.076.332a.5.5 0 0 1 0 .956l-1.076.332a.5.5 0 0 0-.332.332l-.332 1.076a.5.5 0 0 1-.956 0l-.332-1.076a.5.5 0 0 0-.332-.332l-1.076-.332a.5.5 0 0 1 0-.956l1.076-.332a.5.5 0 0 0 .332-.332l.332-1.076a.5.5 0 0 1 .32-.32zm8.5 3.5a.5.5 0 0 1 .656.32l.332 1.076a.5.5 0 0 0 .332.332l1.076.332a.5.5 0 0 1 0 .956l-1.076.332a.5.5 0 0 0-.332.332l-.332 1.076a.5.5 0 0 1-.956 0l-.332-1.076a.5.5 0 0 0-.332-.332l-1.076-.332a.5.5 0 0 1 0-.956l1.076-.332a.5.5 0 0 0 .332-.332l.332-1.076a.5.5 0 0 1 .32-.32zM14.046.21a.5.5 0 0 1 .654.298l.09.245c.105.285.334.514.619.619l.245.09a.5.5 0 0 1 0 .936l-.245.09a1.074 1.074 0 0 0-.619.619l-.09.245a.5.5 0 0 1-.936 0l-.09-.245a1.074 1.074 0 0 0-.619-.619l-.245-.09a.5.5 0 0 1 0-.936l.245-.09a1.074 1.074 0 0 0 .619-.619l.09-.245a.5.5 0 0 1 .298-.298zM5.52.368a.5.5 0 0 1 .652.296l.09.243c.107.288.336.517.624.624l.243.09a.5.5 0 0 1 0 .936l-.243.09a1.074 1.074 0 0 0-.624.624l-.09.243a.5.5 0 0 1-.936 0l-.09-.243a1.074 1.074 0 0 0-.624-.624l-.243-.09a.5.5 0 0 1 0-.936l.243-.09a1.074 1.074 0 0 0 .624-.624l.09-.243a.5.5 0 0 1 .296-.296z"/></svg>
                                                 <div class="fw-bold fs-5 mb-2" style="color: #1e3a8a;">ตัวช่วยกรอกข้อมูลอัตโนมัติ (OCR)</div>
                                                 <p class="small text-muted mb-0">คลิกที่นี่เพื่อ <strong style="color: #1d4ed8;">ถ่ายรูป</strong> หรือ <strong style="color: #1d4ed8;">อัปโหลดไฟล์</strong> ใบผลตรวจสุขภาพ</p>
                                                 <p class="small text-muted mt-1">(AI จะช่วยดึงตัวเลข HDL, LDL, FPG ให้อัตโนมัติ)</p>
@@ -192,7 +370,7 @@
 
                                             <div id="ocrSuccess" style="display: none; padding: 20px 0;">
                                                 <div class="d-flex flex-column align-items-center text-success">
-                                                    <i class="bi bi-check-circle-fill success-pulse mb-3" style="font-size: 2.5rem;"></i>
+                                                    <svg width="40" height="40" fill="currentColor" class="success-pulse mb-3 text-success d-block mx-auto" viewBox="0 0 16 16" aria-hidden="true"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
                                                     <span class="small fw-bold">ดึงข้อมูลสำเร็จ!</span>
                                                     <span class="small text-muted mt-1">(กรุณาตรวจสอบความถูกต้องด้านล่าง)</span>
                                                 </div>
@@ -252,7 +430,7 @@
                                     <!-- Breadcrumb Step 2 -->
                                     <nav aria-label="breadcrumb" class="mb-3">
                                         <ol class="breadcrumb mb-0 bg-transparent p-0">
-                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><svg class="me-1" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/><path d="m8 3.293 6 6V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V9.293l6-6Z"/></svg> หน้าหลัก</a></li>
                                             <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
                                             <li class="breadcrumb-item active" aria-current="page">โรคแทรกซ้อน</li>
                                         </ol>
@@ -317,7 +495,7 @@
                                     <!-- Breadcrumb Step 3 -->
                                     <nav aria-label="breadcrumb" class="mb-3">
                                         <ol class="breadcrumb mb-0 bg-transparent p-0">
-                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><svg class="me-1" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/><path d="m8 3.293 6 6V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V9.293l6-6Z"/></svg> หน้าหลัก</a></li>
                                             <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
                                             <li class="breadcrumb-item text-muted">โรคแทรกซ้อน</li>
                                             <li class="breadcrumb-item active" aria-current="page">กิจกรรมที่สนใจ</li>
@@ -353,7 +531,7 @@
                                     <!-- Breadcrumb Step 4 -->
                                     <nav aria-label="breadcrumb" class="mb-4 text-start w-100">
                                         <ol class="breadcrumb mb-0 bg-transparent p-0 justify-content-start">
-                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><i class="bi bi-house-door"></i> หน้าหลัก</a></li>
+                                            <li class="breadcrumb-item"><a href="/user/dashboard" class="text-decoration-none"><svg class="me-1" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/><path d="m8 3.293 6 6V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V9.293l6-6Z"/></svg> หน้าหลัก</a></li>
                                             <li class="breadcrumb-item text-muted">ผลตรวจสุขภาพ</li>
                                             <li class="breadcrumb-item text-muted">โรคแทรกซ้อน</li>
                                             <li class="breadcrumb-item text-muted">กิจกรรมที่สนใจ</li>
@@ -371,7 +549,7 @@
                                             <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
                                                 <div class="d-flex align-items-center">
                                                     <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-2.5 me-3">
-                                                        <i class="bi bi-exclamation-octagon-fill fs-4 d-block"></i>
+                                                        <svg width="22" height="22" fill="currentColor" class="d-block" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zM8 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
                                                     </div>
                                                     <div>
                                                         <h3 class="h5 fw-bold text-dark mb-0">ข้อจำกัดและสภาวะโรคร่วมที่ต้องพิจารณาก่อน</h3>
@@ -387,7 +565,7 @@
                                                         <div class="px-2">
                                                             <div class="d-flex align-items-center mb-3">
                                                                 <span class="badge bg-warning bg-opacity-15 text-warning-emphasis p-2 rounded-2 me-2">
-                                                                    <i class="bi bi-exclamation-triangle-fill fs-6 d-block text-warning"></i>
+                                                                    <svg width="18" height="18" fill="currentColor" class="d-block text-warning" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
                                                                 </span>
                                                                 <span class="fw-bold text-dark small">ข้อควรระวังสำคัญ</span>
                                                             </div>
@@ -399,7 +577,7 @@
                                                         <div class="px-2">
                                                             <div class="d-flex align-items-center mb-3">
                                                                 <span class="badge bg-info bg-opacity-10 text-info-emphasis p-2 rounded-2 me-2">
-                                                                    <i class="bi bi-activity fs-6 d-block text-info"></i>
+                                                                    <svg width="18" height="18" fill="currentColor" class="d-block text-info" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a.5.5 0 0 1 .47.33L10 12.036l1.53-4.208A.5.5 0 0 1 12 7.5h3.5a.5.5 0 0 1 0 1h-3.15l-1.88 5.17a.5.5 0 0 1-.94 0L6 3.964 4.47 8.171A.5.5 0 0 1 4 8.5H.5a.5.5 0 0 1 0-1h3.15l1.88-5.17A.5.5 0 0 1 6 2Z"/></svg>
                                                                 </span>
                                                                 <span class="fw-bold text-dark small">โรคร่วมที่ตรวจพบ</span>
                                                             </div>
@@ -411,7 +589,7 @@
                                                         <div class="px-2">
                                                             <div class="d-flex align-items-center mb-3">
                                                                 <span class="badge bg-danger bg-opacity-10 text-danger-emphasis p-2 rounded-2 me-2">
-                                                                    <i class="bi bi-virus fs-6 d-block text-danger"></i>
+                                                                    <svg width="18" height="18" fill="currentColor" class="d-block text-danger" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0a1 1 0 0 1 1 1v1.402c0 .511.677.693.933.248l.7-1.213a1 1 0 0 1 1.732 1l-.7 1.213c-.256.444.17.979.682.979h1.403a1 1 0 0 1 1 1v.003a1 1 0 0 1-1 1h-1.402c-.512 0-.694.678-.249.933l1.213.7a1 1 0 1 1-1 1.732l-1.213-.7c-.445-.256-.979.17-.979.682v1.403a1 1 0 0 1-1 1h-.003a1 1 0 0 1-1-1v-1.402c0-.512-.678-.694-.933-.249l-.7 1.213a1 1 0 1 1-1.732-1l.7-1.213c.256-.445-.17-.979-.682-.979H1.75a1 1 0 0 1-1-1v-.003a1 1 0 0 1 1-1h1.402c.512 0 .694-.678.249-.933l-1.213-.7a1 1 0 1 1 1-1.732l1.213.7c.445.256.979-.17.979-.682V1a1 1 0 0 1 1-1h.003ZM6.5 4.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2ZM10 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2ZM6 9.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>
                                                                 </span>
                                                                 <span class="fw-bold text-dark small">ภาวะแทรกซ้อน</span>
                                                             </div>
@@ -428,7 +606,7 @@
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <div class="d-flex align-items-center">
                                                         <div class="bg-success bg-opacity-10 text-success rounded-3 p-2.5 me-3">
-                                                            <i class="bi bi-person-walking fs-4 d-block"></i>
+                                                            <svg width="24" height="24" fill="currentColor" class="d-block" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM6.44 3.752A.75.75 0 0 1 7 3.5h1.445c.742 0 1.32.643 1.243 1.38l-.43 4.083a1.8 1.8 0 0 1-.088.395l-.318.906.96 1.2a1 1 0 0 1 .218.513l.4 3.5a.75.75 0 0 1-1.49.172l-.372-3.253-.976-1.22a1.75 1.75 0 0 1-.383-.897l-.277-2.637-.99 1.187a.75.75 0 1 1-1.15-.96l1.326-1.59a1.5 1.5 0 0 1 .5-.386L6.44 3.752Z"/><path d="M4.5 9.5a.75.75 0 0 1 .75.75v1.895l1.042 1.737a.75.75 0 1 1-1.284.77l-1.258-2.097A.75.75 0 0 1 3.5 12.145V10.25a.75.75 0 0 1 .75-.75Z"/></svg>
                                                         </div>
                                                         <div>
                                                             <h3 class="h5 fw-bold text-dark mb-0">กิจกรรมและท่าออกกำลังกายเฉพาะบุคคลที่ปลอดภัย</h3>
@@ -467,7 +645,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header text-white" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);">
-                    <h5 class="modal-title"><i class="bi bi-clock-history"></i> พบข้อมูลสุขภาพล่าสุด</h5>
+                    <h5 class="modal-title"><svg class="me-1" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.376.772a7.034 7.034 0 0 0-.738-.577l.53-.848c.316.197.62.415.908.653l-.7.772zm1.079 1.08c-.208.26-.433.504-.67.73l-.72-.693a7.067 7.067 0 0 0 .584-.734l.806.697zM16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-1 0A7 7 0 1 0 1 8a7 7 0 0 0 14 0zm-7.5-4a.5.5 0 0 1 .5.5v3.25l2.25 1.35a.5.5 0 1 1-.515.857l-2.5-1.5A.5.5 0 0 1 7.5 7.5v-3.5a.5.5 0 0 1 .5-.5z"/></svg> พบข้อมูลสุขภาพล่าสุด</h5>
                 </div>
                 <div class="modal-body">
                     <p>ระบบพบข้อมูลการตรวจล่าสุดของคุณเมื่อวันที่ <strong id="modalDate" style="color: #1d4ed8;">--/--/----</strong></p>
@@ -475,24 +653,41 @@
                     <small class="text-muted">*หากข้อมูลไม่เปลี่ยน ผลการวิเคราะห์และแผนการออกกำลังกายจะเหมือนเดิม</small>
                 </div>
                 <div class="modal-footer justify-content-center gap-2">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-pencil"></i> ต้องการแก้ไขข้อมูล
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" onclick="hideExistingModal()">
+                        <svg class="me-1" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg> ต้องการแก้ไขข้อมูล
                     </button>
                     <button type="button" class="btn btn-primary" onclick="skipToPlan()" style="background-color: #1d4ed8; border-color: #1d4ed8;">
-                        <i class="bi bi-arrow-right-circle"></i> ข้อมูลคงเดิม (ไปเลือกแผนเลย)
+                        <svg class="me-1" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/></svg> ข้อมูลคงเดิม (ไปเลือกแผนเลย)
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 1. โหลด Bootstrap Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-
-    <!-- 2. โหลด SweetAlert2 (ต้องอยู่ตรงนี้และอยู่ก่อน rec_1.js เสมอ) -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-
-    <!-- 3. โหลด JS หลักของหน้า -->
+    <!-- โหลด JS หลักของหน้า -->
     <script src="{{ url_for('static', filename='js/rec_1.js') }}" defer></script>
+
+    <!-- โหลด SweetAlert2 และ Bootstrap Bundle แบบ Deferred/Idle เพื่อไม่ให้กีดขวาง First Contentful Paint -->
+    <script>
+        window.addEventListener('load', function() {
+            function loadScript(src) {
+                var s = document.createElement('script');
+                s.src = src;
+                s.defer = true;
+                document.body.appendChild(s);
+            }
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(function() {
+                    loadScript("https://cdn.jsdelivr.net/npm/sweetalert2@11");
+                    loadScript("https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js");
+                }, { timeout: 2000 });
+            } else {
+                setTimeout(function() {
+                    loadScript("https://cdn.jsdelivr.net/npm/sweetalert2@11");
+                    loadScript("https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js");
+                }, 1000);
+            }
+        });
+    </script>
 </body>
 </html>

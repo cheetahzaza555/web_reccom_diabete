@@ -31,7 +31,7 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap">
     </noscript>
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         body { font-family: 'Prompt', system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
         .header-section {
             background: linear-gradient(135deg, #1e40af 0%, #3366cc 100%);
@@ -183,10 +183,10 @@
         </div>
     </main>
 
-    <script id="exercises-data-source" type="application/json">{{ exercises | tojson | safe }}</script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script nonce="{{ csp_nonce }}" id="exercises-data-source" type="application/json">{{ exercises | tojson | safe }}</script>
+    <script nonce="{{ csp_nonce }}" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
     const placeholderImg = "/static/images/exercises/exercise_default.png";
     let exercisesData = [];
     const grid = document.getElementById('exerciseGrid');

@@ -26,7 +26,7 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap">
     </noscript>
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Prompt', system-ui, -apple-system, sans-serif;
             background-color: #f4f6fa;
@@ -173,7 +173,7 @@
         </div>
     </main>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         // 1. Logic การ Login
         document.getElementById("loginForm").addEventListener("submit", async function(e) {
             e.preventDefault();

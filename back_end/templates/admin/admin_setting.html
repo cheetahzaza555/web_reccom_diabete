@@ -7,8 +7,8 @@
     <meta name="description" content="การตั้งค่าผู้ดูแลระบบ DiaBalance แก้ไขชื่อและเปลี่ยนรหัสผ่านด้วยการยืนยัน OTP">
     <title>DiaBalance Admin | การตั้งค่า</title>
     {{ admin_assets() }}
-    <script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
-    <style>
+    <script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <style nonce="{{ csp_nonce }}">
         .settings-page {
             font-family: 'Prompt', sans-serif;
             width: 100%;
@@ -89,7 +89,7 @@
             <button type="button" class="settings-cancel" id="cancelAllSettings">ยกเลิกทั้งหมด</button>
         </div>
     </main>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         const settingsSections = {
             profile: { form: document.getElementById('profileForm'), edit: document.getElementById('editProfile'), cancel: document.getElementById('cancelProfile'), fields: ['firstname','lastname'] },
             password: { form: document.getElementById('passwordForm'), edit: document.getElementById('editPassword'), cancel: document.getElementById('cancelPassword'), fields: ['oldPassword','newPassword','confirmPassword'] }

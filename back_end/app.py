@@ -3,7 +3,7 @@ load_dotenv()
 from flask import Flask
 import os
 from routes.user import user_bp
-from flask_cors import CORS
+from utils.security_headers import install_security_headers
 from routes.auth import auth
 from routes.admin import admin_bp
 from modules.oauth import init_oauth
@@ -17,7 +17,7 @@ if os.getenv("APP_ENV") == "production" and len(os.getenv("JWT_SECRET_KEY", ""))
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
+    SESSION_COOKIE_SECURE=os.getenv("APP_ENV") == "production" or os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
     MAX_CONTENT_LENGTH=10 * 1024 * 1024,
 )
 if os.getenv("TRUST_PROXY") == "1":
@@ -47,7 +47,8 @@ def ready():
         return {"status": "database_unavailable"}, 503
 
 # Scheduled jobs run separately in scheduler.py.
-CORS(app)
+# Browser requests use the same origin; do not expose every route via wildcard CORS.
+install_security_headers(app)
 
 # ลงทะเบียน Blueprint
 app.register_blueprint(auth)

@@ -32,7 +32,7 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
     </noscript>
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         body { font-family: 'Prompt', system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
         .detail-header {
             background: linear-gradient(135deg, #1e40af 0%, #3366cc 100%);
@@ -178,7 +178,7 @@
         </div>
     </main>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
     function playVideo(vid, title) {
         const el = document.getElementById('ytContainer');
         if (!el) return;

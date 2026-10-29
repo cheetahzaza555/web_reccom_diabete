@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 load_dotenv()
-from flask import Flask
+from flask import Flask, request
 import os
 from routes.user import user_bp
 from utils.security_headers import install_security_headers
@@ -26,6 +26,36 @@ if os.getenv("TRUST_PROXY") == "1":
 
 # ตั้งค่า OAuth (Google Login)
 init_oauth(app)
+
+
+# เพิ่ม Security Headers ทั้งหมดเพื่อปิดช่องโหว่ OWASP ZAP (Medium & Low alerts เป็น 0)
+@app.after_request
+def apply_security_headers(response):
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://accounts.google.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com; "
+        "frame-src 'self' https://accounts.google.com; "
+        "frame-ancestors 'self';"
+    )
+    # แก้ Low: Big Redirect Detected โดยล้าง response body เมื่อเป็น redirect 3xx ป้องกันข้อมูลรั่วไหล
+    if 300 <= response.status_code < 400:
+        response.data = b""
+
+    # แก้ Info/Low: Cache-control
+    if request.path.startswith(("/login", "/register", "/admin", "/user", "/api", "/auth")):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+    return response
+
 
 @app.get('/healthz')
 def health():

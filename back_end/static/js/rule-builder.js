@@ -748,20 +748,39 @@ reset();
       resetRecordButton();
     };
 
-    record.onclick = () => {
+    record.onclick = async () => {
       if (listening) {
         // เมื่อผู้ใช้กดปุ่มเพื่อปิดไมค์ ให้หยุดทันที
         stopRecognition(true);
         status.textContent = "ปิดไมโครโฟนแล้ว";
-      } else {
+        return;
+      }
+
+      // กระตุ้นให้เบราว์เซอร์เด้ง Popup ขอสิทธิ์ไมโครโฟนทันที (สำหรับเบราว์เซอร์ที่ยังไม่เคยถาม)
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
-          if (silenceTimer) clearTimeout(silenceTimer);
-          recognition.start();
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop()); // ปล่อยสิทธิ์ให้ SpeechRecognition ทันที
         } catch (err) {
-          console.warn("Speech start error:", err);
-          status.textContent = "เปิดไมโครโฟนไม่ได้ กรุณาลองใหม่อีกครั้ง";
-          resetRecordButton();
+          console.warn("getUserMedia permission error:", err);
+          if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+            if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+              status.textContent = "เบราว์เซอร์ไม่แสดง Popup ขอสิทธิ์ไมค์ เนื่องจากเข้าผ่าน HTTP (IP เครื่อง) บน Android/Chrome ต้องเข้าผ่าน HTTPS หรือตั้งค่า chrome://flags (หรือพิมพ์ข้อความแทนได้ทันที)";
+            } else {
+              status.textContent = "สิทธิ์ไมโครโฟนถูกปฏิเสธ: กรุณาคลิกไอคอนแม่กุญแจ/สิทธิ์เว็บไซต์ที่แถบ URL แล้วเปลี่ยนเป็น Allow";
+            }
+            return;
+          }
         }
+      }
+
+      try {
+        if (silenceTimer) clearTimeout(silenceTimer);
+        recognition.start();
+      } catch (err) {
+        console.warn("Speech start error:", err);
+        status.textContent = "เปิดไมโครโฟนไม่ได้ กรุณาลองใหม่อีกครั้ง";
+        resetRecordButton();
       }
     };
   }

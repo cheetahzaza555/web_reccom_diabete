@@ -169,13 +169,12 @@ def get_all_swrl_rules():
         print(f"❌ Error fetching SWRL rules: {e}")
         return {"success": False, "message": str(e)}
 
-# =========================================================
-# ⚙️ Helper Functions สำหรับสร้าง SPARQL / RDF
-# =========================================================
+
+#  Helper Functions สำหรับสร้าง SPARQL / RDF
 
 def preview_swrl_rule(swrl_expression):
     """
-    ✅ [NEW] Dry-run: แกะ swrl_expression ออกมาดูว่าแต่ละ argument จะถูกตีความ
+     [NEW] Dry-run: แกะ swrl_expression ออกมาดูว่าแต่ละ argument จะถูกตีความ
     เป็น individual/literal/variable แบบไหน โดย 'ไม่เขียนอะไรลง GraphDB'
     ใช้เช็คก่อนกด save จริงทุกครั้ง เพื่อจับกรณีลืมใส่ 'ex:' หรือลืม quote
     ก่อนที่จะไปเป็นบั๊กเงียบๆ ในกฎจริง
@@ -245,7 +244,7 @@ def preview_swrl_rule(swrl_expression):
         "warnings": all_warnings
     }
 
-
+# Helper function สำหรับส่งคำสั่ง SPARQL UPDATE ไปยัง GraphDB WRITE Endpoint
 def _execute_sparql_update(sparql_query):
     """Helper function สำหรับส่งคำสั่ง SPARQL UPDATE ไปยัง GraphDB WRITE Endpoint"""
     sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
@@ -263,7 +262,7 @@ def _sparql_node_ref(node):
     """Return a valid SPARQL reference for an IRI or blank node."""
     return node if node.startswith("_:") else f"<{node}>"
 
-
+# แปลงข้อความกฎทีละส่วน หรือ “atom” ให้เป็นโครงสร้าง RDF เพื่อให้ฟังก์ชัน _build_rule_insert_query() นำไปประกอบเป็นคำสั่งบันทึกครับ
 def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
     """แปลงข้อความ Atom ให้เป็น RDF Triples ปลอดภัยจาก Syntax Error และ Pellet Error"""
     atom_str = atom_str.strip()
@@ -272,7 +271,7 @@ def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
     def node_ref(node):
         return node if node.startswith("_:") else f"<{node}>"
 
-    # ✅ [FIX] เดิม resolve_arg เจอคำที่ไม่มี prefix (ลืมพิมพ์ "ex:" นำหน้า) จะ
+    # เดิม resolve_arg เจอคำที่ไม่มี prefix (ลืมพิมพ์ "ex:" นำหน้า) จะ
     # เดาแบบเงียบๆ ว่าเป็น STRING LITERAL (xsd:string) ทำให้ atom ที่ควรจะเป็น
     # ObjectProperty (เช่น hasComplication(?x, NoGeneralComplication)) กลาย
     # เป็นการเปรียบเทียบกับข้อความ "NoGeneralComplication" แทนที่จะเป็น
@@ -377,7 +376,7 @@ def _parse_swrl_atom_to_triples(atom_str, atom_uri, prefix_ex):
 
     return ""
 
-
+# ข้อความกฎ SWRL → คำสั่ง SPARQL INSERT ที่บรรจุโครงสร้าง RDF
 def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="true", target_rule_uri=None):
     """ประกอบร่าง SPARQL INSERT query"""
     prefix_ex = "http://example.org/diabetes#"
@@ -390,8 +389,8 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
     else:
         body_part, head_part = swrl_expression, ""
 
-    body_atoms_str = [a.strip() for a in body_part.split("^") if a.strip()]
-    head_atoms_str = [a.strip() for a in head_part.split("^") if a.strip()]
+    body_atoms_str = [a.strip() for a in body_part.split("^") if a.strip()] # แยก body atoms atoms = ex:Patient(?p)
+    head_atoms_str = [a.strip() for a in head_part.split("^") if a.strip()] # แยก head atoms
 
     if not body_atoms_str or not head_atoms_str:
         raise ValueError("กฎ SWRL ต้องมีทั้ง body และ head คั่นด้วย ->")
@@ -437,8 +436,9 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
                 
             insert_triples.append(f"{list_node} rdf:rest {next_list_node} .")
 
+    # แปลงแต่ละ atom เป็น RDF แล้วเชื่อมเข้ากับกฎ
     build_atom_list("body", body_atoms_str)
-    build_atom_list("head", head_atoms_str)
+    build_atom_list("head", head_atoms_str) 
 
     query = f"""
     PREFIX swrl: <http://www.w3.org/2003/11/swrl#>
@@ -455,15 +455,14 @@ def _build_rule_insert_query(rule_label, comment, swrl_expression, is_enabled="t
     return query, rule_uri
 
 
-# =========================================================
-# 🟢 1. ฟังก์ชันเพิ่มกฎ SWRL (Add Rule)
-# =========================================================
+
+# 1. ฟังก์ชันเพิ่มกฎ SWRL (Add Rule)
 
 def add_swrl_rule(rule_label, comment, swrl_expression):
     """สร้างกฎ SWRL ใหม่ลง GraphDB"""
     try:
-        sparql_query, _ = _build_rule_insert_query(rule_label, comment, swrl_expression)
-        success, err_msg = _execute_sparql_update(sparql_query)
+        sparql_query, _ = _build_rule_insert_query(rule_label, comment, swrl_expression) # สร้าง SPARQL INSERT query
+        success, err_msg = _execute_sparql_update(sparql_query) # ส่งคำสั่งไปยัง GraphDB
 
         if success:
             return {"success": True, "message": f"เพิ่มกฎ SWRL '{rule_label}' สำเร็จ"}
@@ -474,9 +473,7 @@ def add_swrl_rule(rule_label, comment, swrl_expression):
         return {"success": False, "message": str(e)}
 
 
-# =========================================================
-# 🗑️ 2. ฟังก์ชันลบกฎ SWRL (Delete Rule)
-# =========================================================
+#  2. ฟังก์ชันลบกฎ SWRL (Delete Rule)
 
 def delete_swrl_rule(rule_uri=None, rule_label=None):
     """ลบกฎ SWRL และโหนด Blank Nodes ทั้งหมดที่เชื่อมโยงอยู่ ออกจาก GraphDB"""
@@ -529,11 +526,6 @@ def delete_swrl_rule(rule_uri=None, rule_label=None):
         print(f"❌ Error deleting SWRL rule: {e}")
         return {"success": False, "message": str(e)}
 
-
-# =========================================================
-# ✏️ 3. ฟังก์ชันแก้ไขกฎ SWRL (Update Rule)
-# =========================================================
-
 def update_swrl_rule(rule_uri, rule_label, comment, swrl_expression, is_enabled="true"):
     """แก้ไขรายละเอียดกฎ SWRL ที่มีอยู่แล้ว (ลบโครงสร้างเดิม แล้วเขียนโครงสร้างใหม่ทับ)"""
     try:
@@ -555,11 +547,6 @@ def update_swrl_rule(rule_uri, rule_label, comment, swrl_expression, is_enabled=
     except Exception as e:
         print(f"❌ Error updating SWRL rule: {e}")
         return {"success": False, "message": str(e)}
-
-
-# =========================================================
-# 🔘 4. ฟังก์ชันเปิด/ปิดการใช้งานกฎ (Toggle Rule Status)
-# =========================================================
 
 def toggle_swrl_rule_status(rule_uri, is_enabled):
     """สลับสถานะการเปิดใช้งานกฎ (true / false) ผ่าน swrla:isRuleEnabled"""
@@ -646,6 +633,86 @@ BUILDER_THAI_LABELS = {
 }
 
 
+def describe_swrl_rule(expression, catalog):
+    """Describe stored atoms without treating the rule's editable comment as truth."""
+    labels = {**BUILDER_THAI_LABELS, 'T1DM': 'เบาหวานชนิดที่ 1',
+              'T2DM': 'เบาหวานชนิดที่ 2', 'Light': 'ระดับเบา',
+              'Moderate': 'ระดับปานกลาง', 'Vigorous': 'ระดับหนัก'}
+    for group in catalog.get('results', {}).values():
+        for item in group:
+            labels.setdefault(item['value'].split('#')[-1], item['label'])
+    for field in catalog.get('fields', {}).values():
+        for item in field.get('options', []):
+            labels.setdefault(item['value'].split('#')[-1], item['label'])
+    def label(term):
+        key = term.removeprefix('ex:').strip('"')
+        return labels.get(key, key)
+    numbers = {v[3]: (v[1], v[2]) for v in NUMBERS.values()}
+    numbers['metValue'] = ('ค่า MET ของกิจกรรม', 'MET')
+    props = {v[2]: v[1] for v in OBJECT_INPUTS.values()}
+    props.update({'hasPatientWarning': 'คำเตือน', 'avoidExercise': 'ข้อควรหลีกเลี่ยง',
+                  'exerciseFrequency': 'ความถี่ในการออกกำลังกาย',
+                  'intensityOfExercise': 'ความหนักในการออกกำลังกาย',
+                  'hasKetone': 'ผลตรวจคีโตน', 'hasMicroalbuminurin': 'ผลตรวจไมโครอัลบูมินในปัสสาวะ'})
+    comparisons = {'greaterThanOrEqual': 'มากกว่าหรือเท่ากับ', 'greaterThan': 'มากกว่า',
+                   'lessThanOrEqual': 'น้อยกว่าหรือเท่ากับ', 'lessThan': 'น้อยกว่า', 'equal': 'เท่ากับ'}
+    parts = expression.split('->', 1)
+    parsed = []
+    for part in parts:
+        atoms = []
+        for raw in part.split(' ^ '):
+            match = re.fullmatch(r'([\w:]+)\((.*)\)', raw.strip())
+            atoms.append((raw.strip(), match.group(1).split(':')[-1] if match else '',
+                          [a.strip() for a in re.split(r',\s*(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)', match.group(2))] if match else []))
+        parsed.append(atoms)
+    variables = {}
+    for raw, prop, args in parsed[0]:
+        if prop in numbers and len(args) == 2 and args[1].startswith('?'):
+            variables[args[1]] = numbers[prop]
+    result = []
+    for part_index, atoms in enumerate(parsed):
+        lines = []
+        for raw, prop, args in atoms:
+            # Structural links are needed by SWRL, but add no useful detail to the condition list.
+            if part_index == 0 and (
+                (prop == 'Patient' and len(args) == 1)
+                or (prop in ('hasPhysicalExam', 'hasLabExam') and len(args) == 2)
+            ):
+                continue
+            if prop in numbers and len(args) == 2:
+                if args[1].startswith('?') and part_index == 0 and any(
+                    op in comparisons and len(values) == 2 and values[0] == args[1]
+                    and not values[1].startswith('?') for _, op, values in atoms
+                ):
+                    continue
+                title, unit = numbers[prop]
+                text = f'{title} เท่ากับ {label(args[1])} {unit}'
+            elif prop in comparisons and len(args) == 2 and args[0] in variables and not args[1].startswith('?'):
+                title, unit = variables[args[0]]
+                text = f'{title} {comparisons[prop]} {label(args[1])} {unit}'
+            elif prop in props and len(args) == 2 and not args[1].startswith('?'):
+                value = {'Positive': 'ผลบวก (Positive)', 'Negative': 'ผลลบ (Negative)'}.get(label(args[1]), label(args[1]))
+                text = f'{props[prop]}: {value}'
+            elif prop == 'Patient' and len(args) == 1:
+                text = 'เป็นผู้ป่วยในระบบ'
+            elif prop in ('hasPhysicalExam', 'hasLabExam') and len(args) == 2:
+                text = 'มีข้อมูลตรวจร่างกาย' if prop == 'hasPhysicalExam' else 'มีข้อมูลผลตรวจทางห้องปฏิบัติการ'
+            elif prop == 'recommendedExercise' and len(args) == 2:
+                text = 'แนะนำกิจกรรมที่ตรงกับเงื่อนไขของกฎ (' + label(args[1]) + ')'
+            elif prop == 'favoriteExercise' and len(args) == 2:
+                text = 'มีหมวดกิจกรรมที่ผู้ป่วยชอบ: ' + label(args[1])
+            elif prop == 'hasKindOfExercise' and len(args) == 2:
+                text = f'กิจกรรม {label(args[0])} อยู่ในหมวด {label(args[1])}'
+            elif len(args) == 1 and prop in labels:
+                text = f'{label(args[0])} อยู่ในหมวด {labels[prop]}'
+            else:
+                text = 'มีเงื่อนไขหรือผลลัพธ์เพิ่มเติมที่ระบบยังแปลเป็นภาษาไทยไม่ได้ กรุณาให้ผู้ดูแลตรวจสอบ'
+            if text not in lines:
+                lines.append(text)
+        result.append(lines)
+    return {'conditions': result[0], 'outputs': result[1] if len(result) > 1 else []}
+
+
 def get_builder_catalog():
     client = SPARQLWrapper(GRAPHDB_READ)
     client.setTimeout(30)
@@ -725,7 +792,7 @@ def get_builder_catalog():
             {'value': 'Negative', 'label': 'ผลลบ (Negative)'}, {'value': 'Positive', 'label': 'ผลบวก (Positive)'}]}
     return {'categories': CATEGORIES, 'fields': fields, 'results': {key: groups[key] for key in OUTPUTS}}
 
-
+# ข้อมูลจากฟอร์ม → ข้อความกฎ SWRL
 def compile_builder_rule(data, catalog):
     if not isinstance(data, dict):
         raise ValueError('รูปแบบข้อมูลไม่ถูกต้อง')
@@ -748,7 +815,7 @@ def compile_builder_rule(data, catalog):
             raise ValueError('รหัสรายการไม่ถูกต้อง')
         return 'ex:' + uri[len(EX):], item['label']
 
-    body, summary = ['ex:Patient(?p)'], []
+    body, summary = ['ex:Patient(?p)'], []  # เริ่มต้น body ของกฎด้วยการ match ตัวแปรผู้ป่วย ?p เสมอ
 
     def numeric(value):
         if not isinstance(value, (str, int, float)) or isinstance(value, bool) or len(str(value)) > 30:
@@ -832,6 +899,6 @@ def compile_builder_rule(data, catalog):
         else:
             head.append(f'ex:{OUTPUTS[action]}(?p, {target})')
             descriptions.append(f'{action}: {label}')
-    expression = ' ^ '.join(body) + ' -> ' + ' ^ '.join(dict.fromkeys(head))
+    expression = ' ^ '.join(body) + ' -> ' + ' ^ '.join(dict.fromkeys(head)) # รวมเป็นข้อความกฎหนึ่งข้อ
     comment = 'ถ้าผู้ป่วย' + ' และ'.join(summary) + ' ให้' + ' และ'.join(descriptions)
-    return {'rule_label': name.strip(), 'comment': comment, 'swrl_expression': expression}
+    return {'rule_label': name.strip(), 'comment': comment, 'swrl_expression': expression} # ส่งกลับข้อมูลกฎที่พร้อมบันทึกลง GraphDB

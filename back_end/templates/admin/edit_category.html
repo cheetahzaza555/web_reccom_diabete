@@ -7,7 +7,7 @@
     <title>DiaBalance Admin | จัดการหมวดหมู่การออกกำลังกาย</title>
 
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         :root {
             --primary-blue: #2B5CB3;
             --light-bg: #F4F7FC;
@@ -167,7 +167,7 @@
     </style>
 
 {{ admin_assets() }}
-<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 {{ admin_layout_styles() }}
 <meta name="description" content="DiaBalance Admin | จัดการหมวดหมู่การออกกำลังกาย">
 </head>
@@ -219,7 +219,7 @@
 
     <template id="category-icon-edit">{{ admin_icon('pencil-square') }}</template>
     <template id="category-icon-delete">{{ admin_icon('trash3') }}</template>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         const container = document.getElementById('category-data-container');
         const categoriesData = JSON.parse(container.getAttribute('data-json') || '[]');
 

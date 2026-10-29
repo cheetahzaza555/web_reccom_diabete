@@ -15,7 +15,7 @@
     <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Prompt', sans-serif;
             background-color: #ffffff;

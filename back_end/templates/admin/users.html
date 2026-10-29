@@ -8,9 +8,9 @@
     <title>DiaBalance Admin | จัดการสิทธิ์ผู้ใช้</title>
     
     {{ admin_assets() }}
-    <script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         :root {
             --primary-blue: #2B5CB3;
             --light-bg: #F4F7FC;
@@ -113,7 +113,7 @@
         .swal2-popup { font-family: 'Prompt', sans-serif !important; border-radius: 16px !important; }
     </style>
     {{ admin_layout_styles() }}
-    <style>
+    <style nonce="{{ csp_nonce }}">
         .admin-page .table-card .user-table { table-layout: auto; min-width: 900px; }
         .user-table .col-id { width: 1%; }
         .user-table .col-username { width: 18%; }
@@ -207,7 +207,7 @@
         </main>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         // ฟังก์ชันเปลี่ยนสิทธิ์ด้วย SweetAlert2
         function changeRole(userId, newRole, selectElement) {
             // เก็บค่าเดิมไว้ก่อน เผื่อผู้ใช้กด "ยกเลิก" จะได้เด้ง Dropdown กลับค่าเก่า

@@ -4,7 +4,7 @@
 <title>DiaBalance | เพิ่มกฎ</title><link rel="stylesheet" href="{{ url_for('static', filename='css/rule-builder.css') }}">
 
 {{ admin_assets() }}
-<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 {{ admin_layout_styles() }}
 <meta name="description" content="DiaBalance | เพิ่มกฎ">
 </head><body class="admin-page">
@@ -15,9 +15,21 @@
     <main class="main-content rule-builder-page">
       {% include 'includes/admin_breadcrumb.html' %}
       <div class="intro">
+        <button type="button" class="btn voice-launch" id="voice-open" aria-expanded="false" aria-controls="voice-panel">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></svg>
+          พูดเพื่อกรอกกฎ
+        </button>
         <h1>เพิ่มกฎใหม่</h1>
-        <p class="muted">ถ้าผู้ป่วยตรงกับเงื่อนไขที่เลือก ให้ระบบแสดงผลลัพธ์ที่กำหนด</p>
+        <p class="muted">กฎนี้จะใช้ในการประมวลผลคำแนะนำครั้งถัดไป</p>
       </div>
+      <section id="voice-panel" class="card" hidden aria-label="กรอกกฎด้วยเสียง">
+        <button type="button" class="btn" id="voice-record">เริ่มพูด</button>
+        <label for="voice-text">ข้อความที่ได้จากการพูด (สามารถแก้ไขหรือพิมพ์เองได้)</label>
+        <textarea id="voice-text" rows="5" maxlength="4000" placeholder="ระบุเงื่อนไข ตัวเลข และคำเตือน/ความถี่ที่ต้องการให้ชัดเจน"></textarea>
+        <button type="button" class="btn" id="voice-convert">แปลงข้อความเป็นร่างกฎ</button>
+        <p id="voice-status" role="status" aria-live="polite"></p>
+        <div id="voice-review" hidden><p>ตรวจร่างด้านล่างก่อนนำไปแทนข้อมูลในฟอร์ม ระบบยังไม่บันทึกกฎ</p><pre id="voice-draft-text"></pre><button type="button" class="btn" id="voice-apply">ใช้ร่างนี้แทนข้อมูลในฟอร์ม</button></div>
+      </section>
       <form id="builder" novalidate>
         <div class="card">
           <label for="name">ชื่อกฎ</label>
@@ -30,7 +42,7 @@
               <div class="title">
                 <span class="number">1</span>
                 <div>
-                  <h2>ถ้าผู้ป่วย…</h2>
+                  <h2>เงื่อนไข</h2>
                   <div class="muted">
                     เลือกข้อมูลและเงื่อนไขที่ต้องการ ผู้ป่วยต้องตรงทุกข้อ
                   </div>
@@ -47,15 +59,14 @@
             </div>
             <div class="flow-arrow" aria-hidden="true">↓</div>
             <div class="card">
-              <div class="title"><span class="number">2</span><h2>ให้แสดง…</h2></div>
+              <div class="title"><span class="number">2</span><h2>ผลลัพธ์หากเข้าเงื่อนไข</h2></div>
               <p class="muted">เพิ่มได้หลายรายการ เช่น แนะนำการออกกำลังกาย พร้อมความถี่และข้อควรหลีกเลี่ยง</p>
               <div id="outputs"></div>
               <button type="button" class="btn add" id="add-output">＋ เพิ่มผลลัพธ์</button>
               <div class="hint">รายการจากฐานข้อมูลปัจจุบัน หากไม่มีรายการให้เลือก ให้เพิ่มในหน้าจัดการคลังข้อมูลก่อน</div>
             </div>
             <div class="footer">
-              <span class="muted">ลองปรับเงื่อนไข แล้วดูสรุปทางด้านขวา</span
-              ><button type="button" class="btn" id="reset">
+              <button type="button" class="btn" id="reset">
                 ล้างแบบฟอร์ม
               </button>
             </div>
@@ -74,9 +85,6 @@
                 บันทึกและเปิดใช้งานกฎ
               </button>
               <div class="status" id="save-status" role="status"></div>
-              <div class="hint">
-                เมื่อบันทึกสำเร็จ กฎจะใช้ในการประมวลผลคำแนะนำครั้งถัดไป
-              </div>
             </div>
             <p class="muted note">
               โรคร่วม ภาวะแทรกซ้อนทั่วไป และภาวะแทรกซ้อนอื่นๆ เช่น ไม่มีโรคร่วม ต้องมีข้อเท็จจริงหรือผลอนุมานนั้นอยู่จริง ระบบไม่ถือว่าข้อมูลที่ขาดแปลว่าไม่มีโรค
@@ -86,9 +94,9 @@
       </form>
     </main>
 
-<script id="builder-catalog" type="application/json">{{ catalog | tojson }}</script>
+<script nonce="{{ csp_nonce }}" id="builder-catalog" type="application/json">{{ catalog | tojson }}</script>
 
-<script src="{{ url_for('static', filename='js/rule-builder.js') }}"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/rule-builder.js') }}"></script>
 {% endif %}
 
 </body></html>

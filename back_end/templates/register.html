@@ -25,7 +25,7 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
     </noscript>
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Prompt', system-ui, -apple-system, sans-serif;
             background-color: #f1f4f9;
@@ -297,9 +297,9 @@
     </main>
 
     <!-- SweetAlert2 deferred to not block rendering -->
-    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}" defer></script>
+    <script nonce="{{ csp_nonce }}" src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         let usernameTimer = null;
         let lastCheckedUsername = '';
         let isUsernameTakenFlag = false;

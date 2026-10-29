@@ -8,7 +8,7 @@
 
 
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         :root {
             --primary-blue: #2B5CB3;
             --light-bg: #F4F7FC;
@@ -139,7 +139,7 @@
     </style>
 
 {{ admin_assets() }}
-<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 {{ admin_layout_styles() }}
 <meta name="description" content="DiaBalance Admin | จัดการข้อควรระวังการออกกำลังกาย">
 </head>
@@ -190,7 +190,7 @@
         </main>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         const container = document.getElementById('avoid-data-container');
         const avoidData = JSON.parse(container.getAttribute('data-json') || '[]');
 

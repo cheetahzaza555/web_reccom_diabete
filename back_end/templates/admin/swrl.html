@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DiaBalance Admin | จัดการกฎ</title>
 
-      <style>
+      <style nonce="{{ csp_nonce }}">
       body {
         background: #fff;
         color: #333;
@@ -105,9 +105,17 @@
         font-size: 14px;
         border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
+        text-align: left;
       }
-      .rules-table th:first-child { width: 20%; }
+      .rules-table th:first-child { width: 12%; }
+      .rules-table td.rule-name { vertical-align: top; padding-top: 33px; overflow-wrap: anywhere; }
+      .rule-explanation { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .rule-explanation-panel { min-width: 0; padding: 12px; border: 1px solid #dfe6f0; border-radius: 12px; background: #fff; overflow-wrap: anywhere; }
+      .rule-explanation-panel h3 { margin: 0 0 12px; font-size: 16px; color: #2b5cb3; }
+      .rule-explanation-panel ul { margin: 0; padding-left: 20px; }
+      .rule-explanation-panel li + li { margin-top: 0px; }
       .rules-table .rules-actions { width: 150px; text-align: center; }
+      .rules-table td.rules-actions { vertical-align: top; padding-top: 16px; }
       .rules-table tbody tr:hover { background: #f8fafc; }
       .rules-table .rule-details { margin: 8px 0 0; }
       .rules-table .rules-empty { padding: 40px 16px; }
@@ -248,7 +256,7 @@
         font-size: 16px;
         font-weight: 600;
         color: #333;
-        margin: 1px 0 7px;
+        margin: 0;
         line-height: 1.65;
         overflow-wrap: anywhere;
       }
@@ -405,7 +413,7 @@
     </style>
 
 {{ admin_assets() }}
-<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 {{ admin_layout_styles() }}
 <meta name="description" content="DiaBalance Admin | จัดการกฎ">
 </head>
@@ -424,17 +432,6 @@
         </div>
       </header>
         <div class="rules-panel-heading">
-          <div class="rules-panel-title">
-            <span class="rules-icon"
-              >{{ admin_icon('diagram-3') }}</span>
-            <div>
-              <h2 id="rules-list-title">
-                รายการกฎทั้งหมด
-                <span class="rules-total">{{ swrl_rules | length }}</span>
-              </h2>
-              <p>เลือก “ดูเงื่อนไขและผลลัพธ์” เพื่ออ่านกฎฉบับเต็ม</p>
-            </div>
-          </div>
           <div class="rules-toolbar">
           <div class="rules-search">
             <label class="rules-sr-only" for="searchBar">ค้นหากฎ</label>
@@ -461,8 +458,7 @@
         </div>
       <section class="rules-panel table-card" aria-labelledby="rules-list-title">
         <div class="rules-list-caption">
-          <span id="result-count" role="status" aria-live="polite"></span
-          ><span>เรียงตามชื่อกฎ</span>
+          <span id="result-count" role="status" aria-live="polite"></span>
         </div>
         <table class="rules-table">
           <thead>
@@ -484,10 +480,10 @@
     <template id="rule-icon-trash">{{ admin_icon('trash3') }}</template>
     <template id="rule-icon-search">{{ admin_icon('search') }}</template>
     <template id="rule-icon-empty">{{ admin_icon('diagram-3') }}</template>
-    <script id="swrl-data" type="application/json">
+    <script nonce="{{ csp_nonce }}" id="swrl-data" type="application/json">
       {{ swrl_rules | tojson }}
     </script>
-    <script>
+    <script nonce="{{ csp_nonce }}">
       function deleteRule(encodedRuleUri, ruleLabel) {
         const ruleUri = decodeURIComponent(encodedRuleUri);
         ruleLabel = decodeURIComponent(ruleLabel);
@@ -575,7 +571,7 @@
         function render() {
           const query = search.value.trim().toLocaleLowerCase();
           const filtered = rules.filter((rule) =>
-            [rule.rule_label, rule.comment, expression(rule)].some((value) =>
+            [rule.rule_label, rule.comment, expression(rule), ...(rule.explanation?.conditions || []), ...(rule.explanation?.outputs || [])].some((value) =>
               String(value || "")
                 .toLocaleLowerCase()
                 .includes(query),
@@ -617,15 +613,18 @@
             const nameCell = element("td", "rule-name");
             nameCell.append(element("strong", "", title));
             const text = element("td", "rule-text");
-            text.append(
-              element(
-                "p",
-                rule.comment
-                  ? "rule-description"
-                  : "rule-description rule-description-empty",
-                rule.comment || "ยังไม่มีคำอธิบาย กดดูรายละเอียดกฎด้านล่าง",
-              ),
-            );
+            const explanation = element("div", "rule-explanation");
+            [["conditions", "เงื่อนไข"], ["outputs", "ผลลัพธ์ที่ระบบอนุมาน"]].forEach(([key, heading]) => {
+              const panel = element("section", "rule-explanation-panel");
+              panel.append(element("h3", "", heading));
+              const bullets = element("ul", "");
+              const lines = rule.explanation?.[key] || [];
+              lines.forEach((line) => bullets.append(element("li", "", line)));
+              if (!lines.length) bullets.append(element("li", "", "ยังไม่มีคำอธิบายสำหรับส่วนนี้"));
+              panel.append(bullets);
+              explanation.append(panel);
+            });
+            text.append(explanation);
             const remove = element("button", "rule-delete");
             remove.type = "button";
             remove.setAttribute("aria-label", "ลบกฎ " + title);
@@ -641,17 +640,6 @@
             const actions = element("div", "action-buttons");
             actions.append(remove);
             actionCell.append(actions);
-            const details = element("details", "rule-details");
-            const summary = element("summary", "", "ดูเงื่อนไขและผลลัพธ์");
-            const code = element(
-              "code",
-              "",
-              expression(rule) || "ไม่พบรายละเอียดกฎ",
-            );
-            const pre = element("pre", "rule-expression");
-            pre.append(code);
-            details.append(summary, pre);
-            text.append(details);
             row.append(nameCell, text, actionCell);
             fragment.append(row);
           });

@@ -1,35 +1,50 @@
 // --- rec_1.js : ตรรกะสำหรับหน้าผลตรวจสุขภาพ (DiaBalance) ---
 
-let currentUser = {};
-let currentPatientID = "";
+let currentUser = window.initialCurrentUser || {};
+let currentPatientID = currentUser && currentUser.id ? String(currentUser.id) : "";
 let currentStep = 1;
 
 const weightInput = document.getElementById('weight');
 const heightInput = document.getElementById('height');
 const bmiOutput = document.getElementById('bmi_result');
 
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const res = await fetch('/api/current_user');
-        if (res.ok) {
-            currentUser = await res.json();
-            const fullName = (currentUser.firstname && currentUser.lastname)
+document.addEventListener('DOMContentLoaded', () => {
+    if (!currentUser || !currentUser.id) {
+        fetch('/api/current_user')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (data) {
+                    currentUser = data;
+                    if (data.id) currentPatientID = String(data.id);
+                    const fullNameEl = document.getElementById('displayFullname');
+                    if (fullNameEl) {
+                        fullNameEl.innerText = (data.firstname && data.lastname)
+                            ? `${data.firstname} ${data.lastname}`
+                            : (data.username || 'ผู้ใช้งาน');
+                    }
+                }
+            })
+            .catch(() => {});
+    } else {
+        const fullNameEl = document.getElementById('displayFullname');
+        if (fullNameEl && (currentUser.firstname || currentUser.username)) {
+            fullNameEl.innerText = (currentUser.firstname && currentUser.lastname)
                 ? `${currentUser.firstname} ${currentUser.lastname}`
-                : currentUser.username;
-            document.getElementById('displayFullname').innerText = fullName;
-
-            await fetchLastCheckup();
+                : (currentUser.username || 'ผู้ใช้งาน');
         }
-    } catch (e) {
-        console.error('Error fetching user:', e);
     }
 
-    weightInput.addEventListener('input', calculateBMI);
-    heightInput.addEventListener('input', calculateBMI);
+    if (window.requestIdleCallback) { requestIdleCallback(fetchLastCheckup); } else { setTimeout(fetchLastCheckup, 50); }
+
+    if (weightInput) weightInput.addEventListener('input', calculateBMI);
+    if (heightInput) heightInput.addEventListener('input', calculateBMI);
 
     document.querySelectorAll('input[name="special"]:not(#chkNoOther)').forEach(el => {
         el.addEventListener('change', () => {
-            if (el.checked) document.getElementById('chkNoOther').checked = false;
+            if (el.checked) {
+                const noOther = document.getElementById('chkNoOther');
+                if (noOther) noOther.checked = false;
+            }
         });
     });
 });
@@ -226,10 +241,8 @@ async function fetchLastCheckup() {
                     });
                 }
 
-                const modalEl = document.getElementById('existingDataModal');
-                if (modalEl && data.found === true && data.checkup_date) {
-                    const myModal = new bootstrap.Modal(modalEl);
-                    myModal.show();
+                if (data.found === true && data.checkup_date) {
+                    showExistingModal();
                 }
             }
         }
@@ -238,14 +251,50 @@ async function fetchLastCheckup() {
     }
 }
 
+function showExistingModal() {
+    const modalEl = document.getElementById('existingDataModal');
+    if (!modalEl) return;
+    if (window.bootstrap && bootstrap.Modal) {
+        const m = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        m.show();
+    } else {
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        modalEl.setAttribute('aria-modal', 'true');
+        modalEl.removeAttribute('aria-hidden');
+        let bd = document.getElementById('modalBackdrop');
+        if (!bd) {
+            bd = document.createElement('div');
+            bd.id = 'modalBackdrop';
+            bd.className = 'modal-backdrop fade show';
+            document.body.appendChild(bd);
+        }
+        document.body.classList.add('modal-open');
+    }
+}
+
+function hideExistingModal() {
+    const modalEl = document.getElementById('existingDataModal');
+    if (!modalEl) return;
+    if (window.bootstrap && bootstrap.Modal) {
+        const m = bootstrap.Modal.getInstance(modalEl);
+        if (m) m.hide();
+    }
+    modalEl.classList.remove('show');
+    modalEl.style.display = 'none';
+    modalEl.setAttribute('aria-hidden', 'true');
+    modalEl.removeAttribute('aria-modal');
+    const bd = document.getElementById('modalBackdrop');
+    if (bd) bd.remove();
+    document.body.classList.remove('modal-open');
+}
+
 function skipToPlan() {
     if (currentPatientID) {
         window.location.href = "/user/select_plan/Patient" + currentPatientID;
     } else {
         alert("ไม่พบรหัสผู้ป่วย กรุณาตรวจสอบข้อมูลอีกครั้ง");
-        const modalEl = document.getElementById('existingDataModal');
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        modal.hide();
+        hideExistingModal();
     }
 }
 
@@ -459,7 +508,7 @@ function renderResults(json) {
         // 🛑 ป้องกันบัค: ปรับปุ่มไม่ให้ไปหน้าเลือกแผนเมื่อไม่มีท่าออกกำลังกายที่ปลอดภัย
         const btnNext = document.getElementById('btnNext');
         if (btnNext) {
-            btnNext.innerHTML = '<i class="bi bi-house-door me-1"></i> กลับสู่หน้าหลัก';
+            btnNext.innerHTML = '<svg class="me-1" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/><path d="m8 3.293 6 6V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V9.293l6-6Z"/></svg> กลับสู่หน้าหลัก';
             btnNext.className = 'btn-next bg-secondary border-0';
             btnNext.onclick = function () {
                 window.location.href = "/user/dashboard";
@@ -482,7 +531,7 @@ function renderResults(json) {
     // กรณีมีท่าออกกำลังกายที่แนะนำ คืนค่าปุ่มให้ไปหน้าเลือกแผนตามปกติ
     const btnNext = document.getElementById('btnNext');
     if (btnNext) {
-        btnNext.innerHTML = 'ยืนยันและไปเลือกแผน <i class="bi bi-arrow-right ms-1"></i>';
+        btnNext.innerHTML = 'ยืนยันและไปเลือกแผน <svg class="ms-1" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/></svg>';
         btnNext.className = 'btn-next';
         btnNext.onclick = function () {
             if (currentPatientID) {

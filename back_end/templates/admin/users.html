@@ -167,7 +167,14 @@
                         <tr>
                             <td><strong>#{{ user.id }}</strong></td>
                             <td>คุณ {{ user.firstname }} {{ user.lastname }}</td>
-                            <td>{{ user.username }}</td>
+                            <td>
+                                {{ user.username }}
+                                {% if user.auth_provider == 'google' %}
+                                <span style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #1a73e8; background: #e8f0fe; padding: 2px 7px; border-radius: 10px; margin-left: 4px; font-weight: 600;">
+                                    Google
+                                </span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if user.role == 'admin' %}
                                 <span class="badge badge-admin">{{ admin_icon('shield-lock-fill') }} Admin</span>

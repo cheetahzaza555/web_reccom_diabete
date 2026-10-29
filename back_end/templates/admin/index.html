@@ -59,42 +59,53 @@
         /* --- ระบบกล่องสถิติ (STAT CARDS) --- */
         .stat-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 20px;
             margin-bottom: 32px;
         }
 
         .stat-card {
             background-color: var(--white);
             border-radius: 16px;
-            padding: 24px;
+            padding: 22px;
             display: flex;
             align-items: center;
-            gap: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+            gap: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
             border: 1px solid var(--border-color);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
         }
 
         .stat-icon {
-            width: 56px;
-            height: 56px;
+            width: 54px;
+            height: 54px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
             background-color: var(--light-bg);
             color: #333;
+            flex-shrink: 0;
+        }
+
+        .stat-icon-google {
+            background-color: #f8fafd;
+            border: 1px solid #e8f0fe;
         }
 
         .stat-info .stat-label {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-muted);
             margin-bottom: 4px;
         }
 
         .stat-info .stat-value {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 600;
         }
 
@@ -103,7 +114,7 @@
             background-color: var(--white);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
             border: 1px solid var(--border-color);
         }
 
@@ -118,7 +129,7 @@
         .activity-list {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         .activity-item {
@@ -128,6 +139,7 @@
             padding: 12px 16px;
             background-color: var(--light-bg);
             border-radius: 10px;
+            gap: 12px;
         }
 
         .activity-left {
@@ -139,16 +151,43 @@
         .activity-text .main-text {
             font-weight: 600;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .activity-text .sub-text {
             font-size: 12px;
             color: var(--text-muted);
+            margin-top: 2px;
         }
 
         .activity-time {
             font-size: 12px;
             color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* Badges สำหรับ Auth Provider */
+        .auth-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .auth-badge-google {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+            border: 1px solid #d2e3fc;
+        }
+        .auth-badge-local {
+            background-color: #f1f3f4;
+            color: #5f6368;
+            border: 1px solid #dadce0;
         }
     </style>
     {{ admin_layout_styles() }}
@@ -166,14 +205,47 @@
                 <p>ภาพรวมของข้อมูลทั้งหมดในระบบ</p>
             </div>
 
+            <!-- กล่องสถิติหลัก -->
             <div class="stat-grid">
+                <!-- ผู้ใช้งานทั้งหมด -->
                 <div class="stat-card">
-                    <div class="stat-icon">{{ admin_icon('people-fill') }}</div>
+                    <div class="stat-icon" style="background-color: #ebf3ff; color: #2b5cb3;">
+                        {{ admin_icon('people-fill') }}
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">ผู้ใช้งานทั้งหมด</div>
                         <div class="stat-value">{{ stats.total_patients }} คน</div>
                     </div>
                 </div>
+
+                <!-- ผู้ใช้ที่เข้าสู่ระบบด้วย Google -->
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-google">
+                        <svg width="26" height="26" viewBox="0 0 48 48">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">เข้าสู่ระบบด้วย Google</div>
+                        <div class="stat-value" style="color: #1a73e8;">{{ stats.google_patients }} คน</div>
+                    </div>
+                </div>
+
+                <!-- ผู้ใช้ที่สมัครผ่านเว็บปกติ -->
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #f0fdf4; color: #16a34a;">
+                        {{ admin_icon('person-plus-fill') }}
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">สมัครผ่านหน้าเว็บ</div>
+                        <div class="stat-value" style="color: #16a34a;">{{ stats.local_patients }} คน</div>
+                    </div>
+                </div>
+
+                <!-- สื่อท่าออกกำลังกาย -->
                 <div class="stat-card">
                     <div class="stat-icon">{{ admin_icon('person-arms-up') }}</div>
                     <div class="stat-info">
@@ -181,6 +253,8 @@
                         <div class="stat-value">{{ stats.total_exercises }} ชิ้น</div>
                     </div>
                 </div>
+
+                <!-- กฎ SWRL ที่ใช้งาน -->
                 <div class="stat-card">
                     <div class="stat-icon">{{ admin_icon('puzzle-fill') }}</div>
                     <div class="stat-info">
@@ -190,18 +264,42 @@
                 </div>
             </div>
 
-            <div class="activity-card">
+            <!-- กล่องผู้ใช้ล่าสุดที่ลงทะเบียนในระบบ -->
+            <div class="activity-card" style="margin-bottom: 24px;">
                 <div class="activity-title">ผู้ใช้ล่าสุดที่ลงทะเบียนในระบบ</div>
                 <div class="activity-list">
-                    
                     {% for user in recent_users %}
                     <div class="activity-item">
                         <div class="activity-left">
                             <div class="stat-icon" style="width:40px; height:40px; font-size:16px;">
+                                {% if user.auth_provider == 'google' %}
+                                <svg width="18" height="18" viewBox="0 0 48 48">
+                                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                                </svg>
+                                {% else %}
                                 {{ admin_icon('person-plus-fill') }}
+                                {% endif %}
                             </div>
                             <div class="activity-text">
-                                <div class="main-text">คุณ {{ user.firstname }} {{ user.lastname }}</div>
+                                <div class="main-text">
+                                    คุณ {{ user.firstname }} {{ user.lastname }}
+                                    {% if user.auth_provider == 'google' %}
+                                    <span class="auth-badge auth-badge-google">
+                                        <svg width="12" height="12" viewBox="0 0 48 48">
+                                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                                        </svg>
+                                        Google
+                                    </span>
+                                    {% else %}
+                                    <span class="auth-badge auth-badge-local">เว็บปกติ</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                         <div class="activity-time">
@@ -217,7 +315,57 @@
                         ยังไม่มีผู้ใช้งานลงทะเบียนในระบบ
                     </div>
                     {% endfor %}
+                </div>
+            </div>
 
+            <!-- กล่องรายชื่อผู้ใช้งานที่เข้าสู่ระบบด้วย Google -->
+            <div class="activity-card">
+                <div class="activity-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="22" height="22" viewBox="0 0 48 48">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
+                        รายชื่อผู้ใช้งานที่เข้าสู่ระบบด้วย Google
+                    </div>
+                    <span style="font-size: 13px; color: var(--text-muted); font-weight: normal;">
+                        ทั้งหมด {{ google_users|length }} บัญชี
+                    </span>
+                </div>
+                <div class="activity-list">
+                    {% for guser in google_users %}
+                    <div class="activity-item">
+                        <div class="activity-left">
+                            <div class="stat-icon" style="width:40px; height:40px; font-size:16px; background-color: #e8f0fe; color: #1a73e8;">
+                                <svg width="20" height="20" viewBox="0 0 48 48">
+                                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                                </svg>
+                            </div>
+                            <div class="activity-text">
+                                <div class="main-text">
+                                    คุณ {{ guser.firstname }} {{ guser.lastname }}
+                                    <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(@{{ guser.username }})</span>
+                                    {% if guser.role == 'admin' %}
+                                    <span class="auth-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">Admin</span>
+                                    {% endif %}
+                                </div>
+                                <div class="sub-text">{{ guser.email }} &bull; รหัสคนไข้ #{{ guser.id }}</div>
+                            </div>
+                        </div>
+                        <div class="activity-time">
+                            สมัคร/เชื่อมต่อเมื่อ {{ guser.created_at }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; color: var(--text-muted); padding: 24px;">
+                        ยังไม่มีผู้ใช้งานเข้าสู่ระบบด้วย Google
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
 

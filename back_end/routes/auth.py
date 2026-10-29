@@ -1,10 +1,20 @@
 from flask import Blueprint, redirect, render_template, request, jsonify, session, url_for
-from werkzeug.security import generate_password_hash, check_password_hash # เพิ่ม generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from modules.auth_utils import generate_token
 import random
 from modules.email_utils import send_otp_email
-# เปลี่ยนมานำเข้าฟังก์ชันจาก database.py แทน (เพราะเราจะย้ายคำสั่ง SPARQL ไปรวมไว้ที่นั่น)
-from modules.db import is_username_taken, register_new_patient, get_user_for_login, get_user_by_id, update_user_profile_db, update_password_db
+from modules.db import (
+    is_username_taken,
+    register_new_patient,
+    get_user_for_login,
+    get_user_by_id,
+    update_user_profile_db,
+    update_password_db,
+    get_user_by_email,
+    register_google_user,
+    set_user_auth_provider,
+)
+from modules.oauth import oauth
 
 auth = Blueprint("auth", __name__)
 
@@ -19,16 +29,14 @@ def index():
 
     if role == "admin":
         # 🛡️ วิธีป้องกันหน้าพังที่ดีที่สุด: โยนแอดมินไปที่พาร์ทแดชบอร์ดของแอดมินโดยตรง
-        # เพื่อให้ฟังก์ชันใน routes/admin.py ทำหน้าที่ดึงข้อมูลสรุปสถิติจริงมาแสดงผลได้อย่างถูกต้อง
         return redirect(url_for("admin.dashboard_page"))
-        
     else:
         # สำหรับ User ทั่วไป ให้พาไปหน้า Dashboard ของฝั่งคนไข้ตามปกติครับ
         return redirect(url_for("user.dashboard_page"))
     
 @auth.route("/login")
 def login_page():
-    return render_template("login.html")
+    return render_template("login.html", error=request.args.get("error"))
 
 @auth.route("/register")
 def register_page():
@@ -37,6 +45,67 @@ def register_page():
 @auth.route("/forget_password")
 def forgetpassword_page():
     return render_template("forget_password.html")
+
+# --- Google OAuth Routes ---
+@auth.route("/auth/google")
+@auth.route("/auth/google/login")
+def google_login():
+    redirect_uri = url_for("auth.google_callback", _external=True)
+    return oauth.google.authorize_redirect(redirect_uri, prompt="select_account")
+
+
+@auth.route("/auth/google/callback")
+def google_callback():
+    try:
+        token = oauth.google.authorize_access_token()
+        userinfo = token.get("userinfo")
+        if not userinfo:
+            userinfo = oauth.google.userinfo()
+
+        email = userinfo.get("email")
+        if not email:
+            return render_template("login.html", error="ไม่สามารถดึงข้อมูลอีเมลจากบัญชี Google ได้")
+
+        # 1. ตรวจสอบว่าผู้ใช้มีอยู่ในระบบแล้วหรือยัง
+        user = get_user_by_email(email)
+
+        # 2. ถ้ายังไม่มี ให้ลงทะเบียนใหม่อัตโนมัติ
+        if not user:
+            firstname = userinfo.get("given_name") or userinfo.get("name", "").split(" ")[0] or "GoogleUser"
+            lastname = userinfo.get("family_name") or ""
+            reg_result = register_google_user(email, firstname, lastname)
+            if not reg_result.get("success"):
+                return render_template("login.html", error=f"ไม่สามารถลงทะเบียนบัญชี Google ได้: {reg_result.get('message')}")
+            user = get_user_by_email(email)
+        else:
+            # หากมีบัญชีอยู่แล้ว แต่ล็อกอินผ่าน Google ให้อัปเดต authProvider เป็น google
+            if user.get("auth_provider") != "google":
+                set_user_auth_provider(user.get("patient_id"), "google")
+                user["auth_provider"] = "google"
+
+        if not user:
+            return render_template("login.html", error="เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้งาน")
+
+        # 3. กำหนด Session สำหรับการเข้าสู่ระบบ
+        clean_pid = str(user.get("patient_id", "")).replace("Patient", "")
+        session["user_id"] = clean_pid
+        session["username"] = user.get("username", "")
+        session["role"] = user.get("role", "user")
+        session["firstname"] = user.get("firstname", "")
+        session["lastname"] = user.get("lastname", "")
+        session["email"] = user.get("email", email)
+
+        # 4. Redirect ตาม Role ของผู้ใช้
+        role = session.get("role")
+        if role == "admin":
+            return redirect(url_for("admin.dashboard_page"))
+        else:
+            return redirect(url_for("user.dashboard_page"))
+
+    except Exception as e:
+        print(f"Google login error: {e}")
+        return render_template("login.html", error=f"เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google: {str(e)}")
+
 
 @auth.route("/api/logout", methods=["POST"])
 def logout():
@@ -121,12 +190,9 @@ def get_current_user():
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
-    user_id = session["user_id"]
-    
     try:
-        # ✅ เรียกใช้ฟังก์ชัน SPARQL เพื่อดึง Profile แทน
         user_id = session["user_id"]
-        user_data = get_user_by_id(user_id) # ฟังก์ชันที่เราเพิ่งแก้ด้านบน
+        user_data = get_user_by_id(user_id)
         
         if user_data:
             return jsonify(user_data)
@@ -159,7 +225,7 @@ def check_username():
         return jsonify({"error": str(e)}), 500
 
 
-    # --- 1. API สำหรับส่ง OTP ไปที่อีเมล ---
+# --- 1. API สำหรับส่ง OTP ไปที่อีเมล ---
 @auth.route("/api/request_otp", methods=["POST"])
 def request_otp():
     try:
@@ -170,11 +236,11 @@ def request_otp():
 
         # 2. ดึงอีเมลให้ถูกที่
         if action in ("update_settings", "update_profile", "update_password", "update_admin_settings", "update_admin_profile", "update_admin_password"): 
-            email = session.get('email') or data.get('email') # หน้าตั้งค่า ดึงจาก Session หรือ input เผื่อกรณี session หลุด
+            email = session.get('email') or data.get('email')
             if email and not session.get('email'):
                 session['email'] = email
         else:
-            email = data.get('email') # หน้าสมัครสมาชิก ดึงจากที่ผู้ใช้พิมพ์เข้ามา
+            email = data.get('email')
             username = (data.get('username') or '').strip()
             if username and is_username_taken(username):
                 return jsonify({"error": "ชื่อบัญชีผู้ใช้นี้มีผู้ใช้งานแล้ว กรุณาตั้งชื่อบัญชีผู้ใช้อื่น"}), 400
@@ -189,7 +255,7 @@ def request_otp():
         session['register_otp'] = otp_code
         session['register_email'] = email 
 
-        # 5. ส่ง action พ่วงไปด้วย เพื่อให้ฟังก์ชันส่งเมลรู้ว่าต้องพิมพ์หัวข้อว่าอะไร!
+        # 5. ส่ง action พ่วงไปด้วย
         success = send_otp_email(email, otp_code, action)
         
         if success:
@@ -219,13 +285,12 @@ def forgot_password_request():
         otp_code = str(random.randint(100000, 999999))
         session['forgot_otp'] = otp_code
         session['forgot_username'] = username
-        session['forgot_patient_id'] = user.get("patient_id") # เก็บ ID ไว้ใช้อัปเดตรหัส
+        session['forgot_patient_id'] = user.get("patient_id")
 
         # 3. สั่งส่งอีเมล
         success = send_otp_email(email, otp_code, action="forgot_password")
         
         if success:
-            # ซ่อนอีเมลบางส่วนเพื่อความปลอดภัย เช่น d***o@gmail.com
             masked_email = email[:2] + "***" + email[email.find("@")-1:]
             return jsonify({"status": "ok", "masked_email": masked_email})
         else:
@@ -260,7 +325,7 @@ def forgot_password_reset():
         success = update_password_db(patient_id, new_hash)
         
         if success:
-            session.pop('forgot_otp', None) # เคลียร์ OTP ทิ้ง
+            session.pop('forgot_otp', None)
             return jsonify({"status": "ok", "message": "เปลี่ยนรหัสผ่านสำเร็จ"})
         else:
             return jsonify({"error": "ไม่สามารถอัปเดตฐานข้อมูลได้"}), 500

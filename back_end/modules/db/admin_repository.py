@@ -69,13 +69,29 @@ def get_all_categories_for_dropdown():
 def get_admin_dashboard_stats():
     """ฟังก์ชันดึงตัวเลขสถิติแยกคิวรี เพื่อความแม่นยำ 100% ไม่เกิดการคูณซ้ำ"""
     sparql = SPARQLWrapper(GRAPHDB_READ)
-    stats = {"total_patients": 0, "total_exercises": 0, "total_mets": 0}
+    stats = {
+        "total_patients": 0,
+        "google_patients": 0,
+        "local_patients": 0,
+        "total_exercises": 0,
+        "total_mets": 0,
+        "total_rules": 0
+    }
 
     # 1. นับจำนวนคนไข้จริง (นับเฉพาะตัวที่มีคลาส Patient)
     query_patients = """
     PREFIX ex: <http://example.org/diabetes#>
     SELECT (COUNT(DISTINCT ?patient) AS ?count) WHERE {
         ?patient a ex:Patient .
+    }
+    """
+
+    # 1.1 นับจำนวนผู้ใช้ที่เชื่อมต่อ/ล็อกอินด้วย Google
+    query_google_patients = """
+    PREFIX ex: <http://example.org/diabetes#>
+    SELECT (COUNT(DISTINCT ?patient) AS ?count) WHERE {
+        ?patient a ex:Patient ;
+                 ex:authProvider "google" .
     }
     """
 
@@ -111,7 +127,14 @@ def get_admin_dashboard_stats():
 
         sparql.setQuery(query_patients)
         res_p = sparql.query().convert()
-        stats["total_patients"] = int(res_p["results"]["bindings"][0]["count"]["value"])
+        total_p = int(res_p["results"]["bindings"][0]["count"]["value"])
+        stats["total_patients"] = total_p
+
+        sparql.setQuery(query_google_patients)
+        res_g = sparql.query().convert()
+        google_p = int(res_g["results"]["bindings"][0]["count"]["value"])
+        stats["google_patients"] = google_p
+        stats["local_patients"] = max(0, total_p - google_p)
 
         sparql.setQuery(query_exercises)
         res_e = sparql.query().convert()
@@ -132,18 +155,19 @@ def get_admin_dashboard_stats():
 
 
 def get_recent_registered_users():
-    """ผู้สมัครล่าสุด 5 ราย โดยบัญชีที่ไม่มีวันที่สมัครอยู่ท้ายรายการ"""
+    """ผู้สมัครล่าสุด 5 ราย พร้อมระบุช่องทางการสมัคร (Google / เว็บปกติ)"""
     sparql = SPARQLWrapper(GRAPHDB_READ)
     user_list = []
 
     query = """
     PREFIX ex: <http://example.org/diabetes#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-    SELECT DISTINCT ?p ?username ?fname ?lname ?createdAt WHERE {
+    SELECT DISTINCT ?p ?username ?fname ?lname ?authProvider ?createdAt WHERE {
         ?p a ex:Patient .
         OPTIONAL { ?p ex:username ?username . }
         OPTIONAL { ?p ex:firstname ?fname . }
         OPTIONAL { ?p ex:lastname ?lname . }
+        OPTIONAL { ?p ex:authProvider ?authProvider . }
         OPTIONAL {
             ?p ex:createdAt ?rawCreatedAt .
             BIND(xsd:dateTime(?rawCreatedAt) AS ?createdAt)
@@ -161,16 +185,74 @@ def get_recent_registered_users():
             u_name = row.get("username", {}).get("value", "Unknown")
             f_name = row.get("fname", {}).get("value", u_name)
             l_name = row.get("lname", {}).get("value", "")
+            auth_prov = row.get("authProvider", {}).get("value", "local")
 
             user_list.append({
+                "username": u_name,
                 "firstname": f_name,
                 "lastname": l_name,
+                "auth_provider": auth_prov,
                 "created_at": row.get("createdAt", {}).get("value")
             })
     except Exception as e:
         print("❌ [Admin Module Error] เกิดข้อผิดพลาดขณะ Query รายชื่อผู้ใช้ล่าสุด:", e)
 
     return user_list
+
+
+def get_google_users_list():
+    """ดึงรายชื่อผู้ใช้งานทั้งหมดที่เข้าสู่ระบบด้วย Google"""
+    sparql = SPARQLWrapper(GRAPHDB_READ)
+    google_users = []
+
+    query = """
+    PREFIX ex: <http://example.org/diabetes#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    SELECT DISTINCT ?p ?username ?fname ?lname ?email ?role ?createdAt WHERE {
+        ?p a ex:Patient ;
+           ex:authProvider "google" .
+        OPTIONAL { ?p ex:username ?username . }
+        OPTIONAL { ?p ex:firstname ?fname . }
+        OPTIONAL { ?p ex:lastname ?lname . }
+        OPTIONAL { ?p ex:email ?email . }
+        OPTIONAL { ?p ex:role ?role . }
+        OPTIONAL {
+            ?p ex:createdAt ?rawCreatedAt .
+            BIND(xsd:dateTime(?rawCreatedAt) AS ?createdAt)
+        }
+    }
+    ORDER BY DESC(BOUND(?createdAt)) DESC(?createdAt) ASC(STR(?p))
+    """
+    try:
+        sparql.setQuery(query)
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
+
+        for row in results["results"]["bindings"]:
+            p_uri = row["p"]["value"]
+            p_id = p_uri.split("#")[-1].replace("Patient", "") if "#" in p_uri else p_uri
+            u_name = row.get("username", {}).get("value", "-")
+            f_name = row.get("fname", {}).get("value", u_name)
+            l_name = row.get("lname", {}).get("value", "")
+            email = row.get("email", {}).get("value", "-")
+            role = row.get("role", {}).get("value", "user")
+
+            created = row.get("createdAt", {}).get("value")
+            created_display = created[:10] if created else "ไม่ระบุ"
+
+            google_users.append({
+                "id": p_id,
+                "username": u_name,
+                "firstname": f_name,
+                "lastname": l_name,
+                "email": email,
+                "role": role,
+                "created_at": created_display
+            })
+    except Exception as e:
+        print("❌ [Admin Module Error] เกิดข้อผิดพลาดขณะ Query รายชื่อผู้ใช้ Google:", e)
+
+    return google_users
 
 
 def get_patient_health_summary():
@@ -225,12 +307,13 @@ def get_all_users_with_roles():
 
     query = """
     PREFIX ex: <http://example.org/diabetes#>
-    SELECT DISTINCT ?p ?username ?fname ?lname ?role WHERE {
+    SELECT DISTINCT ?p ?username ?fname ?lname ?role ?authProvider WHERE {
         ?p a ex:Patient .
         OPTIONAL { ?p ex:username ?username . }
         OPTIONAL { ?p ex:firstname ?fname . }
         OPTIONAL { ?p ex:lastname ?lname . }
         OPTIONAL { ?p ex:role ?role . } 
+        OPTIONAL { ?p ex:authProvider ?authProvider . }
     }
     """
     try:
@@ -247,7 +330,8 @@ def get_all_users_with_roles():
                 "username": row.get("username", {}).get("value", "-"),
                 "firstname": row.get("fname", {}).get("value", "-"),
                 "lastname": row.get("lname", {}).get("value", "-"),
-                "role": row.get("role", {}).get("value", "user")
+                "role": row.get("role", {}).get("value", "user"),
+                "auth_provider": row.get("authProvider", {}).get("value", "local")
             })
     except Exception as e:
         print("❌ [Admin Error] ดึงรายชื่อผู้ใช้ล้มเหลว:", e)

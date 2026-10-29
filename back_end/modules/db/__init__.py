@@ -3,11 +3,6 @@
 รวม import จากทุกไฟล์ใน modules/db/ ไว้ที่เดียว
 เพื่อให้ไฟล์อื่นในโปรเจค (routes/, modules/logic.py ฯลฯ) 
 เรียกใช้ได้เหมือนเดิมโดยไม่ต้องแก้โค้ด import ที่มีอยู่แล้ว
-
-ตัวอย่าง: จากเดิม
-    from modules.database import get_patient_profile
-เปลี่ยนเป็นแค่
-    from modules.db import get_patient_profile
 """
 
 from .connection import (
@@ -43,6 +38,9 @@ from .auth_repository import (
     get_password_hash_by_id,
     update_user_profile_db,
     update_password_db,
+    get_user_by_email,
+    register_google_user,
+    set_user_auth_provider,
 )
 
 from .plan_repository import (
@@ -65,5 +63,5 @@ from .admin_repository import (
     get_patient_health_summary,
     get_all_users_with_roles,
     update_user_role_in_graphdb,
+    get_google_users_list,
 )
-

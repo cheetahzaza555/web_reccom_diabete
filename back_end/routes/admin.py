@@ -435,6 +435,12 @@ def api_get_swrl_rules():
     """Endpoint สำหรับดึงกฎ SWRL ไปโชว์บนหน้าเว็บ Admin"""
     result = get_all_swrl_rules()
     if result["success"]:
+        try:
+            catalog = get_builder_catalog()
+        except Exception:
+            catalog = {}
+        for rule in result['data']:
+            rule['explanation'] = describe_swrl_rule(rule.get('full_rule', ''), catalog)
         return render_template('admin/swrl.html', swrl_rules=result["data"]), 200
     return jsonify(result), 500
 
@@ -442,7 +448,7 @@ def api_get_swrl_rules():
 @admin_required
 def new_swrl_rule():
     try:
-        catalog = get_builder_catalog()
+        catalog = get_builder_catalog() 
     except Exception:
         return render_template('admin/rule_builder.html', catalog=None,
                                load_error='โหลดรายการจากฐานข้อมูลไม่สำเร็จ กรุณาลองใหม่'), 503
@@ -456,18 +462,34 @@ def save_builder_rule():
     if not isinstance(data, dict):
         return jsonify(success=False, message='รูปแบบข้อมูลไม่ถูกต้อง'), 400
     try:
-        catalog = get_builder_catalog()
+        catalog = get_builder_catalog() # ดึงข้อมูล catalog เพื่อใช้ตรวจว่ารายการที่ผู้ใช้เลือก ยังมีอยู่จริงในระบบ
     except Exception:
         return jsonify(success=False, message='ตรวจสอบรายการจากฐานข้อมูลไม่ได้ กรุณาลองใหม่'), 503
     try:
         compiled = compile_builder_rule(data, catalog)
     except ValueError as exc:
         return jsonify(success=False, message=str(exc)), 400
-    result = add_swrl_rule(**compiled)
+    result = add_swrl_rule(**compiled) # บันทึกกฎ SWRL ลง GraphDB
     return jsonify(result), 200 if result.get('success') else 400
 
 
-# 1.5 POST: Preview/Dry-run กฎก่อนบันทึกจริง (ไม่เขียนลง GraphDB)
+@admin_bp.route('/api/swrl/rules/voice-draft', methods=['POST'])
+@admin_required
+def voice_rule_draft():
+    data = request.get_json(silent=True)
+    text = data.get('text') if isinstance(data, dict) else None
+    if not isinstance(text, str) or not 1 <= len(text.strip()) <= 4000:
+        return jsonify(success=False, message='กรุณาระบุข้อความไม่เกิน 4,000 ตัวอักษร'), 400
+    try:
+        from modules.rule_voice import draft_rule
+        draft = draft_rule(text.strip(), get_builder_catalog())
+        return jsonify(success=True, draft=draft)
+    except ValueError as exc:
+        return jsonify(success=False, message=str(exc)), 400
+    except Exception:
+        return jsonify(success=False, message='แปลงข้อความไม่สำเร็จ กรุณาลองใหม่หรือตั้งค่ากฎด้วยตนเอง'), 503
+
+
 @admin_bp.route('/api/swrl/rules/preview', methods=['POST'])
 @admin_required
 def api_preview_swrl_rule():
@@ -481,7 +503,6 @@ def api_preview_swrl_rule():
     return jsonify({"success": True, **result}), 200
 
 
-# 2. POST: เพิ่มกฎ SWRL ใหม่
 @admin_bp.route('/api/swrl/rules/add', methods=['POST'])
 @admin_required
 def api_add_swrl_rule():

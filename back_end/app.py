@@ -28,12 +28,12 @@ if os.getenv("TRUST_PROXY") == "1":
 init_oauth(app)
 
 
-# เพิ่ม Security Headers ทั้งหมดเพื่อปิดช่องโหว่ OWASP ZAP (Medium & Low alerts เป็น 0)
+# เพิ่ม Security Headers ทั้งหมดเพื่อปิดช่องโหว่ OWASP ZAP
 @app.after_request
 def apply_security_headers(response):
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    # Strict-Transport-Security ให้ Caddy Reverse Proxy เป็นผู้กำหนดจุดเดียว ป้องกัน duplicate header
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     response.headers["Content-Security-Policy"] = (
@@ -41,10 +41,13 @@ def apply_security_headers(response):
         "script-src 'self' 'unsafe-inline' https://accounts.google.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; "
-        "img-src 'self' data: https:; "
+        "img-src 'self' data: https://*.googleusercontent.com https://lh3.googleusercontent.com; "
         "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com; "
         "frame-src 'self' https://accounts.google.com; "
-        "frame-ancestors 'self';"
+        "frame-ancestors 'self'; "
+        "base-uri 'self'; "
+        "form-action 'self' https://accounts.google.com; "
+        "object-src 'none';"
     )
     # แก้ Low: Big Redirect Detected โดยล้าง response body เมื่อเป็น redirect 3xx ป้องกันข้อมูลรั่วไหล
     if 300 <= response.status_code < 400:

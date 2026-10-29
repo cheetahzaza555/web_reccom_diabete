@@ -8,7 +8,7 @@
 
 
 
-    <style>
+    <style nonce="{{ csp_nonce }}">
         :root {
             --primary-blue: #2B5CB3;
             --light-bg: #F4F7FC;
@@ -162,7 +162,7 @@
     </style>
 
 {{ admin_assets() }}
-<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 {{ admin_layout_styles() }}
 <meta name="description" content="DiaBalance Admin | จัดการคลังข้อมูลการออกกำลังกาย">
 </head>
@@ -217,7 +217,7 @@
         </main>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         // 📥 1. ดึงข้อมูล JSON ทั้ง Exercises และ Categories
         const container = document.getElementById('exercise-data-container');
         const exercisesData = JSON.parse(container.getAttribute('data-json') || '[]');

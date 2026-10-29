@@ -4,7 +4,7 @@
 <title>DiaBalance | เพิ่มกฎ</title><link rel="stylesheet" href="{{ url_for('static', filename='css/rule-builder.css') }}">
 
 {{ admin_assets() }}
-<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 {{ admin_layout_styles() }}
 <meta name="description" content="DiaBalance | เพิ่มกฎ">
 </head><body class="admin-page">
@@ -94,9 +94,9 @@
       </form>
     </main>
 
-<script id="builder-catalog" type="application/json">{{ catalog | tojson }}</script>
+<script nonce="{{ csp_nonce }}" id="builder-catalog" type="application/json">{{ catalog | tojson }}</script>
 
-<script src="{{ url_for('static', filename='js/rule-builder.js') }}"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/rule-builder.js') }}"></script>
 {% endif %}
 
 </body></html>

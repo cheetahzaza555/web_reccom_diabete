@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DiaBalance Admin | จัดการกฎ</title>
 
-      <style>
+      <style nonce="{{ csp_nonce }}">
       body {
         background: #fff;
         color: #333;
@@ -413,7 +413,7 @@
     </style>
 
 {{ admin_assets() }}
-<script defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}" defer src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
 {{ admin_layout_styles() }}
 <meta name="description" content="DiaBalance Admin | จัดการกฎ">
 </head>
@@ -480,10 +480,10 @@
     <template id="rule-icon-trash">{{ admin_icon('trash3') }}</template>
     <template id="rule-icon-search">{{ admin_icon('search') }}</template>
     <template id="rule-icon-empty">{{ admin_icon('diagram-3') }}</template>
-    <script id="swrl-data" type="application/json">
+    <script nonce="{{ csp_nonce }}" id="swrl-data" type="application/json">
       {{ swrl_rules | tojson }}
     </script>
-    <script>
+    <script nonce="{{ csp_nonce }}">
       function deleteRule(encodedRuleUri, ruleLabel) {
         const ruleUri = decodeURIComponent(encodedRuleUri);
         ruleLabel = decodeURIComponent(ruleLabel);

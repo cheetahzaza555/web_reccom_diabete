@@ -3,7 +3,7 @@
     {% for subset in [0, 3, 4, 7] %}
     <link rel="preload" href="{{ url_for('static', filename='fonts/prompt/prompt-' ~ subset ~ '.woff2') }}" as="font" type="font/woff2" crossorigin>
     {% endfor %}
-    <style>
+    <style nonce="{{ csp_nonce }}">
 /* thai */
 @font-face {
   font-family: 'Prompt';
@@ -83,7 +83,7 @@
 {% macro admin_layout_styles() -%}
     {{ sidebar_styles() }}
     {% with admin_styles_only = true %}{% include 'includes/admin_responsive.html' %}{% endwith %}
-    <style>
+    <style nonce="{{ csp_nonce }}">
         body.admin-page { font-family: 'Prompt', sans-serif; font-size: 16px; line-height: 1.5; transition: none; }
         h1 { line-height: 1.2; }
         .bi { display: inline-block; width: 1em; height: 1em; vertical-align: -.125em; flex-shrink: 0; }
@@ -108,7 +108,7 @@
             min-height: 44px;
         }
     </style>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.admin-page .table-card').forEach(card => {
                 card.tabIndex = 0;
@@ -124,7 +124,7 @@
 {% endmacro %}
 
 {% macro sidebar_styles() -%}
-    <style>
+    <style nonce="{{ csp_nonce }}">
 /* thai */
 @font-face {
   font-family: 'Kanit';
@@ -271,7 +271,7 @@
 }
 
 </style>
-    <style>
+    <style nonce="{{ csp_nonce }}">
         /* Scrollable sidebar with subtle edge shadows instead of a visible scrollbar. */
         :root { --sidebar-width: 260px; --primary-blue: #3366CC; --primary-dark: #2952A3; --hover-bg: #4A7BD4; }
         * { margin: 0; padding: 0; box-sizing: border-box;}
@@ -477,7 +477,7 @@
         </button>
     </aside>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         // Mobile Sidebar Logic
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');

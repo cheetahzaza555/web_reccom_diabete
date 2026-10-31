@@ -463,10 +463,13 @@ def _delete_catalog_item(item_id, item_type, label, remove_incoming=True):
     try:
         reader = SPARQLWrapper(GRAPHDB_READ)
         reader.setReturnFormat(JSON)
-        reader.setQuery(prefixes + f"SELECT DISTINCT ?rule WHERE {{ {rule_reference} }}")
-        rules = sorted({row["rule"]["value"] for row in reader.query().convert()["results"]["bindings"]})
+        reader.setQuery(prefixes + f"SELECT DISTINCT ?rule ?ruleLabel WHERE {{ {rule_reference} OPTIONAL {{ ?rule rdfs:label ?ruleLabel . }} }}")
+        rule_rows = reader.query().convert()["results"]["bindings"]
+        rules = sorted({row["rule"]["value"] for row in rule_rows})
         if rules:
-            names = [uri.rsplit("#", 1)[-1].rsplit("/", 1)[-1] for uri in rules]
+            names = sorted({row.get("ruleLabel", {}).get("value", "").strip()
+                            or row["rule"]["value"].rsplit("#", 1)[-1].rsplit("/", 1)[-1]
+                            for row in rule_rows})
             return {"success": False, "rules": rules,
                     "message": f"ไม่สามารถลบ{label} {item_id} ได้ เนื่องจากมีกฎ SWRL อ้างอิง: "
                     + ", ".join(names) + " กรุณาแก้ไขหรือลบกฎที่เกี่ยวข้องก่อน"}
@@ -668,7 +671,7 @@ def delete_category_from_ontology(category_id):
         reader = SPARQLWrapper(GRAPHDB_READ)
         reader.setReturnFormat(JSON)
         reader.setQuery(prefixes + f"""
-            SELECT DISTINCT ?ref ?property ?rule WHERE {{
+            SELECT DISTINCT ?ref ?property ?rule ?ruleLabel WHERE {{
                 {target} rdfs:subClassOf* ex:Exercise ; ?p ?o .
                 OPTIONAL {{
                     {references}
@@ -676,6 +679,7 @@ def delete_category_from_ontology(category_id):
                         ?rule a swrl:Imp .
                         ?rule (swrl:body|swrl:head)/rdf:rest*/rdf:first/
                             (swrl:arguments/rdf:rest*)? ?ref .
+                        OPTIONAL {{ ?rule rdfs:label ?ruleLabel . }}
                     }}
                 }}
             }}
@@ -685,7 +689,8 @@ def delete_category_from_ontology(category_id):
             return {"success": False, "message": "ไม่พบหมวดหมู่ที่ต้องการลบ"}
         dependencies = [row for row in rows if "ref" in row]
         if dependencies:
-            rules = sorted({row["rule"]["value"].rsplit("#", 1)[-1]
+            rules = sorted({row.get("ruleLabel", {}).get("value", "").strip()
+                            or row["rule"]["value"].rsplit("#", 1)[-1].rsplit("/", 1)[-1]
                             for row in dependencies if "rule" in row})
             message = "ไม่สามารถลบหมวดหมู่ได้ เนื่องจากยังมีท่าออกกำลังกาย หมวดย่อย หรือข้อมูลอื่นอ้างอิงอยู่ กรุณาย้ายหรือแก้ไขข้อมูลที่อ้างอิงก่อน"
             if rules:

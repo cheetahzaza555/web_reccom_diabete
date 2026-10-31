@@ -333,7 +333,7 @@
         function deleteAvoidRule(avoidId, avoidDesc) {
             Swal.fire({
                 title: 'ยืนยันการลบข้อควรระวัง ex:' + avoidId + ' ?',
-                text: `คุณต้องการลบ " ${avoidDesc || avoidId}" ใช่หรือไม่?`,
+                text: `คุณต้องการลบ " ${avoidDesc || avoidId}" ใช่หรือไม่? ระบบจะตรวจสอบกฎ SWRL ก่อนลบ หากมีกฎอ้างอิงจะไม่อนุญาตให้ลบ`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E53E3E',

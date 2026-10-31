@@ -334,7 +334,7 @@
         function deletePatientWarning(warningId, warningDesc) {
             Swal.fire({
                 title: 'ยืนยันการลบคำเตือน ex:' + warningId + ' ?',
-                text: `คุณต้องการลบ " ${warningDesc || warningId}" ใช่หรือไม่?`,
+                text: `คุณต้องการลบ " ${warningDesc || warningId}" ใช่หรือไม่? ระบบจะตรวจสอบกฎ SWRL ก่อนลบ หากมีกฎอ้างอิงจะไม่อนุญาตให้ลบ`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E53E3E',

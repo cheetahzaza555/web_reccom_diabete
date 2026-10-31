@@ -442,34 +442,61 @@ def insert_exercise_to_ontology_v2(existing_id=None, name=None, exercise_type=No
 def insert_exercise_to_ontology(name, exercise_type, mets, youtube_id=None):
     return insert_exercise_to_ontology_v2(None, name, exercise_type, mets, youtube_id)
     
-def delete_exercise_from_ontology(exercise_id):
-    """ฟังก์ชันสำหรับลบความสัมพันธ์ทั้งหมดของท่าออกกำลังกายตาม ID ออกจาก GraphDB"""
+def _delete_catalog_item(item_id, item_type, label, remove_incoming=True):
+    """ตรวจการอ้างอิงจากทั้งเงื่อนไขและผลลัพธ์ของ SWRL ก่อนลบข้อมูลคลัง"""
+    if not isinstance(item_id, str) or not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_-]*", item_id):
+        return {"success": False, "message": "รหัสรายการไม่ถูกต้อง"}
+    prefixes = """
+        PREFIX ex: <http://example.org/diabetes#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX swrl: <http://www.w3.org/2003/11/swrl#>
+    """
+    target = f"<http://example.org/diabetes#{item_id}>"
+    membership = f"{target} rdf:type/rdfs:subClassOf* ex:{item_type} ."
+    rule_reference = f"""
+        ?rule a swrl:Imp .
+        ?rule (swrl:body|swrl:head)/rdf:rest*/rdf:first/
+            (swrl:arguments/rdf:rest*)? ?node .
+        ?node ?predicate {target} .
+    """
     try:
-        from SPARQLWrapper import SPARQLWrapper
-        from modules.config import GRAPHDB_WRITE
-        
-        sparql_write_client = SPARQLWrapper(GRAPHDB_WRITE)
-        base_prefix = "http://example.org/diabetes#"
-        subject_uri = f"<{base_prefix}{exercise_id}>"
-        
-        # คำสั่งล้างไตรภาค (Triples) ทุกรูปแบบที่เกี่ยวข้องกับ ID ตัวนี้
-        delete_query = f"""
-        PREFIX ex: <{base_prefix}>
-        
-        DELETE WHERE {{
-            {subject_uri} ?p ?o .
-        }}
-        """
-        
-        sparql_write_client.setQuery(delete_query)
-        sparql_write_client.setMethod('POST')
-        sparql_write_client.query()
-        
-        print(f"🗑️ [GraphDB Success] ลบข้อมูลไอดี #{exercise_id} ออกจากระบบเรียบร้อย")
-        return {"success": True, "message": "ลบข้อมูลสำกำดเร็จ"}
-    except Exception as e:
-        print(f"❌ Error deleting exercise: {e}")
-        return {"success": False, "message": str(e)}
+        reader = SPARQLWrapper(GRAPHDB_READ)
+        reader.setReturnFormat(JSON)
+        reader.setQuery(prefixes + f"SELECT DISTINCT ?rule WHERE {{ {rule_reference} }}")
+        rules = sorted({row["rule"]["value"] for row in reader.query().convert()["results"]["bindings"]})
+        if rules:
+            names = [uri.rsplit("#", 1)[-1].rsplit("/", 1)[-1] for uri in rules]
+            return {"success": False, "rules": rules,
+                    "message": f"ไม่สามารถลบ{label} {item_id} ได้ เนื่องจากมีกฎ SWRL อ้างอิง: "
+                    + ", ".join(names) + " กรุณาแก้ไขหรือลบกฎที่เกี่ยวข้องก่อน"}
+        reader.setQuery(prefixes + f"ASK {{ {membership} }}")
+        if not reader.query().convert()["boolean"]:
+            return {"success": False, "message": f"ไม่พบ{label}ที่ต้องการลบ"}
+        incoming_delete = f"?s ?q {target} ." if remove_incoming else ""
+        incoming_match = f"OPTIONAL {{ ?s ?q {target} . }}" if remove_incoming else ""
+        writer = SPARQLWrapper(GRAPHDB_WRITE)
+        writer.setMethod(POST)
+        writer.setQuery(prefixes + f"""
+            DELETE {{ {target} ?p ?o . {incoming_delete} }}
+            WHERE {{
+                {membership}
+                {target} ?p ?o .
+                {incoming_match}
+                FILTER NOT EXISTS {{ {rule_reference} }}
+            }}
+        """)
+        writer.query()
+        reader.setQuery(prefixes + f"ASK {{ {target} ?p ?o }}")
+        if reader.query().convert()["boolean"]:
+            return {"success": False, "message": "ยังลบไม่ได้ อาจมีกฎอ้างอิงเพิ่มขึ้นระหว่างดำเนินการ กรุณาลองใหม่เพื่อตรวจสอบกฎล่าสุด"}
+        return {"success": True, "message": f"ลบ{label} {item_id} เรียบร้อยแล้ว"}
+    except Exception:
+        return {"success": False, "message": "ไม่สามารถตรวจสอบกฎหรือลบข้อมูลได้ กรุณาลองใหม่อีกครั้ง"}
+
+
+def delete_exercise_from_ontology(exercise_id):
+    return _delete_catalog_item(exercise_id, "Exercise", "ท่าออกกำลังกาย", remove_incoming=False)
 
 def get_all_categories_from_ontology():
     """
@@ -752,39 +779,7 @@ def save_or_update_frequency(freq_id, description=""):
 # 3. ฟังก์ชันลบข้อมูล Frequency
 # 3. ฟังก์ชันลบข้อมูล Frequency
 def delete_frequency(freq_id):
-    try:
-        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", freq_id):
-            return {"success": False, "message": "รหัส Frequency ไม่ถูกต้อง"}
-        sparql = SPARQLWrapper(GRAPHDB_WRITE)
-        query = f"""
-        PREFIX ex: <http://example.org/diabetes#>
-
-        DELETE {{
-            # 1. ลบ Properties ทั้งหมดของ freq_id นี้
-            ex:{freq_id} ?p1 ?o1 .
-            # 2. ลบความสัมพันธ์ที่โหนดอื่นชี้มาหา freq_id นี้
-            ?s2 ?p2 ex:{freq_id} .
-        }}
-        WHERE {{
-            # 🔒 ล็อคเงื่อนไข: ต้องเป็นประเภท Frequency เท่านั้นถึงจะทำการลบ
-            ex:{freq_id} a ex:Frequency .
-
-            # ดึงความสัมพันธ์ทั้งหมดที่ออกไป และชี้เข้ามา
-            {{
-                ex:{freq_id} ?p1 ?o1 .
-            }}
-            UNION
-            {{
-                ?s2 ?p2 ex:{freq_id} .
-            }}
-        }}
-        """
-        sparql.setMethod(POST)
-        sparql.setQuery(query)
-        sparql.query()
-        return {"success": True, "message": f"ลบข้อมูล ex:{freq_id} เรียบร้อยแล้ว"}
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+    return _delete_catalog_item(freq_id, "Frequency", "ความถี่ในการออกกำลังกาย")
     
 def get_avoidance_page():
     sparql = SPARQLWrapper(GRAPHDB_READ)
@@ -850,41 +845,7 @@ def save_or_update_avoidance(avoid_id, description=""):
         return {"success": False, "message": str(e)}
     
 def delete_avoidance(avoid_id):
-    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", avoid_id):
-        return {"success": False, "message": "รหัส Avoid ไม่ถูกต้อง"}
-
-    sparql = SPARQLWrapper(GRAPHDB_WRITE)
-    sparql.setMethod(POST)
-
-    query = f"""
-    PREFIX ex: <http://example.org/diabetes#>
-
-    DELETE {{
-        # 1. ลบ Properties ทั้งหมดของ avoid_id นี้
-        ex:{avoid_id} ?p1 ?o1 .
-        # 2. ลบความสัมพันธ์ที่โหนดอื่นชี้มาหา avoid_id นี้
-        ?s2 ?p2 ex:{avoid_id} .
-    }}
-    WHERE {{
-        # 🔒 ล็อคเงื่อนไข: ต้องเป็นประเภท WarningAvoidExercise เท่านั้นถึงจะทำการลบ
-        ex:{avoid_id} a ex:WarningAvoidExercise .
-
-        # ดึงความสัมพันธ์ทั้งหมดที่ออกไป และชี้เข้ามา
-        {{
-            ex:{avoid_id} ?p1 ?o1 .
-        }}
-        UNION
-        {{
-            ?s2 ?p2 ex:{avoid_id} .
-        }}
-    }}
-    """
-    sparql.setQuery(query)
-    try:
-        sparql.query()
-        return {"success": True, "message": f"ลบข้อมูลข้อควรระวัง ex:{avoid_id} สำเร็จ"}
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+    return _delete_catalog_item(avoid_id, "WarningAvoidExercise", "ข้อควรหลีกเลี่ยง")
 
 def get_patient_warning():
     sparql = SPARQLWrapper(GRAPHDB_READ)
@@ -952,38 +913,4 @@ def save_or_update_warning(warning_id, description=""):
         return {"success": False, "message": str(e)}
     
 def delete_warning(warning_id):
-    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", warning_id):
-        return {"success": False, "message": "รหัสคำเตือนไม่ถูกต้อง"}
-
-    sparql = SPARQLWrapper(GRAPHDB_WRITE)
-    sparql.setMethod(POST)
-
-    query = f"""
-    PREFIX ex: <http://example.org/diabetes#>
-
-    DELETE {{
-        # 1. ลบ Properties ทั้งหมดของ warning_id นี้
-        ex:{warning_id} ?p1 ?o1 .
-        # 2. ลบความสัมพันธ์ที่โหนดอื่นชี้มาหา warning_id นี้
-        ?s2 ?p2 ex:{warning_id} .
-    }}
-    WHERE {{
-        # 🔒 เงื่อนไขสำคัญ: เช็กก่อนว่า ex:{warning_id} เป็น PatientWarning จริงหรือไม่
-        ex:{warning_id} a ex:PatientWarning .
-
-        # ดึงความสัมพันธ์ทั้งหมดที่ออกไป และชี้เข้ามา
-        {{
-            ex:{warning_id} ?p1 ?o1 .
-        }}
-        UNION
-        {{
-            ?s2 ?p2 ex:{warning_id} .
-        }}
-    }}
-    """
-    sparql.setQuery(query)
-    try:
-        sparql.query()
-        return {"success": True, "message": f"ลบข้อมูลคำเตือน ex:{warning_id} ทั้งหมดสำเร็จ"}
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+    return _delete_catalog_item(warning_id, "PatientWarning", "คำเตือนสำหรับผู้ป่วย")

@@ -250,7 +250,7 @@
         function deleteFreq(freqId, freqDesc) {
             Swal.fire({
                 title: 'ยืนยันการลบความถี่ ex:' + freqId + ' ?',
-                text: `คุณต้องการลบ "${freqDesc || freqId}" ใช่หรือไม่?`,
+                text: `คุณต้องการลบ "${freqDesc || freqId}" ใช่หรือไม่? ระบบจะตรวจสอบกฎ SWRL ก่อนลบ หากมีกฎอ้างอิงจะไม่อนุญาตให้ลบ`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E53E3E',

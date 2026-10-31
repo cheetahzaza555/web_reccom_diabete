@@ -623,52 +623,66 @@ def update_category_hierarchy_in_ontology(category_id, parent_category_id=None, 
         return {"success": False, "message": str(e)}
 
 def delete_category_from_ontology(category_id):
-    """
-    ลบหมวดหมู่ พร้อมกวาดลบ "ท่าออกกำลังกายทั้งหมด" ที่อยู่ในหมวดหมู่นั้นด้วย
-    """
-    sparql = SPARQLWrapper(GRAPHDB_WRITE)
-    base_prefix = "http://example.org/diabetes#"
-    
-    query = f"""
-    PREFIX ex: <{base_prefix}>
+    """ลบเฉพาะหมวดว่าง โดยไม่ลบสมาชิกหรือทำลายข้อมูลที่อ้างอิงหมวดหมู่"""
+    if not isinstance(category_id, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*", category_id):
+        return {"success": False, "message": "รหัสหมวดหมู่ไม่ถูกต้อง"}
+    if category_id == "Exercise":
+        return {"success": False, "message": "ไม่สามารถลบหมวดหมู่หลักของการออกกำลังกายได้"}
+
+    prefixes = """
+    PREFIX ex: <http://example.org/diabetes#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-    DELETE {{
-        # 1. ลบข้อมูลของตัวหมวดหมู่เอง
-        ex:{category_id} ?p1 ?o1 .
-        ?s1 ?p2 ex:{category_id} .
-
-        # 2. ลบข้อมูลของท่าออกกำลังกายที่อยู่ในหมวดหมู่นี้
-        ?exercise ?p3 ?o3 .
-        ?s4 ?p4 ?exercise .
-    }}
-    WHERE {{
-        # 🔒 ตรวจสอบว่าหมวดหมู่นี้เป็นคลาสภายใต้ ex:Exercise
-        ex:{category_id} rdfs:subClassOf* ex:Exercise .
-
-        {{
-            # ดึงข้อมูลของหมวดหมู่
-            ex:{category_id} ?p1 ?o1 .
-        }} UNION {{
-            ?s1 ?p2 ex:{category_id} .
-        }} UNION {{
-            # ดึงท่าออกกำลังกายที่เป็นสมาชิกของหมวดหมู่นี้ (ทั้งแบบ Instance และ Subclass)
-            ?exercise (rdf:type|rdfs:subClassOf) ex:{category_id} .
-            
-            {{ ?exercise ?p3 ?o3 . }}
-            UNION
-            {{ ?s4 ?p4 ?exercise . }}
-        }}
-    }}
+    PREFIX swrl: <http://www.w3.org/2003/11/swrl#>
     """
+    target = f"ex:{category_id}"
+    references = f"?ref ?property {target} . FILTER (?ref != {target})"
     try:
-        sparql.setQuery(query)
-        sparql.setMethod('POST')
-        sparql.query()
-        return {"success": True, "message": f"ลบหมวดหมู่ {category_id} และท่าออกกำลังกายภายในทั้งหมดเรียบร้อยแล้ว"}
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+        reader = SPARQLWrapper(GRAPHDB_READ)
+        reader.setReturnFormat(JSON)
+        reader.setQuery(prefixes + f"""
+            SELECT DISTINCT ?ref ?property ?rule WHERE {{
+                {target} rdfs:subClassOf* ex:Exercise ; ?p ?o .
+                OPTIONAL {{
+                    {references}
+                    OPTIONAL {{
+                        ?rule a swrl:Imp .
+                        ?rule (swrl:body|swrl:head)/rdf:rest*/rdf:first/
+                            (swrl:arguments/rdf:rest*)? ?ref .
+                    }}
+                }}
+            }}
+        """)
+        rows = reader.query().convert()["results"]["bindings"]
+        if not rows:
+            return {"success": False, "message": "ไม่พบหมวดหมู่ที่ต้องการลบ"}
+        dependencies = [row for row in rows if "ref" in row]
+        if dependencies:
+            rules = sorted({row["rule"]["value"].rsplit("#", 1)[-1]
+                            for row in dependencies if "rule" in row})
+            message = "ไม่สามารถลบหมวดหมู่ได้ เนื่องจากยังมีท่าออกกำลังกาย หมวดย่อย หรือข้อมูลอื่นอ้างอิงอยู่ กรุณาย้ายหรือแก้ไขข้อมูลที่อ้างอิงก่อน"
+            if rules:
+                message += " กฎ SWRL ที่อ้างอิง: " + ", ".join(rules)
+            return {"success": False, "message": message}
+
+        writer = SPARQLWrapper(GRAPHDB_WRITE)
+        # ตรวจซ้ำในคำสั่งลบ เพื่อไม่ให้ลบข้อมูลอ้างอิงที่เพิ่มหลังการตรวจครั้งแรก
+        writer.setQuery(prefixes + f"""
+            DELETE {{ {target} ?p ?o . }}
+            WHERE {{
+                {target} rdfs:subClassOf* ex:Exercise ; ?p ?o .
+                FILTER NOT EXISTS {{ {references} }}
+            }}
+        """)
+        writer.setMethod('POST')
+        writer.query()
+        reader.setQuery(prefixes + f"ASK {{ {target} ?p ?o }}")
+        if reader.query().convert()["boolean"]:
+            return {"success": False, "message": "ยังลบหมวดหมู่ไม่ได้ อาจมีข้อมูลอ้างอิงเพิ่มขึ้น กรุณาโหลดหน้าใหม่และตรวจสอบอีกครั้ง"}
+        return {"success": True, "message": f"ลบหมวดหมู่ {category_id} เรียบร้อยแล้ว"}
+    except Exception:
+        return {"success": False, "message": "ไม่สามารถตรวจสอบหรือลบหมวดหมู่ได้ กรุณาลองใหม่อีกครั้ง"}
+
 
 def get_frequencies():
     sparql = SPARQLWrapper(GRAPHDB_READ)

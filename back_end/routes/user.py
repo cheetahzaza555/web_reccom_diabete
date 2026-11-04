@@ -18,6 +18,7 @@ from modules.db import (
     get_password_hash_by_id, update_user_profile_db, update_password_db
 )
 from modules.ocr_service import process_ocr_image
+from modules.health_data import InvalidHealthData, normalize_health_data
 
 user_bp = Blueprint('user', __name__)
 
@@ -124,16 +125,21 @@ def user_knowledge():
 @user_bp.route('/analyze', methods=['POST'])
 @login_required
 def analyze():
-    data = request.json
-    if not data:
-        return jsonify({"status": "error", "message": "ไม่มีข้อมูลส่งมา"}), 400
+    try:
+        data = normalize_health_data(request.get_json(silent=True))
+    except InvalidHealthData as exc:
+        return jsonify(status='error', message=str(exc), fields=exc.fields), 422
 
     # ✅ แก้ IDOR: บังคับใช้ ID ของคนที่ล็อกอินอยู่เท่านั้น
     # ไม่เชื่อค่า data['id'] ที่ client ส่งมาเด็ดขาด ป้องกันการยัดข้อมูลให้คนไข้คนอื่น
     data['id'] = session['user_id']
-    print("🔍 DEBUG: กำลังประมวลผลข้อมูลสำหรับ user_id =", data)
-    save_raw_patient_data(data)
-    recs, warns, comorbs, complis = process_patient_realtime(data['id'], input_data=data)
+    try:
+        save_raw_patient_data(data)
+        recs, warns, comorbs, complis = process_patient_realtime(data['id'], input_data=data)
+    except InvalidHealthData as exc:
+        return jsonify(status='error', message=str(exc), fields=exc.fields), 422
+    except Exception:
+        return jsonify(status='error', message='ไม่สามารถบันทึกหรือประมวลผลข้อมูลได้ กรุณาลองใหม่'), 503
     return jsonify({"status": "ok", "exercises": recs, "warnings": warns, "comorbs": comorbs, "complis": complis})
 
 @user_bp.route('/get_latest_checkup', methods=['GET'])

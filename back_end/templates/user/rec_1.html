@@ -273,6 +273,7 @@ body {
                     <div class="form-content container-fluid px-4 px-md-5">
 
                         <div id="step1">
+                            <p class="alert alert-info" role="note">กรอกข้อมูลที่ใช้ประเมินให้ครบตามผลตรวจจริง ระบบไม่ถือว่าช่องว่างคือผลปกติ หากโหลดข้อมูลเดิม กรุณาตรวจยืนยันผลคีโตน ไมโครอัลบูมิน และภาวะแทรกซ้อนใหม่ก่อนรับคำแนะนำ</p>
                             <!-- Breadcrumb Step 1 -->
                             <nav aria-label="breadcrumb" class="mb-3">
                                 <ol class="breadcrumb mb-0 bg-transparent p-0">
@@ -307,6 +308,7 @@ body {
                                             <div class="col-12 mb-3">
                                                 <label class="form-label" for="diabetes_type">ประเภทเบาหวาน</label>
                                                 <select class="form-select" id="diabetes_type" name="diabetes_type" required>
+                                                    <option value="">กรุณาระบุชนิดเบาหวาน</option>
                                                     <option value="T2DM">เบาหวานชนิดที่ 2 (T2DM)</option>
                                                     <option value="T1DM">เบาหวานชนิดที่ 1 (T1DM)</option>
                                                 </select>
@@ -314,6 +316,7 @@ body {
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="insulin_use">การใช้อินซูลิน</label>
                                                 <select class="form-select" id="insulin_use" name="insulin_use" required>
+                                                    <option value="">กรุณาระบุการใช้อินซูลิน</option>
                                                     <option value="false">ไม่ได้ใช้</option>
                                                     <option value="true">ใช้</option>
                                                 </select>
@@ -326,11 +329,11 @@ body {
                                         <div class="row">
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="weight">น้ำหนัก (kg)</label>
-                                                <input type="number" class="form-control" id="weight" name="weight" step="0.1">
+                                                <input type="number" class="form-control" id="weight" name="weight" required min="0.000001" step="any">
                                             </div>
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="height">ส่วนสูง (cm)</label>
-                                                <input type="number" class="form-control" id="height" name="height" step="0.1">
+                                                <input type="number" class="form-control" id="height" name="height" required min="0.000001" step="any">
                                             </div>
                                             <div class="col-12 mb-3">
                                                 <label class="form-label" for="bmi_result">BMI</label>
@@ -338,11 +341,11 @@ body {
                                             </div>
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="bp_high">ความดันตัวบน (SBP)</label>
-                                                <input type="number" class="form-control" id="bp_high" name="bp_high">
+                                                <input type="number" class="form-control" id="bp_high" name="bp_high" required min="0.000001" step="any">
                                             </div>
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="bp_low">ความดันตัวล่าง (DBP)</label>
-                                                <input type="number" class="form-control" id="bp_low" name="bp_low">
+                                                <input type="number" class="form-control" id="bp_low" name="bp_low" required min="0.000001" step="any">
                                             </div>
                                         </div>
                                     </div>
@@ -380,41 +383,43 @@ body {
 
                                         <div class="mb-3">
                                             <label class="form-label" for="blood_test_date">วันที่เจาะเลือด</label>
-                                            <input type="date" class="form-control" id="blood_test_date" name="blood_test_date">
+                                            <input type="date" class="form-control" id="blood_test_date" name="blood_test_date" required>
                                         </div>
                                         <div class="row">
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="hdl">HDL</label>
-                                                <input type="number" class="form-control" id="hdl" name="hdl" step="0.1">
+                                                <input type="number" class="form-control" id="hdl" name="hdl" required min="0.000001" step="any">
                                             </div>
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="ldl">LDL</label>
-                                                <input type="number" class="form-control" id="ldl" name="ldl" step="0.1">
+                                                <input type="number" class="form-control" id="ldl" name="ldl" required min="0.000001" step="any">
                                             </div>
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="cholesterol">Cholesterol</label>
-                                                <input type="number" class="form-control" id="cholesterol" name="cholesterol" step="0.1">
+                                                <input type="number" class="form-control" id="cholesterol" name="cholesterol" required min="0.000001" step="any">
                                             </div>
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="triglyceride">Triglyceride</label>
-                                                <input type="number" class="form-control" id="triglyceride" name="triglyceride" step="0.1">
+                                                <input type="number" class="form-control" id="triglyceride" name="triglyceride" required min="0.000001" step="any">
                                             </div>
                                             <div class="col-12 mb-3">
                                                 <label class="form-label" for="fpg">FPG (ระดับน้ำตาลในเลือด)</label>
-                                                <input type="number" class="form-control" id="fpg" name="fpg" step="0.1">
+                                                <input type="number" class="form-control" id="fpg" name="fpg" required min="0.000001" step="any">
                                             </div>
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="ketone">Ketone ในปัสสาวะ</label>
-                                                <select class="form-select" id="ketone" name="ketone">
-                                                    <option value="Negative">Negative (ปกติ)</option>
-                                                    <option value="Positive">Positive (พบความเสี่ยง)</option>
+                                                <select class="form-select" id="ketone" name="ketone" required>
+                                                    <option value="">ยังไม่ได้ระบุผลตรวจ</option>
+                                                    <option value="Negative">ผลลบ (Negative)</option>
+                                                    <option value="Positive">ผลบวก (Positive)</option>
                                                 </select>
                                             </div>
                                             <div class="col-6 mb-3">
                                                 <label class="form-label" for="microalbumin">Microalbumin</label>
-                                                <select class="form-select" id="microalbumin" name="microalbumin">
-                                                    <option value="Negative">Negative (ปกติ)</option>
-                                                    <option value="Positive">Positive (พบความเสี่ยง)</option>
+                                                <select class="form-select" id="microalbumin" name="microalbumin" required>
+                                                    <option value="">ยังไม่ได้ระบุผลตรวจ</option>
+                                                    <option value="Negative">ผลลบ (Negative)</option>
+                                                    <option value="Positive">ผลบวก (Positive)</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -436,7 +441,7 @@ body {
                                     </nav>
 
                                     <h2 class="h4 mb-2 fw-bold" style="color: #1e3a8a;">โรคแทรกซ้อน</h2>
-                                    <p class="text-muted mb-4">เลือกอาการที่คุณมี (ถ้าไม่มีให้เลือกข้อสุดท้าย)</p>
+                                    <p class="text-muted mb-4">เลือกตามข้อมูลที่ได้รับการตรวจหรือแจ้งจากแพทย์ หากไม่ทราบให้ตรวจสอบก่อนรับคำแนะนำ</p>
                                     <div class="row">
                                         <div class="col-md-6">
                                             <label class="selection-card" for="spec_Retinopathy">
@@ -478,8 +483,8 @@ body {
                                             <label class="selection-card border-success" for="chkNoOther" style="background-color:#f0fdf4;">
                                                 <input class="form-check-input" type="checkbox" name="special" value="NoOtherComplication" id="chkNoOther" onchange="toggleNoOther(this)">
                                                 <div>
-                                                    <div class="selection-title text-success">ไม่มีภาวะแทรกซ้อน</div>
-                                                    <p class="selection-desc">สุขภาพแข็งแรง ปกติดี</p>
+                                                    <div class="selection-title text-success">ยืนยันว่าไม่มีภาวะแทรกซ้อนอื่น ๆ ตามรายการข้างต้น</div>
+                                                    <p class="selection-desc">การเลือกข้อนี้ไม่ใช่การยืนยันว่าไม่มีความเสี่ยงด้านสุขภาพอื่น</p>
                                                 </div>
                                             </label>
                                         </div>
@@ -648,15 +653,15 @@ body {
                 </div>
                 <div class="modal-body">
                     <p>ระบบพบข้อมูลการตรวจล่าสุดของคุณเมื่อวันที่ <strong id="modalDate" style="color: #1d4ed8;">--/--/----</strong></p>
-                    <p class="mb-0">ข้อมูลสุขภาพของคุณ (เช่น น้ำหนัก, ค่าน้ำตาล) มีการเปลี่ยนแปลงหรือไม่?</p>
-                    <small class="text-muted">*หากข้อมูลไม่เปลี่ยน ผลการวิเคราะห์และแผนการออกกำลังกายจะเหมือนเดิม</small>
+                    <p class="mb-0">ระบบโหลดข้อมูลเดิมเพื่อช่วยกรอก กรุณาตรวจสอบว่ายังตรงกับผลตรวจและสภาวะปัจจุบัน</p>
+                    <small class="text-muted">กรุณาเลือกยืนยันผลคีโตน ไมโครอัลบูมิน และภาวะแทรกซ้อนใหม่ ระบบจะประมวลผลจากข้อมูลที่ยืนยันและกฎล่าสุด</small>
                 </div>
                 <div class="modal-footer justify-content-center gap-2">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" onclick="hideExistingModal()">
                         <svg class="me-1" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg> ต้องการแก้ไขข้อมูล
                     </button>
                     <button type="button" class="btn btn-primary" onclick="skipToPlan()" style="background-color: #1d4ed8; border-color: #1d4ed8;">
-                        <svg class="me-1" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/></svg> ข้อมูลคงเดิม (ไปเลือกแผนเลย)
+                        <svg class="me-1" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: -0.125em;"><path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/></svg> ตรวจยืนยันข้อมูลก่อนรับคำแนะนำ
                     </button>
                 </div>
             </div>

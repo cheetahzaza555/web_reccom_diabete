@@ -11,6 +11,7 @@ from modules.db import (
     save_results_to_db
 )
 from modules.ontology import load_ontology
+from modules.health_data import InvalidHealthData, normalize_health_data
 
 
 def process_patient_realtime(patient_id, input_data=None):
@@ -31,20 +32,17 @@ def process_patient_realtime(patient_id, input_data=None):
     created_temp_entities = []  # เก็บ entity ใหม่ที่สร้างชั่วคราว (t_obj/sp_obj/f_obj ที่หาไม่เจอใน ontology)
 
     try:
-        # Fetch a fresh snapshot so committed rule changes apply on every run.
-        onto = load_ontology()
-        ex = onto.get_namespace("http://example.org/diabetes#")
-
         # 1. เตรียมตัวแปร
         data = {}
         target_specials = []
         target_favorites = []
 
-        if input_data:  # มีข้อมูลส่งเข้ามาแบบตรงๆ
+        if input_data is not None:
+            input_data = normalize_health_data(input_data)
             print(f"⚡ Processing {patient_id} (Direct)...")
 
             data = {
-                'type': input_data.get('type', 'T2DM'),
+                'type': input_data['type'],
                 'weight': safe_float(input_data.get('weight')),
                 'height': safe_float(input_data.get('height')),
                 'bmi': safe_float(input_data.get('bmi')),
@@ -55,8 +53,8 @@ def process_patient_realtime(patient_id, input_data=None):
                 'hdl': safe_float(input_data.get('hdl')),
                 'tri': safe_float(input_data.get('tri')),
                 'fpg': safe_float(input_data.get('fpg')),
-                'ketone': input_data.get('ketone', 'Negative'),
-                'micro': input_data.get('micro', 'Negative'),
+                'ketone': input_data['ketone'],
+                'micro': input_data['micro'],
                 'frequency': input_data.get('frequency')
             }
 
@@ -72,14 +70,17 @@ def process_patient_realtime(patient_id, input_data=None):
             print(f"📥 Fetching {patient_id} from DB...")
             query = f"""
             PREFIX ex: <http://example.org/diabetes#>
-            SELECT ?typeUri ?weight ?height ?bmi ?sbp ?dbp ?chol ?ldl ?hdl ?tri ?fpg ?ketone ?micro ?specialUri ?favName ?freqUri
+            SELECT ?typeUri ?weight ?height ?bmi ?sbp ?dbp ?chol ?ldl ?hdl ?tri ?fpg ?ketone ?micro ?specialUri ?favName ?freqUri ?datePE ?dateLab ?insulin
             WHERE {{
                 ex:Patient{patient_id} a ex:Patient ; ex:diabetType ?typeUri .
+                OPTIONAL {{ ex:Patient{patient_id} ex:insulinTreatment ?insulin }}
                 OPTIONAL {{ ex:Patient{patient_id} ex:hasPhysicalExam ?pe . 
+                            OPTIONAL {{ ?pe ex:visitDate_Physical ?datePE }}
                             OPTIONAL {{ ?pe ex:hasWeight ?weight }} OPTIONAL {{ ?pe ex:hasHeight ?height }} 
                             OPTIONAL {{ ?pe ex:hasBMI ?bmi }} OPTIONAL {{ ?pe ex:hasSBP ?sbp }} OPTIONAL {{ ?pe ex:hasDBP ?dbp }}
                             OPTIONAL {{ ?pe ex:hasSpecialComplication ?specialUri }} }}
                 OPTIONAL {{ ex:Patient{patient_id} ex:hasLabExam ?le . 
+                            OPTIONAL {{ ?le ex:visitDate_Lab ?dateLab }}
                             OPTIONAL {{ ?le ex:hasTotalCholesterol ?chol }} OPTIONAL {{ ?le ex:hasLDL ?ldl }} 
                             OPTIONAL {{ ?le ex:hasHDL ?hdl }} OPTIONAL {{ ?le ex:hasTriglyceride ?tri }}
                             OPTIONAL {{ ?le ex:hasFPG ?fpg }} OPTIONAL {{ ?le ex:hasKetone ?ketone }} OPTIONAL {{ ?le ex:hasMicroalbuminurin ?micro }} }}
@@ -103,8 +104,6 @@ def process_patient_realtime(patient_id, input_data=None):
                 if f_name and f_name not in target_favorites:
                     target_favorites.append(f_name)
 
-            if not target_specials:
-                target_specials.append("NoOtherComplication")
             row = results["results"]["bindings"][0]
 
             freq_uri = row.get('freqUri', {}).get('value')
@@ -115,21 +114,26 @@ def process_patient_realtime(patient_id, input_data=None):
             dbp_val = safe_float(row.get('dbp', {}).get('value'))
 
             data = {
-                'type': safe_get_name(row.get('typeUri', {}).get('value')) or 'T2DM',
+                'type': safe_get_name(row.get('typeUri', {}).get('value')),
                 'weight': safe_float(row.get('weight', {}).get('value')),
                 'height': safe_float(row.get('height', {}).get('value')),
                 'bmi': safe_float(row.get('bmi', {}).get('value')),
-                'sbp': int(sbp_val) if sbp_val is not None else None,
-                'dbp': int(dbp_val) if dbp_val is not None else None,
+                'sbp': sbp_val,
+                'dbp': dbp_val,
                 'chol': safe_float(row.get('chol', {}).get('value')),
                 'ldl': safe_float(row.get('ldl', {}).get('value')),
                 'hdl': safe_float(row.get('hdl', {}).get('value')),
                 'tri': safe_float(row.get('tri', {}).get('value')),
                 'fpg': safe_float(row.get('fpg', {}).get('value')),
-                'ketone': row.get('ketone', {}).get('value') or "Negative",
-                'micro': row.get('micro', {}).get('value') or "Negative",
-                'frequency': safe_get_name(freq_uri)
+                'ketone': row.get('ketone', {}).get('value'),
+                'micro': row.get('micro', {}).get('value'),
+                'frequency': safe_get_name(freq_uri),
+                'special': target_specials,
+                'checkup_date': row.get('datePE', {}).get('value'),
+                'blood_test_date': row.get('dateLab', {}).get('value'),
+                'insulin_use': row.get('insulin', {}).get('value'),
             }
+            data = normalize_health_data(data)
 
         if data['bmi'] is None and data['weight'] and data['height']:
             try:
@@ -137,7 +141,9 @@ def process_patient_realtime(patient_id, input_data=None):
             except Exception as e:
                 print(f"⚠️ Could not calculate BMI: {e}")
 
-        print(f"🧐 Analyzed: {data}")
+        # Load a fresh isolated snapshot only after validating the patient's facts.
+        onto = load_ontology()
+        ex = onto.get_namespace("http://example.org/diabetes#")
 
         # 2. สร้าง Instance ใน Memory
         with onto:
@@ -297,10 +303,12 @@ def process_patient_realtime(patient_id, input_data=None):
         )
         return recs, warns, comorbs, complis
 
+    except InvalidHealthData:
+        raise
     except Exception as e:
         print(f"❌ Error: {e}")
         traceback.print_exc()
-        return [], [], [], [f"Error: {str(e)}"]
+        raise RuntimeError('ไม่สามารถประมวลผลคำแนะนำได้') from e
 
     finally:
         # ✅ ลบ entity ชั่วคราวทั้งหมดออกจาก onto (in-memory) หลังใช้งานเสร็จ

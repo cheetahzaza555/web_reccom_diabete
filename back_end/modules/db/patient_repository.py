@@ -5,6 +5,8 @@
 
 from datetime import date, datetime , timedelta
 import uuid
+from decimal import Decimal
+from modules.health_data import InvalidHealthData, normalize_health_data
 from .connection import (
     sparql_read, sparql_write,
     validate_id, escape_sparql, safe_float
@@ -12,8 +14,10 @@ from .connection import (
 
 
 def save_raw_patient_data(data):
+    # Validate before DELETE: incomplete requests must not overwrite the last record.
+    data = normalize_health_data(data)
     if not validate_id(data.get('id')):
-        return
+        raise InvalidHealthData({'id': 'รหัสผู้ป่วยไม่ถูกต้อง'})
 
     # ตัด SUPA ออกป้องกันร่างโคลน
     raw_id = str(data.get('id')).replace("Patient", "").replace("SUPA", "")
@@ -30,12 +34,19 @@ def save_raw_patient_data(data):
                 ex:{pid} ex:hasPhysicalExam ?pe . ex:{pid} ex:hasLabExam ?le .
                 ex:{pid} ex:exerciseFrequency ?f . ex:{pid} ex:favoriteExercise ?fav .
                 ?pe ?pp ?po . ?le ?lp ?lo .
+                ex:{pid} ?resultProperty ?oldResult .
             }} 
             WHERE {{ 
                 OPTIONAL {{ ex:{pid} ex:hasPhysicalExam ?pe . ?pe ?pp ?po }} 
                 OPTIONAL {{ ex:{pid} ex:hasLabExam ?le . ?le ?lp ?lo }} 
                 OPTIONAL {{ ex:{pid} ex:exerciseFrequency ?f }}
                 OPTIONAL {{ ex:{pid} ex:favoriteExercise ?fav }}
+                OPTIONAL {{
+                    VALUES ?resultProperty {{ ex:recommendedExercise ex:recommendExercise
+                        ex:hasPatientWarning ex:hasComorbidity ex:hasComplication
+                        ex:avoidExercise ex:intensityOfExercise }}
+                    ex:{pid} ?resultProperty ?oldResult .
+                }}
             }}
         """
         sparql_write.setQuery(delete_query)
@@ -45,8 +56,7 @@ def save_raw_patient_data(data):
         le_date = escape_sparql(data.get('blood_test_date', ''))
 
         def val(k, alt=None):
-            v = data.get(k) or data.get(alt)
-            return safe_float(v) or 0
+            return format(Decimal(str(data[alt or k])), 'f')
 
         pe_date_line = f'ex:visitDate_Physical "{pe_date}"^^xsd:date ;' if pe_date else ""
         le_date_line = f'ex:visitDate_Lab "{le_date}"^^xsd:date ;' if le_date else ""
@@ -55,7 +65,7 @@ def save_raw_patient_data(data):
         special_triples = ""
         if isinstance(raw_special, list):
             for sp in raw_special:
-                if sp and sp not in ["None", "", "NoOtherComplication"]:
+                if sp:
                     special_triples += f"{pe_node} ex:hasSpecialComplication ex:{escape_sparql(sp)} .\n"
 
         freq_val = data.get('frequency')
@@ -74,7 +84,7 @@ def save_raw_patient_data(data):
         # โค้ดสร้าง Triples แบบเดิมของคุณ (ใช้ตัว 'a' ไม่ใช่ 'rdf:type')
         triples = f"""
             ex:{pid} a ex:Patient ; 
-                     ex:diabetType ex:{escape_sparql(data.get('type', 'T2DM'))} ; 
+                     ex:diabetType ex:{escape_sparql(data['type'])} ; 
                      ex:gender "{escape_sparql(data.get('gender', '-'))}" ;  
                      ex:insulinTreatment "{safe_insulin}"^^xsd:boolean ;
                      ex:hasPhysicalExam {pe_node} ; ex:hasLabExam {le_node} .
@@ -86,8 +96,8 @@ def save_raw_patient_data(data):
                         ex:hasWeight "{val('weight')}"^^xsd:decimal ; 
                         ex:hasHeight "{val('height')}"^^xsd:decimal ; 
                         ex:hasBMI "{val('bmi')}"^^xsd:decimal ; 
-                        ex:hasSBP "{int(val('bp_high', 'sbp'))}"^^xsd:decimal ; 
-                        ex:hasDBP "{int(val('bp_low', 'dbp'))}"^^xsd:decimal .
+                        ex:hasSBP "{val('sbp')}"^^xsd:decimal ; 
+                        ex:hasDBP "{val('dbp')}"^^xsd:decimal .
             
             {special_triples} 
             
@@ -97,8 +107,8 @@ def save_raw_patient_data(data):
                         ex:hasLDL "{val('ldl')}"^^xsd:decimal ; ex:hasHDL "{val('hdl')}"^^xsd:decimal ; 
                         ex:hasTriglyceride "{val('triglyceride', 'tri')}"^^xsd:decimal ;
                         ex:hasFPG "{val('fpg')}"^^xsd:decimal ; 
-                        ex:hasKetone "{data.get('ketone', 'Negative')}" ; 
-                        ex:hasMicroalbuminurin "{data.get('micro', 'Negative')}" . 
+                        ex:hasKetone "{data['ketone']}" ; 
+                        ex:hasMicroalbuminurin "{data['micro']}" . 
         """
 
         sparql_write.setQuery(
@@ -109,6 +119,7 @@ def save_raw_patient_data(data):
 
     except Exception as e:
         print(f"❌ Error saving raw data: {e}")
+        raise
 
 
 def save_results_to_db(pid_num, recs, warns, comorbs, complis, avoids, intens, freqs):

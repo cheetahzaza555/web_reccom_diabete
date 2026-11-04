@@ -202,8 +202,9 @@ async function fetchLastCheckup() {
                 setVal('ldl', data.ldl);
                 setVal('cholesterol', data.cholesterol);
                 setVal('triglyceride', data.triglyceride);
-                setVal('microalbumin', data.microalbumin);
-                setVal('ketone', data.ketone);
+                // Reconfirm these facts: legacy records may contain default negatives.
+                document.querySelector('[name="microalbumin"]').value = '';
+                document.querySelector('[name="ketone"]').value = '';
                 setVal('fpg', data.fpg);
                 setVal('frequency', data.frequency);
 
@@ -225,8 +226,7 @@ async function fetchLastCheckup() {
                     }
                 };
 
-                const diseaseList = data.special || data.special_diseases;
-                setCheckboxes('special', diseaseList);
+                document.querySelectorAll('input[name="special"]').forEach(el => el.checked = false);
                 setCheckboxes('favorites', data.favorites);
 
                 if (currentUser && currentUser.id) {
@@ -290,12 +290,10 @@ function hideExistingModal() {
 }
 
 function skipToPlan() {
-    if (currentPatientID) {
-        window.location.href = "/user/select_plan/Patient" + currentPatientID;
-    } else {
-        alert("ไม่พบรหัสผู้ป่วย กรุณาตรวจสอบข้อมูลอีกครั้ง");
-        hideExistingModal();
-    }
+    hideExistingModal();
+    currentStep = 1;
+    updateUI();
+    document.querySelector('[name="ketone"]').focus();
 }
 
 // ---------- BMI ----------
@@ -358,12 +356,13 @@ function updateUI() {
 function handleNext() {
     if (currentStep === 1) {
         const inputs = document.getElementById('step1').querySelectorAll('input[required], select[required]');
-        let valid = true;
-        inputs.forEach(input => {
-            if (!input.value) { valid = false; input.style.borderColor = 'red'; }
-            else { input.style.borderColor = '#dee2e6'; }
-        });
-        if (!valid) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+        for (const input of inputs) {
+            if (!input.reportValidity()) return;
+        }
+    }
+    if (currentStep === 2 && !document.querySelector('input[name="special"]:checked')) {
+        alert('กรุณาระบุภาวะแทรกซ้อนอื่น ๆ หรือยืนยันว่าไม่มีรายการที่ระบุ หากไม่ทราบให้ตรวจสอบข้อมูลก่อนรับคำแนะนำ');
+        return;
     }
     if (currentStep < 4) { currentStep++; updateUI(); }
 }
@@ -381,6 +380,14 @@ function toggleNoOther(checkbox) {
 
 // ---------- ส่งข้อมูลไปวิเคราะห์ ----------
 async function analyzeData() {
+    const incomplete = Array.from(document.querySelectorAll('#step1 input[required], #step1 select[required]'))
+        .find(input => !input.checkValidity());
+    if (incomplete) {
+        currentStep = 1;
+        updateUI();
+        incomplete.reportValidity();
+        return;
+    }
     const getVal = (name) => {
         const el = document.querySelector(`[name="${name}"]`);
         return el ? el.value : '';
@@ -388,6 +395,12 @@ async function analyzeData() {
 
     const selectedSpecials = Array.from(document.querySelectorAll('input[name="special"]:checked')).map(el => el.value);
     const selectedFavorites = Array.from(document.querySelectorAll('input[name="favorites"]:checked')).map(el => el.value);
+    if (!selectedSpecials.length || (selectedSpecials.includes('NoOtherComplication') && selectedSpecials.length > 1)) {
+        currentStep = 2;
+        updateUI();
+        alert('กรุณาตรวจสอบสถานะภาวะแทรกซ้อน ไม่เลือกไม่มีภาวะแทรกซ้อนร่วมกับรายการอื่น');
+        return;
+    }
 
     let generatedID = 'TEMP_GUEST';
     if (currentUser.id) generatedID = currentUser.id;
@@ -463,6 +476,10 @@ async function analyzeData() {
                 }
                 btnNext.disabled = false;
                 btnNext.innerHTML = 'สร้างตารางออกกำลังกาย';
+                if (json.fields) {
+                    currentStep = Object.keys(json.fields).includes('special') ? 2 : 1;
+                    updateUI();
+                }
             }
         } catch (err) {
             console.error("Server Error HTML:", text);
